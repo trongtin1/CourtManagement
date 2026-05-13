@@ -1,0 +1,60 @@
+using CourtManagementBE.Domain.Entities;
+using CourtManagementBE.Domain.IRepositories;
+using CourtManagementBE.Infrastructure.Common;
+using CourtManagementBE.Infrastructure.Data;
+
+namespace CourtManagementBE.Infrastructure.Repositories;
+
+public class FacilityRepository : GenericRepository<Facilities>, IFacilityRepository
+{ public FacilityRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class AreaRepository : GenericRepository<Areas>, IAreaRepository
+{ public AreaRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtRepository : GenericRepository<Courts>, ICourtRepository
+{ public CourtRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtTypeRepository : GenericRepository<CourtTypes>, ICourtTypeRepository
+{ public CourtTypeRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtStatusRepository : GenericRepository<CourtStatus>, ICourtStatusRepository
+{ public CourtStatusRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class UtilityRepository : GenericRepository<Utilities>, IUtilityRepository
+{ public UtilityRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class TimeSlotRepository : GenericRepository<TimeSlots>, ITimeSlotRepository
+{ public TimeSlotRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtPriceRepository : GenericRepository<CourtPriceByTimeSlot>, ICourtPriceRepository
+{ public CourtPriceRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CustomerRepository : GenericRepository<Customers>, ICustomerRepository
+{ public CustomerRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class BookingRepository : GenericRepository<Bookings>, IBookingRepository
+{ public BookingRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class BookingSlotRepository : GenericRepository<BookingSlots>, IBookingSlotRepository
+{ public BookingSlotRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class BookingServiceRepository : GenericRepository<BookingServices>, IBookingServiceRepository
+{ public BookingServiceRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class PaymentRepository : GenericRepository<Payments>, IPaymentRepository
+{ public PaymentRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class ServiceRepository : GenericRepository<Services>, IServiceRepository
+{ public ServiceRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class ServicePriceRepository : GenericRepository<ServicePrice>, IServicePriceRepository
+{ public ServicePriceRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtAreaMappingRepository : GenericRepository<CourtAreaMapping>, ICourtAreaMappingRepository
+{ public CourtAreaMappingRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtUtilityRepository : GenericRepository<CourtUtilities>, ICourtUtilityRepository
+{ public CourtUtilityRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtPriceHistoryRepository : GenericRepository<CourtPriceHistory>, ICourtPriceHistoryRepository
+{ public CourtPriceHistoryRepository(AppDbContext ctx) : base(ctx) { } }
