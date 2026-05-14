@@ -1,7 +1,6 @@
 export type Court = {
   courtID: number
   facilityID: number
-  areaID: number | null
   courtTypeID: number
   courtCode: string
   courtName: string
@@ -18,7 +17,6 @@ export type Court = {
 
 export type CreateCourtRequest = {
   facilityID: number
-  areaID?: number | null
   courtTypeID: number
   courtCode: string
   courtName: string
@@ -33,7 +31,6 @@ export type CreateCourtRequest = {
 }
 
 export type UpdateCourtRequest = {
-  areaID?: number | null
   courtTypeID: number
   courtCode: string
   courtName: string

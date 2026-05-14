@@ -7,7 +7,6 @@ public class Courts
     [Key]
     public int CourtID { get; set; }
     public int FacilityID { get; set; }
-    public int? AreaID { get; set; }           // nullable: sân thuộc khu vực nào (nếu có)
     public int CourtTypeID { get; set; }
     public string CourtCode { get; set; } = string.Empty;
     public string CourtName { get; set; } = string.Empty;

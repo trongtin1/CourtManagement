@@ -21,7 +21,6 @@ public static class AppDbSeeder
         var courts = await GetOrCreateCourtsAsync(
             db,
             facility.FacilityID,
-            areas,
             courtTypes,
             courtStatuses,
             cancellationToken);
@@ -219,22 +218,19 @@ public static class AppDbSeeder
     private static async Task<List<Courts>> GetOrCreateCourtsAsync(
         AppDbContext db,
         int facilityId,
-        List<Areas> areas,
         List<CourtTypes> courtTypes,
         List<CourtStatus> courtStatuses,
         CancellationToken cancellationToken)
     {
-        var areaA = areas.First(x => x.AreaCode == "A");
-        var areaB = areas.First(x => x.AreaCode == "B");
         var badminton = courtTypes.First(x => x.Code == "BADMINTON");
         var pickleball = courtTypes.First(x => x.Code == "PICKLEBALL");
         var available = courtStatuses.First(x => x.StatusCode == "available");
 
         var seed = new[]
         {
-            new Courts { FacilityID = facilityId, AreaID = areaA.AreaID, CourtTypeID = badminton.CourtTypeID, CourtCode = "A01", CourtName = "Badminton A01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 1, Description = "Indoor badminton court A01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Courts { FacilityID = facilityId, AreaID = areaA.AreaID, CourtTypeID = badminton.CourtTypeID, CourtCode = "A02", CourtName = "Badminton A02", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 2, Description = "Indoor badminton court A02", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Courts { FacilityID = facilityId, AreaID = areaB.AreaID, CourtTypeID = pickleball.CourtTypeID, CourtCode = "B01", CourtName = "Pickleball B01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 3, Description = "Pickleball court B01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A01", CourtName = "Badminton A01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 1, Description = "Indoor badminton court A01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A02", CourtName = "Badminton A02", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 2, Description = "Indoor badminton court A02", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = pickleball.CourtTypeID, CourtCode = "B01", CourtName = "Pickleball B01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 3, Description = "Pickleball court B01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -327,22 +323,31 @@ public static class AppDbSeeder
         List<Areas> areas,
         CancellationToken cancellationToken)
     {
+        var areaByCode = areas.ToDictionary(x => x.AreaCode);
+        var courtAreaCodes = new Dictionary<string, string>
+        {
+            ["A01"] = "A",
+            ["A02"] = "A",
+            ["B01"] = "B",
+        };
+
         foreach (var court in courts)
         {
-            if (court.AreaID is null)
+            if (!courtAreaCodes.TryGetValue(court.CourtCode, out var areaCode)
+                || !areaByCode.TryGetValue(areaCode, out var area))
             {
                 continue;
             }
 
             if (!await db.CourtAreaMappings.AnyAsync(
-                x => x.CourtID == court.CourtID && x.AreaID == court.AreaID,
+                x => x.CourtID == court.CourtID && x.AreaID == area.AreaID,
                 cancellationToken))
             {
-                var areaIndex = areas.FindIndex(x => x.AreaID == court.AreaID);
+                var areaIndex = areas.FindIndex(x => x.AreaID == area.AreaID);
                 db.CourtAreaMappings.Add(new CourtAreaMapping
                 {
                     CourtID = court.CourtID,
-                    AreaID = court.AreaID.Value,
+                    AreaID = area.AreaID,
                     PositionX = court.SortOrder * 12,
                     PositionY = areaIndex <= 0 ? 8 : 28,
                     DisplayOrder = court.SortOrder,

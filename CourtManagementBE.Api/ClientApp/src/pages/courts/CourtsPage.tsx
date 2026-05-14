@@ -31,7 +31,6 @@ export function CourtsPage() {
       const v = await form.validateFields()
       if (editingId) {
         const data: UpdateCourtRequest = {
-          areaID: v.areaID,
           courtTypeID: v.courtTypeID,
           courtCode: v.courtCode,
           courtName: v.courtName,

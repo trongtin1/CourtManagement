@@ -5,7 +5,6 @@ namespace CourtManagementBE.Application.DTOs;
 public class CreateCourtRequest
 {
     [Required] public int FacilityID { get; set; }
-    public int? AreaID { get; set; }
     [Required] public int CourtTypeID { get; set; }
     [Required, MaxLength(20)] public string CourtCode { get; set; } = string.Empty;
     [Required, MaxLength(200)] public string CourtName { get; set; } = string.Empty;
@@ -21,7 +20,6 @@ public class CreateCourtRequest
 
 public class UpdateCourtRequest
 {
-    public int? AreaID { get; set; }
     [Required] public int CourtTypeID { get; set; }
     [Required, MaxLength(20)] public string CourtCode { get; set; } = string.Empty;
     [Required, MaxLength(200)] public string CourtName { get; set; } = string.Empty;
