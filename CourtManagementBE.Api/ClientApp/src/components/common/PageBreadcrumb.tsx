@@ -6,6 +6,7 @@ import { ROUTES } from '@/constants/routes'
 
 const breadcrumbLabels: Record<string, string> = {
   [ROUTES.dashboard]: 'Dashboard',
+  [ROUTES.areas]: 'Khu vực',
 }
 
 export function PageBreadcrumb() {

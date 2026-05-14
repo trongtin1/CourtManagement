@@ -9,8 +9,12 @@ export const facilityKeys = {
   detail: (id: number) => [...facilityKeys.all, 'detail', id] as const,
 }
 
-export const useFacilitiesQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: facilityKeys.list(params), queryFn: () => facilityApi.getAll(params) })
+export const useFacilitiesQuery = (params?: PaginationQuery, enabled = true) =>
+  useQuery({
+    queryKey: facilityKeys.list(params),
+    queryFn: () => facilityApi.getAll(params),
+    enabled,
+  })
 
 export const useFacilityQuery = (id: number) =>
   useQuery({ queryKey: facilityKeys.detail(id), queryFn: () => facilityApi.getById(id), enabled: id > 0 })

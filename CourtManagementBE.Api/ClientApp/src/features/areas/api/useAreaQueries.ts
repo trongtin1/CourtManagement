@@ -9,7 +9,7 @@ export const areaKeys = {
   detail: (id: number) => [...areaKeys.all, 'detail', id] as const,
 }
 
-export const useAreasQuery = (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
+export const useAreasQuery = (params?: PaginationQuery) =>
   useQuery({ queryKey: areaKeys.list(params), queryFn: () => areaApi.getAll(params) })
 
 export const useAreaQuery = (id: number) =>

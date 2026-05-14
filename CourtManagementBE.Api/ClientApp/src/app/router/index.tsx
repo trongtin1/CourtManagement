@@ -6,6 +6,7 @@ import { ROUTES } from '@/constants/routes'
 import { MainLayout } from '@/layouts/MainLayout'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import {
+  AreasPage,
   BookingsPage,
   CourtFeaturesPage,
   CourtStatusesPage,
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to={ROUTES.dashboard} replace /> },
       { path: ROUTES.dashboard.replace('/', ''), element: withSuspense(<DashboardPage />) },
       { path: ROUTES.facilities.replace('/', ''), element: withSuspense(<FacilitiesPage />) },
+      { path: ROUTES.areas.replace('/', ''), element: withSuspense(<AreasPage />) },
       { path: ROUTES.courts.replace('/', ''), element: withSuspense(<CourtsPage />) },
       { path: ROUTES.courtTypes.replace('/', ''), element: withSuspense(<CourtTypesPage />) },
       { path: ROUTES.courtStatuses.replace('/', ''), element: withSuspense(<CourtStatusesPage />) },

@@ -3,6 +3,7 @@ export const ROUTES = {
   login: '/login',
   dashboard: '/dashboard',
   facilities: '/facilities',
+  areas: '/areas',
   courts: '/courts',
   courtTypes: '/court-types',
   courtStatuses: '/court-statuses',

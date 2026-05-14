@@ -16,6 +16,10 @@ export const FacilitiesPage = lazy(() =>
   import('@/pages/facilities/FacilitiesPage').then((m) => ({ default: m.FacilitiesPage })),
 )
 
+export const AreasPage = lazy(() =>
+  import('@/pages/areas/AreasPage').then((m) => ({ default: m.AreasPage })),
+)
+
 export const CourtsPage = lazy(() =>
   import('@/pages/courts/CourtsPage').then((m) => ({ default: m.CourtsPage })),
 )

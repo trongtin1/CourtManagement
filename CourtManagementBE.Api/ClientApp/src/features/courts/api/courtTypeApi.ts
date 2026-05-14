@@ -4,7 +4,7 @@ import type { CourtType, CreateCourtTypeRequest, UpdateCourtTypeRequest } from '
 
 
 export const courtTypeApi = {
-  getAll: (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
+  getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtType>>('/courttype', params),
   getById: (id: number) => apiGet<CourtType>(`/courttype/${id}`),
   create: (data: CreateCourtTypeRequest) => apiPost<CourtType>('/courttype', data),

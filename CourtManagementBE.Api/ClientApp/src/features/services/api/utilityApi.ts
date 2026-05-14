@@ -5,7 +5,7 @@ import type { CreateUtilityRequest, UpdateUtilityRequest, Utility } from '../mod
 
 
 export const utilityApi = {
-  getAll: (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
+  getAll: (params?: PaginationQuery) =>
     apiGet<PageList<Utility>>('/utility', params),
   getById: (id: number) => apiGet<Utility>(`/utility/${id}`),
   create: (data: CreateUtilityRequest) => apiPost<Utility>('/utility', data),

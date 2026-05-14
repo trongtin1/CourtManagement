@@ -4,7 +4,7 @@ import type { CourtPrice, CreateCourtPriceRequest, UpdateCourtPriceRequest } fro
 
 
 export const courtPriceApi = {
-  getAll: (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
+  getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtPrice>>('/courtprice', params),
   getById: (id: number) => apiGet<CourtPrice>(`/courtprice/${id}`),
   getByCourt: (courtId: number) =>

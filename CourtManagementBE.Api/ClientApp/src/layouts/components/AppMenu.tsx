@@ -6,6 +6,7 @@ import {
   CreditCardOutlined,
   DashboardOutlined,
   EnvironmentOutlined,
+  PartitionOutlined,
   TagsOutlined,
   TeamOutlined,
   ToolOutlined,
@@ -26,6 +27,7 @@ const menuItems: NonNullable<MenuProps['items']> = [
     label: 'He thong',
     children: [
       { key: ROUTES.facilities, icon: <EnvironmentOutlined />, label: 'Co so' },
+      { key: ROUTES.areas, icon: <PartitionOutlined />, label: 'Khu vuc' },
     ],
   },
   {
@@ -64,6 +66,7 @@ const menuItems: NonNullable<MenuProps['items']> = [
 const routeKeys = [
   ROUTES.dashboard,
   ROUTES.facilities,
+  ROUTES.areas,
   ROUTES.courts,
   ROUTES.courtTypes,
   ROUTES.courtStatuses,

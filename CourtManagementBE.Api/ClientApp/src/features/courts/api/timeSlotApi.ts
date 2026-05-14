@@ -3,7 +3,7 @@ import type { PageList, PaginationQuery } from '@/types/api'
 import type { CreateTimeSlotRequest, TimeSlot, UpdateTimeSlotRequest } from '../model/types'
 
 export const timeSlotApi = {
-  getAll: (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
+  getAll: (params?: PaginationQuery) =>
     apiGet<PageList<TimeSlot>>('/timeslot', params),
   getById: (id: number) => apiGet<TimeSlot>(`/timeslot/${id}`),
   create: (data: CreateTimeSlotRequest) => apiPost<TimeSlot>('/timeslot', data),

@@ -8,7 +8,7 @@ import type {
 
 
 export const courtStatusApi = {
-  getAll: (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
+  getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtStatus>>('/courtstatus', params),
   getById: (id: number) => apiGet<CourtStatus>(`/courtstatus/${id}`),
   create: (data: CreateCourtStatusRequest) =>

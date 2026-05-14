@@ -9,8 +9,12 @@ export const courtKeys = {
   detail: (id: number) => [...courtKeys.all, 'detail', id] as const,
 }
 
-export const useCourtsQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: courtKeys.list(params), queryFn: () => courtApi.getAll(params) })
+export const useCourtsQuery = (params?: PaginationQuery, enabled = true) =>
+  useQuery({
+    queryKey: courtKeys.list(params),
+    queryFn: () => courtApi.getAll(params),
+    enabled,
+  })
 
 export const useCourtQuery = (id: number) =>
   useQuery({ queryKey: courtKeys.detail(id), queryFn: () => courtApi.getById(id), enabled: id > 0 })
