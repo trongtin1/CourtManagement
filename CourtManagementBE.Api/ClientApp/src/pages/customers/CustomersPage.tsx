@@ -22,7 +22,7 @@ export function CustomersPage() {
   const updateMut = useUpdateCustomerMutation()
   const deleteMut = useDeleteCustomerMutation()
 
-  const openCreate = () => { setEditingId(null); form.resetFields(); form.setFieldsValue({ isActive: true, tenantID: 1, customerType: 'normal' }); setOpen(true) }
+  const openCreate = () => { setEditingId(null); form.resetFields(); form.setFieldsValue({ isActive: true, customerType: 'normal' }); setOpen(true) }
   const openEdit = (r: Customer) => { setEditingId(r.customerID); form.setFieldsValue(r); setOpen(true) }
 
   const handleSubmit = async () => {
@@ -70,7 +70,6 @@ export function CustomersPage() {
       </Card>
       <Modal confirmLoading={createMut.isPending || updateMut.isPending} okText={editingId ? 'Cập nhật' : 'Tạo'} onCancel={() => setOpen(false)} onOk={handleSubmit} open={open} title={editingId ? 'Sửa KH' : 'Thêm KH'} width={560} destroyOnClose>
         <Form form={form} layout="vertical">
-          {!editingId && <Form.Item label="Tenant ID" name="tenantID" rules={[{ required: true }]}><Input type="number" /></Form.Item>}
           <Form.Item label="Tên KH" name="customerName" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item label="SĐT" name="phone"><Input /></Form.Item>
           <Form.Item label="Email" name="email"><Input /></Form.Item>

@@ -6,7 +6,6 @@ public class Services
 {
     [Key]
     public int ServiceID { get; set; }
-    public int TenantID { get; set; }
     public string ServiceCode { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
     public string ServiceType { get; set; } = string.Empty;

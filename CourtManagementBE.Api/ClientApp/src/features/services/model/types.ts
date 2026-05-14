@@ -1,6 +1,5 @@
 export type Service = {
   serviceID: number
-  tenantID: number
   serviceCode: string
   serviceName: string
   serviceType: string
@@ -12,7 +11,6 @@ export type Service = {
 }
 
 export type CreateServiceRequest = {
-  tenantID: number
   serviceCode: string
   serviceName: string
   serviceType?: string
@@ -22,7 +20,7 @@ export type CreateServiceRequest = {
   isActive?: boolean
 }
 
-export type UpdateServiceRequest = Omit<CreateServiceRequest, 'tenantID'>
+export type UpdateServiceRequest = CreateServiceRequest
 
 export type ServicePrice = {
   id: number

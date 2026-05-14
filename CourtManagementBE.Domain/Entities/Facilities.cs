@@ -6,7 +6,6 @@ public class Facilities
 {
     [Key]
     public int FacilityID { get; set; }
-    public int TenantID { get; set; }
     public string FacilityName { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;

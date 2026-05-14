@@ -1,6 +1,5 @@
 export type Customer = {
   customerID: number
-  tenantID: number
   userID: string | null
   customerName: string
   phone: string
@@ -12,7 +11,6 @@ export type Customer = {
 }
 
 export type CreateCustomerRequest = {
-  tenantID: number
   userID?: string | null
   customerName: string
   phone?: string

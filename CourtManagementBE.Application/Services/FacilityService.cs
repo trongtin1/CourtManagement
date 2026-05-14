@@ -20,12 +20,6 @@ public class FacilityService : BaseService, IFacilityService
         return Success(MapPageList<Facilities, FacilityResponse>(page));
     }
 
-    public async Task<Result<List<FacilityResponse>>> GetByTenant(int tenantId)
-    {
-        var list = await _unitOfWork.IFacilityRepository.FindList(x => x.TenantID == tenantId);
-        return Success(_mapper.Map<List<FacilityResponse>>(list));
-    }
-
     public async Task<Result<FacilityResponse>> GetById(int id)
     {
         var entity = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == id);

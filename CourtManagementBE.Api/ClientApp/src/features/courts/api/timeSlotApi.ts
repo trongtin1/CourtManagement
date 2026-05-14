@@ -6,8 +6,6 @@ export const timeSlotApi = {
   getAll: (params: PaginationQuery = { page: 1, pageSize: 1000 }) =>
     apiGet<PageList<TimeSlot>>('/timeslot', params),
   getById: (id: number) => apiGet<TimeSlot>(`/timeslot/${id}`),
-  getByTenant: (tenantId: number) =>
-    apiGet<TimeSlot[]>(`/timeslot/tenant/${tenantId}`),
   create: (data: CreateTimeSlotRequest) => apiPost<TimeSlot>('/timeslot', data),
   update: (id: number, data: UpdateTimeSlotRequest) =>
     apiPut<TimeSlot>(`/timeslot/${id}`, data),

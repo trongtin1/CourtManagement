@@ -1,6 +1,5 @@
 export type Facility = {
   facilityID: number
-  tenantID: number
   facilityName: string
   address: string
   phone: string
@@ -14,7 +13,6 @@ export type Facility = {
 }
 
 export type CreateFacilityRequest = {
-  tenantID: number
   facilityName: string
   address?: string
   phone?: string

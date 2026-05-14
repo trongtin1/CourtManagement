@@ -183,3 +183,17 @@ C:\tmp\cmbuild\CourtManagementBE.runtimeconfig.json
 C:\tmp\cmbuild\CourtManagementBE.dll
 C:\tmp\cmbuild\CourtManagementBE.pdb
 C:\Users\DELL\Desktop\CourtManagment\CourtManagementBE\obj\Debug\net10.0\CourtManagementBE.sourcelink.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\appsettings.Development.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\appsettings.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\ClientApp\package-lock.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\ClientApp\package.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\ClientApp\tsconfig.app.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\ClientApp\tsconfig.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.Api\ClientApp\tsconfig.node.json
+C:\tmp\CourtManagementBE-build\package.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.staticwebassets.endpoints.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.exe
+C:\tmp\CourtManagementBE-build\CourtManagementBE.deps.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.runtimeconfig.json
+C:\tmp\CourtManagementBE-build\CourtManagementBE.dll
+C:\tmp\CourtManagementBE-build\CourtManagementBE.pdb

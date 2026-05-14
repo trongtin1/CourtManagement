@@ -53,7 +53,7 @@ export function FacilitiesPage() {
   const openCreate = () => {
     setEditingId(null)
     form.resetFields()
-    form.setFieldsValue({ isActive: true, tenantID: 1 })
+    form.setFieldsValue({ isActive: true })
     setOpen(true)
   }
 
@@ -67,7 +67,6 @@ export function FacilitiesPage() {
       description: record.description,
       imageURL: record.imageURL,
       isActive: record.isActive,
-      tenantID: record.tenantID,
     })
     setOpen(true)
   }
@@ -89,7 +88,6 @@ export function FacilitiesPage() {
         message.success('Cập nhật cơ sở thành công')
       } else {
         const data: CreateFacilityRequest = {
-          tenantID: values.tenantID,
           facilityName: values.facilityName,
           address: values.address,
           phone: values.phone,
@@ -208,11 +206,6 @@ export function FacilitiesPage() {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          {!editingId && (
-            <Form.Item label="Tenant ID" name="tenantID" rules={[{ required: true }]}>
-              <Input type="number" placeholder="ID tenant" />
-            </Form.Item>
-          )}
           <Form.Item label="Tên cơ sở" name="facilityName" rules={[{ required: true, message: 'Vui lòng nhập tên' }]}>
             <Input placeholder="Nhập tên cơ sở" />
           </Form.Item>

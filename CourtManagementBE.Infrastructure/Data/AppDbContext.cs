@@ -17,8 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<UserToken> UserTokens => Set<UserToken>();
 
-    // ── Tenant & Cơ sở ────────────────────────────────────────────────────────
-    public DbSet<Tenant> Tenants => Set<Tenant>();
+    // ── Cơ sở ────────────────────────────────────────────────────────────────
     public DbSet<Facilities> Facilities => Set<Facilities>();
 
     // ── Khu vực & Sân ─────────────────────────────────────────────────────────
@@ -76,15 +75,6 @@ public class AppDbContext : DbContext
             e.Property(x => x.TokenType).HasColumnType("varchar(50)").IsRequired();
             e.Property(x => x.UserId).HasColumnType("varchar(36)").IsRequired();
             e.HasIndex(x => x.Token);
-        });
-
-        // ── Tenant ───────────────────────────────────────────────────────────
-        modelBuilder.Entity<Tenant>(e =>
-        {
-            e.HasKey(x => x.TenantID);
-            e.Property(x => x.TenantName).HasColumnType("nvarchar(200)").IsRequired();
-            e.Property(x => x.Domain).HasColumnType("varchar(100)");
-            e.HasIndex(x => x.Domain).IsUnique();
         });
 
         // ── Facilities ───────────────────────────────────────────────────────
@@ -211,7 +201,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Email).HasColumnType("varchar(255)");
             e.Property(x => x.CustomerType).HasColumnType("varchar(20)").HasDefaultValue("normal");
             e.Property(x => x.Note).HasColumnType("nvarchar(500)");
-            e.HasIndex(x => new { x.TenantID, x.Phone });
+            e.HasIndex(x => x.Phone);
         });
 
         // ── Bookings ─────────────────────────────────────────────────────────
@@ -225,7 +215,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.CancellationReason).HasColumnType("nvarchar(500)");
             e.HasIndex(x => x.CustomerID);
             e.HasIndex(x => x.CourtID);
-            e.HasIndex(x => new { x.TenantID, x.BookingDate });
+            e.HasIndex(x => x.BookingDate);
         });
 
         // ── BookingSlots ─────────────────────────────────────────────────────
@@ -271,7 +261,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.ServiceName).HasColumnType("nvarchar(200)").IsRequired();
             e.Property(x => x.ServiceType).HasColumnType("varchar(50)");
             e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
-            e.HasIndex(x => new { x.TenantID, x.ServiceCode }).IsUnique();
+            e.HasIndex(x => x.ServiceCode).IsUnique();
         });
 
         // ── ServicePrice ─────────────────────────────────────────────────────

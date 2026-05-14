@@ -105,7 +105,6 @@ export type UpdateCourtFeatureRequest = CreateCourtFeatureRequest
 
 export type TimeSlot = {
   timeSlotID: number
-  tenantID: number
   slotName: string
   startTime: string
   endTime: string
@@ -113,7 +112,6 @@ export type TimeSlot = {
 }
 
 export type CreateTimeSlotRequest = {
-  tenantID: number
   slotName: string
   startTime: string
   endTime: string

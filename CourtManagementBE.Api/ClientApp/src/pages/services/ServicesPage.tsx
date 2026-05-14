@@ -23,7 +23,7 @@ export function ServicesPage() {
   const deleteMut = useDeleteServiceMutation()
   const toggleMut = useToggleServiceMutation()
 
-  const openCreate = () => { setEditingId(null); form.resetFields(); form.setFieldsValue({ isActive: true, tenantID: 1 }); setOpen(true) }
+  const openCreate = () => { setEditingId(null); form.resetFields(); form.setFieldsValue({ isActive: true }); setOpen(true) }
   const openEdit = (r: Service) => { setEditingId(r.serviceID); form.setFieldsValue(r); setOpen(true) }
 
   const handleSubmit = async () => {
@@ -79,7 +79,6 @@ export function ServicesPage() {
       </Card>
       <Modal confirmLoading={createMut.isPending || updateMut.isPending} okText={editingId ? 'Cập nhật' : 'Tạo'} onCancel={() => setOpen(false)} onOk={handleSubmit} open={open} title={editingId ? 'Sửa DV' : 'Thêm DV'} width={540} destroyOnClose>
         <Form form={form} layout="vertical">
-          {!editingId && <Form.Item label="Tenant ID" name="tenantID" rules={[{ required: true }]}><InputNumber className="w-full" /></Form.Item>}
           <Form.Item label="Mã DV" name="serviceCode" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item label="Tên DV" name="serviceName" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item label="Loại" name="serviceType"><Input /></Form.Item>

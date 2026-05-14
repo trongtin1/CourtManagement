@@ -6,7 +6,6 @@ import type { Facility, CreateFacilityRequest, UpdateFacilityRequest } from '../
 export const facilityApi = {
   getAll: (params?: PaginationQuery) => apiGet<PageList<Facility>>('/facility', params),
   getById: (id: number) => apiGet<Facility>(`/facility/${id}`),
-  getByTenant: (tenantId: number) => apiGet<Facility[]>(`/facility/tenant/${tenantId}`),
   create: (data: CreateFacilityRequest) => apiPost<Facility>('/facility', data),
   update: (id: number, data: UpdateFacilityRequest) => apiPut<Facility>(`/facility/${id}`, data),
   toggleActive: (id: number) => apiPatch<Facility>(`/facility/${id}/toggle-active`),

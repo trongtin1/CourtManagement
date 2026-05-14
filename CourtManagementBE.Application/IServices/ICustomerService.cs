@@ -7,7 +7,6 @@ namespace CourtManagementBE.Application.IServices;
 public interface ICustomerService
 {
     Task<Result<PageList<CustomerResponse>>> GetAll(QueryResource query);
-    Task<Result<List<CustomerResponse>>> GetByTenant(int tenantId);
     Task<Result<List<CustomerResponse>>> SearchByPhone(string phone);
     Task<Result<CustomerResponse>> GetById(int id);
     Task<Result<CustomerResponse>> Create(CreateCustomerRequest request);

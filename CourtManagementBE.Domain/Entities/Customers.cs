@@ -6,7 +6,6 @@ public class Customers
 {
     [Key]
     public int CustomerID { get; set; }
-    public int TenantID { get; set; }
     public Guid? UserID { get; set; }              // nullable: null = khách vãng lai, có giá trị = user đã đăng ký
     public string CustomerName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;

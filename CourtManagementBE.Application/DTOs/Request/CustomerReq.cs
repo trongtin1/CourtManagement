@@ -4,7 +4,6 @@ namespace CourtManagementBE.Application.DTOs;
 
 public class CreateCustomerRequest
 {
-    [Required] public int TenantID { get; set; }
     public Guid? UserID { get; set; }
     [Required, MaxLength(200)] public string CustomerName { get; set; } = string.Empty;
     [MaxLength(20)] public string Phone { get; set; } = string.Empty;

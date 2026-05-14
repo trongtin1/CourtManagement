@@ -3,7 +3,6 @@ namespace CourtManagementBE.Application.DTOs;
 public class BookingResponse
 {
     public Guid BookingID { get; set; }
-    public int TenantID { get; set; }
     public int CourtID { get; set; }
     public int CustomerID { get; set; }
     public DateTime BookingDate { get; set; }

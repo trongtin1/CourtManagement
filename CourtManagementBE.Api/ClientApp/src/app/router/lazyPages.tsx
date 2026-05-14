@@ -12,10 +12,6 @@ export const NotFoundPage = lazy(() =>
   import('@/pages/not-found/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 )
 
-export const TenantsPage = lazy(() =>
-  import('@/pages/tenants/TenantsPage').then((m) => ({ default: m.TenantsPage })),
-)
-
 export const FacilitiesPage = lazy(() =>
   import('@/pages/facilities/FacilitiesPage').then((m) => ({ default: m.FacilitiesPage })),
 )
@@ -24,10 +20,28 @@ export const CourtsPage = lazy(() =>
   import('@/pages/courts/CourtsPage').then((m) => ({ default: m.CourtsPage })),
 )
 
+export const CourtTypesPage = lazy(() =>
+  import('@/pages/court-types/CourtTypesPage').then((m) => ({ default: m.CourtTypesPage })),
+)
+
+export const CourtStatusesPage = lazy(() =>
+  import('@/pages/court-statuses/CourtStatusesPage').then((m) => ({
+    default: m.CourtStatusesPage,
+  })),
+)
+
 export const CourtFeaturesPage = lazy(() =>
   import('@/pages/court-features/CourtFeaturesPage').then((m) => ({
     default: m.CourtFeaturesPage,
   })),
+)
+
+export const UtilitiesPage = lazy(() =>
+  import('@/pages/utilities/UtilitiesPage').then((m) => ({ default: m.UtilitiesPage })),
+)
+
+export const TimeSlotsPage = lazy(() =>
+  import('@/pages/time-slots/TimeSlotsPage').then((m) => ({ default: m.TimeSlotsPage })),
 )
 
 export const CustomersPage = lazy(() =>

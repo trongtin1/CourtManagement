@@ -1,6 +1,5 @@
 export type Booking = {
   bookingID: string
-  tenantID: number
   courtID: number
   customerID: number
   bookingDate: string
@@ -13,7 +12,6 @@ export type Booking = {
 }
 
 export type CreateBookingRequest = {
-  tenantID: number
   courtID: number
   customerID: number
   bookingDate: string

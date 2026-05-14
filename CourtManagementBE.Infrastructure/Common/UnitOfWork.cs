@@ -23,7 +23,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IAuthRepository IAuthRepository => new AuthRepository(_context);
     public IUserTokenRepository IUserTokenRepository => new UserTokenRepository(_context);
-    public ITenantRepository ITenantRepository => new TenantRepository(_context);
     public IFacilityRepository IFacilityRepository => new FacilityRepository(_context);
     public IAreaRepository IAreaRepository => new AreaRepository(_context);
     public ICourtRepository ICourtRepository => new CourtRepository(_context);

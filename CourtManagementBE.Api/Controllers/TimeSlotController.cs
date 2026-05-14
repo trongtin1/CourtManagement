@@ -15,9 +15,6 @@ public class TimeSlotController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] QueryResource query) { var r = await _service.GetAll(query); return StatusCode((int)r.StatusCode, r); }
 
-    [HttpGet("tenant/{tenantId}")]
-    public async Task<IActionResult> GetByTenant(int tenantId) { var r = await _service.GetByTenant(tenantId); return StatusCode((int)r.StatusCode, r); }
-
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id) { var r = await _service.GetById(id); return StatusCode((int)r.StatusCode, r); }
 

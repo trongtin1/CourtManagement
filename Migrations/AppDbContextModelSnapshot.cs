@@ -236,19 +236,16 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(20)");
 
-                    b.Property<int>("TenantID")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("BookingID");
 
+                    b.HasIndex("BookingDate");
+
                     b.HasIndex("CourtID");
 
                     b.HasIndex("CustomerID");
-
-                    b.HasIndex("TenantID", "BookingDate");
 
                     b.ToTable("Bookings");
                 });
@@ -618,15 +615,12 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(20)");
 
-                    b.Property<int>("TenantID")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("UserID")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("CustomerID");
 
-                    b.HasIndex("TenantID", "Phone");
+                    b.HasIndex("Phone");
 
                     b.ToTable("Customers");
                 });
@@ -674,9 +668,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasColumnType("varchar(20)");
-
-                    b.Property<int>("TenantID")
-                        .HasColumnType("int");
 
                     b.HasKey("FacilityID");
 
@@ -812,49 +803,16 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<int>("TenantID")
-                        .HasColumnType("int");
-
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("ServiceID");
 
-                    b.HasIndex("TenantID", "ServiceCode")
+                    b.HasIndex("ServiceCode")
                         .IsUnique();
 
                     b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Tenant", b =>
-                {
-                    b.Property<int>("TenantID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TenantID"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Domain")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("TenantName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("TenantID");
-
-                    b.HasIndex("Domain")
-                        .IsUnique();
-
-                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.TimeSlots", b =>
@@ -877,9 +835,6 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
-
-                    b.Property<int>("TenantID")
-                        .HasColumnType("int");
 
                     b.HasKey("TimeSlotID");
 

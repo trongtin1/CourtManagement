@@ -8,11 +8,6 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // ── Tenant ───────────────────────────────────────────────────────
-        CreateMap<Tenant, TenantResponse>();
-        CreateMap<CreateTenantRequest, Tenant>();
-        CreateMap<UpdateTenantRequest, Tenant>();
-
         // ── Facility ─────────────────────────────────────────────────────
         CreateMap<Facilities, FacilityResponse>();
         CreateMap<CreateFacilityRequest, Facilities>();

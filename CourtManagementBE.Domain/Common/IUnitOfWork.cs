@@ -6,7 +6,6 @@ public interface IUnitOfWork : IDisposable
 {
     IAuthRepository IAuthRepository { get; }
     IUserTokenRepository IUserTokenRepository { get; }
-    ITenantRepository ITenantRepository { get; }
     IFacilityRepository IFacilityRepository { get; }
     IAreaRepository IAreaRepository { get; }
     ICourtRepository ICourtRepository { get; }

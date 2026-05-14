@@ -20,12 +20,6 @@ public class TimeSlotService : BaseService, ITimeSlotService
         return Success(MapPageList<TimeSlots, TimeSlotResponse>(page));
     }
 
-    public async Task<Result<List<TimeSlotResponse>>> GetByTenant(int tenantId)
-    {
-        var list = await _unitOfWork.ITimeSlotRepository.FindList(x => x.TenantID == tenantId);
-        return Success(_mapper.Map<List<TimeSlotResponse>>(list));
-    }
-
     public async Task<Result<TimeSlotResponse>> GetById(int id)
     {
         var entity = await _unitOfWork.ITimeSlotRepository.FindFirst(x => x.TimeSlotID == id);

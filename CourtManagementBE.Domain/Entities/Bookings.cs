@@ -6,7 +6,6 @@ public class Bookings
 {
     [Key]
     public Guid BookingID { get; set; } = Guid.NewGuid();
-    public int TenantID { get; set; }
     public int CourtID { get; set; }
     public int CustomerID { get; set; }
     public DateTime BookingDate { get; set; }

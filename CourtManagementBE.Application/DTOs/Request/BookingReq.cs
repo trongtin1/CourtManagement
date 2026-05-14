@@ -4,7 +4,6 @@ namespace CourtManagementBE.Application.DTOs;
 
 public class CreateBookingRequest
 {
-    [Required] public int TenantID { get; set; }
     [Required] public int CourtID { get; set; }
     [Required] public int CustomerID { get; set; }
     [Required] public DateTime BookingDate { get; set; }

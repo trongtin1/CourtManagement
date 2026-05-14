@@ -6,7 +6,6 @@ public class TimeSlots
 {
     [Key]
     public int TimeSlotID { get; set; }
-    public int TenantID { get; set; }
     public string SlotName { get; set; } = string.Empty;
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }

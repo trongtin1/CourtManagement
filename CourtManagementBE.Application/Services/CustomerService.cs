@@ -20,12 +20,6 @@ public class CustomerService : BaseService, ICustomerService
         return Success(MapPageList<Customers, CustomerResponse>(page));
     }
 
-    public async Task<Result<List<CustomerResponse>>> GetByTenant(int tenantId)
-    {
-        var list = await _unitOfWork.ICustomerRepository.FindList(x => x.TenantID == tenantId);
-        return Success(_mapper.Map<List<CustomerResponse>>(list));
-    }
-
     public async Task<Result<List<CustomerResponse>>> SearchByPhone(string phone)
     {
         var list = await _unitOfWork.ICustomerRepository.FindList(x => x.Phone.Contains(phone));

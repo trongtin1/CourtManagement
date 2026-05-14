@@ -4,7 +4,6 @@ namespace CourtManagementBE.Application.DTOs;
 
 public class CreateFacilityRequest
 {
-    [Required] public int TenantID { get; set; }
     [Required, MaxLength(200)] public string FacilityName { get; set; } = string.Empty;
     [MaxLength(500)] public string Address { get; set; } = string.Empty;
     [MaxLength(20)] public string Phone { get; set; } = string.Empty;

@@ -7,14 +7,12 @@ public static class AppDbSeeder
 {
     private const string AdminLogin = "admin";
     private const string AdminPassword = "admin";
-    private const string DemoTenantDomain = "demo.court.local";
 
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
         await SeedAdminAsync(db, cancellationToken);
 
-        var tenant = await GetOrCreateTenantAsync(db, cancellationToken);
-        var facility = await GetOrCreateFacilityAsync(db, tenant.TenantID, cancellationToken);
+        var facility = await GetOrCreateFacilityAsync(db, cancellationToken);
         var courtTypes = await GetOrCreateCourtTypesAsync(db, cancellationToken);
         var courtStatuses = await GetOrCreateCourtStatusesAsync(db, cancellationToken);
         await GetOrCreateCourtFeaturesAsync(db, cancellationToken);
@@ -27,15 +25,15 @@ public static class AppDbSeeder
             courtTypes,
             courtStatuses,
             cancellationToken);
-        var timeSlots = await GetOrCreateTimeSlotsAsync(db, tenant.TenantID, cancellationToken);
-        var services = await GetOrCreateServicesAsync(db, tenant.TenantID, cancellationToken);
-        var customers = await GetOrCreateCustomersAsync(db, tenant.TenantID, cancellationToken);
+        var timeSlots = await GetOrCreateTimeSlotsAsync(db, cancellationToken);
+        var services = await GetOrCreateServicesAsync(db, cancellationToken);
+        var customers = await GetOrCreateCustomersAsync(db, cancellationToken);
 
         await SeedCourtAreaMappingsAsync(db, courts, areas, cancellationToken);
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
         await SeedCourtPricesAsync(db, courts, timeSlots, cancellationToken);
         await SeedServicePricesAsync(db, services, cancellationToken);
-        await SeedBookingsAsync(db, tenant.TenantID, courts, timeSlots, services, customers, cancellationToken);
+        await SeedBookingsAsync(db, courts, timeSlots, services, customers, cancellationToken);
     }
 
     private static async Task SeedAdminAsync(AppDbContext db, CancellationToken cancellationToken)
@@ -62,34 +60,12 @@ public static class AppDbSeeder
         }
     }
 
-    private static async Task<Tenant> GetOrCreateTenantAsync(AppDbContext db, CancellationToken cancellationToken)
-    {
-        var tenant = await db.Tenants.FirstOrDefaultAsync(x => x.Domain == DemoTenantDomain, cancellationToken);
-        if (tenant is not null)
-        {
-            return tenant;
-        }
-
-        tenant = new Tenant
-        {
-            TenantName = "Demo Court Tenant",
-            Domain = DemoTenantDomain,
-            CreatedDate = DateTime.UtcNow,
-            IsActive = true,
-        };
-
-        db.Tenants.Add(tenant);
-        await db.SaveChangesAsync(cancellationToken);
-        return tenant;
-    }
-
     private static async Task<Facilities> GetOrCreateFacilityAsync(
         AppDbContext db,
-        int tenantId,
         CancellationToken cancellationToken)
     {
         var facility = await db.Facilities
-            .FirstOrDefaultAsync(x => x.TenantID == tenantId && x.FacilityName == "Demo Sports Center", cancellationToken);
+            .FirstOrDefaultAsync(x => x.FacilityName == "Demo Sports Center", cancellationToken);
 
         if (facility is not null)
         {
@@ -98,7 +74,6 @@ public static class AppDbSeeder
 
         facility = new Facilities
         {
-            TenantID = tenantId,
             FacilityName = "Demo Sports Center",
             Address = "123 Nguyen Trai, District 1, Ho Chi Minh City",
             Phone = "0900000000",
@@ -276,21 +251,20 @@ public static class AppDbSeeder
 
     private static async Task<List<TimeSlots>> GetOrCreateTimeSlotsAsync(
         AppDbContext db,
-        int tenantId,
         CancellationToken cancellationToken)
     {
         var seed = new[]
         {
-            new TimeSlots { TenantID = tenantId, SlotName = "06:00 - 08:00", StartTime = new TimeSpan(6, 0, 0), EndTime = new TimeSpan(8, 0, 0), IsActive = true },
-            new TimeSlots { TenantID = tenantId, SlotName = "08:00 - 10:00", StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(10, 0, 0), IsActive = true },
-            new TimeSlots { TenantID = tenantId, SlotName = "16:00 - 18:00", StartTime = new TimeSpan(16, 0, 0), EndTime = new TimeSpan(18, 0, 0), IsActive = true },
-            new TimeSlots { TenantID = tenantId, SlotName = "18:00 - 20:00", StartTime = new TimeSpan(18, 0, 0), EndTime = new TimeSpan(20, 0, 0), IsActive = true },
+            new TimeSlots { SlotName = "06:00 - 08:00", StartTime = new TimeSpan(6, 0, 0), EndTime = new TimeSpan(8, 0, 0), IsActive = true },
+            new TimeSlots { SlotName = "08:00 - 10:00", StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(10, 0, 0), IsActive = true },
+            new TimeSlots { SlotName = "16:00 - 18:00", StartTime = new TimeSpan(16, 0, 0), EndTime = new TimeSpan(18, 0, 0), IsActive = true },
+            new TimeSlots { SlotName = "18:00 - 20:00", StartTime = new TimeSpan(18, 0, 0), EndTime = new TimeSpan(20, 0, 0), IsActive = true },
         };
 
         foreach (var item in seed)
         {
             if (!await db.TimeSlots.AnyAsync(
-                x => x.TenantID == tenantId && x.StartTime == item.StartTime && x.EndTime == item.EndTime,
+                x => x.StartTime == item.StartTime && x.EndTime == item.EndTime,
                 cancellationToken))
             {
                 db.TimeSlots.Add(item);
@@ -298,55 +272,53 @@ public static class AppDbSeeder
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        return await db.TimeSlots.Where(x => x.TenantID == tenantId).ToListAsync(cancellationToken);
+        return await db.TimeSlots.ToListAsync(cancellationToken);
     }
 
     private static async Task<List<Services>> GetOrCreateServicesAsync(
         AppDbContext db,
-        int tenantId,
         CancellationToken cancellationToken)
     {
         var seed = new[]
         {
-            new Services { TenantID = tenantId, ServiceCode = "WATER", ServiceName = "Bottled Water", ServiceType = "drink", Unit = "bottle", MinQuantity = 1, MaxQuantity = 50, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { TenantID = tenantId, ServiceCode = "RACKET", ServiceName = "Racket Rental", ServiceType = "rental", Unit = "racket", MinQuantity = 1, MaxQuantity = 10, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { TenantID = tenantId, ServiceCode = "SHUTTLE", ServiceName = "Shuttlecock Tube", ServiceType = "equipment", Unit = "tube", MinQuantity = 1, MaxQuantity = 20, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "WATER", ServiceName = "Bottled Water", ServiceType = "drink", Unit = "bottle", MinQuantity = 1, MaxQuantity = 50, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "RACKET", ServiceName = "Racket Rental", ServiceType = "rental", Unit = "racket", MinQuantity = 1, MaxQuantity = 10, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "SHUTTLE", ServiceName = "Shuttlecock Tube", ServiceType = "equipment", Unit = "tube", MinQuantity = 1, MaxQuantity = 20, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
         {
-            if (!await db.Services.AnyAsync(x => x.TenantID == tenantId && x.ServiceCode == item.ServiceCode, cancellationToken))
+            if (!await db.Services.AnyAsync(x => x.ServiceCode == item.ServiceCode, cancellationToken))
             {
                 db.Services.Add(item);
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        return await db.Services.Where(x => x.TenantID == tenantId).ToListAsync(cancellationToken);
+        return await db.Services.ToListAsync(cancellationToken);
     }
 
     private static async Task<List<Customers>> GetOrCreateCustomersAsync(
         AppDbContext db,
-        int tenantId,
         CancellationToken cancellationToken)
     {
         var seed = new[]
         {
-            new Customers { TenantID = tenantId, CustomerName = "Nguyen Van An", Phone = "0901111111", Email = "an@example.com", CustomerType = "member", Note = "Seed member customer" },
-            new Customers { TenantID = tenantId, CustomerName = "Tran Thi Binh", Phone = "0902222222", Email = "binh@example.com", CustomerType = "vip", Note = "Seed VIP customer" },
-            new Customers { TenantID = tenantId, CustomerName = "Le Minh Chau", Phone = "0903333333", Email = "chau@example.com", CustomerType = "normal", Note = "Seed normal customer" },
+            new Customers { CustomerName = "Nguyen Van An", Phone = "0901111111", Email = "an@example.com", CustomerType = "member", Note = "Seed member customer" },
+            new Customers { CustomerName = "Tran Thi Binh", Phone = "0902222222", Email = "binh@example.com", CustomerType = "vip", Note = "Seed VIP customer" },
+            new Customers { CustomerName = "Le Minh Chau", Phone = "0903333333", Email = "chau@example.com", CustomerType = "normal", Note = "Seed normal customer" },
         };
 
         foreach (var item in seed)
         {
-            if (!await db.Customers.AnyAsync(x => x.TenantID == tenantId && x.Phone == item.Phone, cancellationToken))
+            if (!await db.Customers.AnyAsync(x => x.Phone == item.Phone, cancellationToken))
             {
                 db.Customers.Add(item);
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        return await db.Customers.Where(x => x.TenantID == tenantId).ToListAsync(cancellationToken);
+        return await db.Customers.ToListAsync(cancellationToken);
     }
 
     private static async Task SeedCourtAreaMappingsAsync(
@@ -508,7 +480,6 @@ public static class AppDbSeeder
 
     private static async Task SeedBookingsAsync(
         AppDbContext db,
-        int tenantId,
         List<Courts> courts,
         List<TimeSlots> timeSlots,
         List<Services> services,
@@ -546,7 +517,6 @@ public static class AppDbSeeder
         db.Bookings.Add(new Bookings
         {
             BookingID = bookingId,
-            TenantID = tenantId,
             CourtID = court.CourtID,
             CustomerID = customer.CustomerID,
             BookingDate = bookingDate,
