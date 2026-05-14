@@ -29,6 +29,7 @@ public class UnitOfWork : IUnitOfWork
     public ICourtRepository ICourtRepository => new CourtRepository(_context);
     public ICourtTypeRepository ICourtTypeRepository => new CourtTypeRepository(_context);
     public ICourtStatusRepository ICourtStatusRepository => new CourtStatusRepository(_context);
+    public ICourtFeatureRepository ICourtFeatureRepository => new CourtFeatureRepository(_context);
     public IUtilityRepository IUtilityRepository => new UtilityRepository(_context);
     public ITimeSlotRepository ITimeSlotRepository => new TimeSlotRepository(_context);
     public ICourtPriceRepository ICourtPriceRepository => new CourtPriceRepository(_context);

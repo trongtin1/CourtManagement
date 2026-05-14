@@ -24,6 +24,12 @@ export const CourtsPage = lazy(() =>
   import('@/pages/courts/CourtsPage').then((m) => ({ default: m.CourtsPage })),
 )
 
+export const CourtFeaturesPage = lazy(() =>
+  import('@/pages/court-features/CourtFeaturesPage').then((m) => ({
+    default: m.CourtFeaturesPage,
+  })),
+)
+
 export const CustomersPage = lazy(() =>
   import('@/pages/customers/CustomersPage').then((m) => ({ default: m.CustomersPage })),
 )

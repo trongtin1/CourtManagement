@@ -84,6 +84,25 @@ export type CreateCourtStatusRequest = {
 
 export type UpdateCourtStatusRequest = CreateCourtStatusRequest
 
+export type CourtFeature = {
+  courtFeatureID: number
+  featureCode: string
+  featureName: string
+  description: string
+  createDate: string
+  createdBy: string
+  isActive: boolean
+}
+
+export type CreateCourtFeatureRequest = {
+  featureCode: string
+  featureName: string
+  description?: string
+  isActive?: boolean
+}
+
+export type UpdateCourtFeatureRequest = CreateCourtFeatureRequest
+
 export type TimeSlot = {
   timeSlotID: number
   tenantID: number

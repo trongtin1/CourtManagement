@@ -4,6 +4,7 @@ import {
   CreditCardOutlined,
   DashboardOutlined,
   EnvironmentOutlined,
+  TagsOutlined,
   TeamOutlined,
   ToolOutlined,
   TrophyOutlined,
@@ -17,12 +18,13 @@ import { ROUTES } from '@/constants/routes'
 const menuItems = [
   { key: ROUTES.dashboard, icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: ROUTES.tenants, icon: <BankOutlined />, label: 'Tenants' },
-  { key: ROUTES.facilities, icon: <EnvironmentOutlined />, label: 'Cơ sở' },
-  { key: ROUTES.courts, icon: <TrophyOutlined />, label: 'Sân' },
-  { key: ROUTES.customers, icon: <TeamOutlined />, label: 'Khách hàng' },
-  { key: ROUTES.bookings, icon: <CalendarOutlined />, label: 'Đặt sân' },
-  { key: ROUTES.services, icon: <ToolOutlined />, label: 'Dịch vụ' },
-  { key: ROUTES.payments, icon: <CreditCardOutlined />, label: 'Thanh toán' },
+  { key: ROUTES.facilities, icon: <EnvironmentOutlined />, label: 'Co so' },
+  { key: ROUTES.courts, icon: <TrophyOutlined />, label: 'San' },
+  { key: ROUTES.courtFeatures, icon: <TagsOutlined />, label: 'Dac diem san' },
+  { key: ROUTES.customers, icon: <TeamOutlined />, label: 'Khach hang' },
+  { key: ROUTES.bookings, icon: <CalendarOutlined />, label: 'Dat san' },
+  { key: ROUTES.services, icon: <ToolOutlined />, label: 'Dich vu' },
+  { key: ROUTES.payments, icon: <CreditCardOutlined />, label: 'Thanh toan' },
 ]
 
 export function AppMenu() {

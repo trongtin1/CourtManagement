@@ -17,6 +17,7 @@ public static class AppDbSeeder
         var facility = await GetOrCreateFacilityAsync(db, tenant.TenantID, cancellationToken);
         var courtTypes = await GetOrCreateCourtTypesAsync(db, cancellationToken);
         var courtStatuses = await GetOrCreateCourtStatusesAsync(db, cancellationToken);
+        await GetOrCreateCourtFeaturesAsync(db, cancellationToken);
         var utilities = await GetOrCreateUtilitiesAsync(db, cancellationToken);
         var areas = await GetOrCreateAreasAsync(db, facility.FacilityID, cancellationToken);
         var courts = await GetOrCreateCourtsAsync(
@@ -162,6 +163,33 @@ public static class AppDbSeeder
 
         var codes = seed.Select(x => x.StatusCode).ToList();
         return await db.CourtStatuses.Where(x => codes.Contains(x.StatusCode)).ToListAsync(cancellationToken);
+    }
+
+    private static async Task<List<CourtFeatures>> GetOrCreateCourtFeaturesAsync(
+        AppDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var seed = new[]
+        {
+            new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Indoor", Description = "Indoor court", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Outdoor", Description = "Outdoor court", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "VIP", FeatureName = "VIP", Description = "VIP court", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Wooden Floor", Description = "Wooden floor surface", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Air Conditioned", Description = "Court has air conditioning", CreatedBy = AdminLogin },
+        };
+
+        foreach (var item in seed)
+        {
+            if (!await db.CourtFeatures.AnyAsync(x => x.FeatureCode == item.FeatureCode, cancellationToken))
+            {
+                db.CourtFeatures.Add(item);
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        var codes = seed.Select(x => x.FeatureCode).ToList();
+        return await db.CourtFeatures.Where(x => codes.Contains(x.FeatureCode)).ToListAsync(cancellationToken);
     }
 
     private static async Task<List<Utilities>> GetOrCreateUtilitiesAsync(

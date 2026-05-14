@@ -5,6 +5,7 @@ export const ROUTES = {
   tenants: '/tenants',
   facilities: '/facilities',
   courts: '/courts',
+  courtFeatures: '/court-features',
   customers: '/customers',
   bookings: '/bookings',
   services: '/services',

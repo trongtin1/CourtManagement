@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<Courts> Courts => Set<Courts>();
     public DbSet<CourtTypes> CourtTypes => Set<CourtTypes>();
     public DbSet<CourtStatus> CourtStatuses => Set<CourtStatus>();
+    public DbSet<CourtFeatures> CourtFeatures => Set<CourtFeatures>();
     public DbSet<CourtAreaMapping> CourtAreaMappings => Set<CourtAreaMapping>();
     public DbSet<CourtUtilities> CourtUtilities => Set<CourtUtilities>();
     public DbSet<Utilities> Utilities => Set<Utilities>();
@@ -127,6 +128,16 @@ public class AppDbContext : DbContext
             e.Property(x => x.ColorCode).HasColumnType("varchar(10)");
             e.Property(x => x.Description).HasColumnType("nvarchar(500)");
             e.HasIndex(x => x.StatusCode).IsUnique();
+        });
+
+        modelBuilder.Entity<CourtFeatures>(e =>
+        {
+            e.HasKey(x => x.CourtFeatureID);
+            e.Property(x => x.FeatureCode).HasColumnType("varchar(20)").IsRequired();
+            e.Property(x => x.FeatureName).HasColumnType("nvarchar(100)").IsRequired();
+            e.Property(x => x.Description).HasColumnType("nvarchar(500)");
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.HasIndex(x => x.FeatureCode).IsUnique();
         });
 
         // ── Utilities ────────────────────────────────────────────────────────

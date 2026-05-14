@@ -287,6 +287,44 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("CourtAreaMappings");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatures", b =>
+                {
+                    b.Property<int>("CourtFeatureID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtFeatureID"));
+
+                    b.Property<DateTimeOffset>("CreateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("FeatureCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("FeatureName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("CourtFeatureID");
+
+                    b.HasIndex("FeatureCode")
+                        .IsUnique();
+
+                    b.ToTable("CourtFeatures");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtPriceByTimeSlot", b =>
                 {
                     b.Property<int>("ID")

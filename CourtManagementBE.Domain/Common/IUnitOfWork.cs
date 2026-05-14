@@ -12,6 +12,7 @@ public interface IUnitOfWork : IDisposable
     ICourtRepository ICourtRepository { get; }
     ICourtTypeRepository ICourtTypeRepository { get; }
     ICourtStatusRepository ICourtStatusRepository { get; }
+    ICourtFeatureRepository ICourtFeatureRepository { get; }
     IUtilityRepository IUtilityRepository { get; }
     ITimeSlotRepository ITimeSlotRepository { get; }
     ICourtPriceRepository ICourtPriceRepository { get; }

@@ -20,6 +20,9 @@ public class CourtTypeRepository : GenericRepository<CourtTypes>, ICourtTypeRepo
 public class CourtStatusRepository : GenericRepository<CourtStatus>, ICourtStatusRepository
 { public CourtStatusRepository(AppDbContext ctx) : base(ctx) { } }
 
+public class CourtFeatureRepository : GenericRepository<CourtFeatures>, ICourtFeatureRepository
+{ public CourtFeatureRepository(AppDbContext ctx) : base(ctx) { } }
+
 public class UtilityRepository : GenericRepository<Utilities>, IUtilityRepository
 { public UtilityRepository(AppDbContext ctx) : base(ctx) { } }
 

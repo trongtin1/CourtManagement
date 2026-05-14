@@ -182,3 +182,4 @@ C:\tmp\cmbuild\CourtManagementBE.deps.json
 C:\tmp\cmbuild\CourtManagementBE.runtimeconfig.json
 C:\tmp\cmbuild\CourtManagementBE.dll
 C:\tmp\cmbuild\CourtManagementBE.pdb
+C:\Users\DELL\Desktop\CourtManagment\CourtManagementBE\obj\Debug\net10.0\CourtManagementBE.sourcelink.json

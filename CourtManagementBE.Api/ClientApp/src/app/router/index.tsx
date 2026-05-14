@@ -7,6 +7,7 @@ import { MainLayout } from '@/layouts/MainLayout'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import {
   BookingsPage,
+  CourtFeaturesPage,
   CourtsPage,
   CustomersPage,
   DashboardPage,
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.tenants.replace('/', ''), element: withSuspense(<TenantsPage />) },
       { path: ROUTES.facilities.replace('/', ''), element: withSuspense(<FacilitiesPage />) },
       { path: ROUTES.courts.replace('/', ''), element: withSuspense(<CourtsPage />) },
+      { path: ROUTES.courtFeatures.replace('/', ''), element: withSuspense(<CourtFeaturesPage />) },
       { path: ROUTES.customers.replace('/', ''), element: withSuspense(<CustomersPage />) },
       { path: ROUTES.bookings.replace('/', ''), element: withSuspense(<BookingsPage />) },
       { path: ROUTES.services.replace('/', ''), element: withSuspense(<ServicesPage />) },
