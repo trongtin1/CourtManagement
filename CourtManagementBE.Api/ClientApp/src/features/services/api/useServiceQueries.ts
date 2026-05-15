@@ -9,11 +9,20 @@ export const serviceKeys = {
   detail: (id: number) => [...serviceKeys.all, 'detail', id] as const,
 }
 
-export const useServicesQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: serviceKeys.list(params), queryFn: () => serviceApi.getAll(params) })
-
-export const useServiceQuery = (id: number) =>
-  useQuery({ queryKey: serviceKeys.detail(id), queryFn: () => serviceApi.getById(id), enabled: id > 0 })
+export const useServicesQuery = (params?: PaginationQuery) => { 
+  return useQuery({ 
+    queryKey: serviceKeys.list(params), 
+    queryFn: () => serviceApi.getAll(params) 
+  })
+}
+  
+export const useServiceQuery = (id: number) => {
+  return useQuery({ 
+    queryKey: serviceKeys.detail(id), 
+    queryFn: () => serviceApi.getById(id), 
+    enabled: id > 0 
+  })
+}
 
 export const useCreateServiceMutation = () => {
   const qc = useQueryClient()

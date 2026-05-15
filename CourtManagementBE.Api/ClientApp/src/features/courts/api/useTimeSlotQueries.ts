@@ -9,11 +9,20 @@ export const timeSlotKeys = {
   detail: (id: number) => [...timeSlotKeys.all, 'detail', id] as const,
 }
 
-export const useTimeSlotsQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: timeSlotKeys.list(params), queryFn: () => timeSlotApi.getAll(params) })
+export const useTimeSlotsQuery = (params?: PaginationQuery) =>  {
+  return useQuery({ 
+    queryKey: timeSlotKeys.list(params), 
+    queryFn: () => timeSlotApi.getAll(params) 
+  })
+}
 
-export const useTimeSlotQuery = (id: number) =>
-  useQuery({ queryKey: timeSlotKeys.detail(id), queryFn: () => timeSlotApi.getById(id), enabled: id > 0 })
+export const useTimeSlotQuery = (id: number) => {
+  return useQuery({ 
+    queryKey: timeSlotKeys.detail(id), 
+    queryFn: () => timeSlotApi.getById(id), 
+    enabled: id > 0 
+  })
+}
 
 export const useCreateTimeSlotMutation = () => {
   const qc = useQueryClient()

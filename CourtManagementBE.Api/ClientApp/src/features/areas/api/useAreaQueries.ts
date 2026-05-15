@@ -9,11 +9,20 @@ export const areaKeys = {
   detail: (id: number) => [...areaKeys.all, 'detail', id] as const,
 }
 
-export const useAreasQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: areaKeys.list(params), queryFn: () => areaApi.getAll(params) })
+export const useAreasQuery = (params?: PaginationQuery) => {
+  return useQuery({
+    queryKey: areaKeys.list(params),
+    queryFn: () => areaApi.getAll(params),
+  })
+}
 
-export const useAreaQuery = (id: number) =>
-  useQuery({ queryKey: areaKeys.detail(id), queryFn: () => areaApi.getById(id), enabled: id > 0 })
+export const useAreaQuery = (id: number) => {
+  return useQuery({
+    queryKey: areaKeys.detail(id),
+    queryFn: () => areaApi.getById(id),
+    enabled: id > 0,
+  })
+}
 
 export const useCreateAreaMutation = () => {
   const qc = useQueryClient()

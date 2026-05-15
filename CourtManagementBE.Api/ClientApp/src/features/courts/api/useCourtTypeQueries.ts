@@ -9,11 +9,20 @@ export const courtTypeKeys = {
   detail: (id: number) => [...courtTypeKeys.all, 'detail', id] as const,
 }
 
-export const useCourtTypesQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: courtTypeKeys.list(params), queryFn: () => courtTypeApi.getAll(params) })
+export const useCourtTypesQuery = (params?: PaginationQuery) => {
+  return useQuery({ 
+    queryKey: courtTypeKeys.list(params), 
+    queryFn: () => courtTypeApi.getAll(params) 
+  })
+}
 
-export const useCourtTypeQuery = (id: number) =>
-  useQuery({ queryKey: courtTypeKeys.detail(id), queryFn: () => courtTypeApi.getById(id), enabled: id > 0 })
+export const useCourtTypeQuery = (id: number) => {
+  return useQuery({ 
+    queryKey: courtTypeKeys.detail(id), 
+    queryFn: () => courtTypeApi.getById(id), 
+    enabled: id > 0 
+  })
+}
 
 export const useCreateCourtTypeMutation = () => {
   const qc = useQueryClient()

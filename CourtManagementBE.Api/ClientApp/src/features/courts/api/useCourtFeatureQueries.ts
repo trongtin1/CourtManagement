@@ -13,18 +13,20 @@ export const courtFeatureKeys = {
   detail: (id: number) => [...courtFeatureKeys.all, 'detail', id] as const,
 }
 
-export const useCourtFeaturesQuery = (params?: PaginationQuery) =>
-  useQuery({
+export const useCourtFeaturesQuery = (params?: PaginationQuery) => {
+  return useQuery({
     queryKey: courtFeatureKeys.list(params),
     queryFn: () => courtFeatureApi.getAll(params),
   })
+}
 
-export const useCourtFeatureQuery = (id: number) =>
-  useQuery({
+export const useCourtFeatureQuery = (id: number) => {
+  return useQuery({
     queryKey: courtFeatureKeys.detail(id),
     queryFn: () => courtFeatureApi.getById(id),
     enabled: id > 0,
   })
+}
 
 export const useCreateCourtFeatureMutation = () => {
   const qc = useQueryClient()

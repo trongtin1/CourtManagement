@@ -9,11 +9,20 @@ export const utilityKeys = {
   detail: (id: number) => [...utilityKeys.all, 'detail', id] as const,
 }
 
-export const useUtilitiesQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: utilityKeys.list(params), queryFn: () => utilityApi.getAll(params) })
+export const useUtilitiesQuery = (params?: PaginationQuery) =>   { 
+  return useQuery({ 
+    queryKey: utilityKeys.list(params), 
+    queryFn: () => utilityApi.getAll(params) 
+  }) 
+}
 
-export const useUtilityQuery = (id: number) =>
-  useQuery({ queryKey: utilityKeys.detail(id), queryFn: () => utilityApi.getById(id), enabled: id > 0 })
+export const useUtilityQuery = (id: number) => {
+  return useQuery({ 
+    queryKey: utilityKeys.detail(id), 
+    queryFn: () => utilityApi.getById(id), 
+    enabled: id > 0 
+  }) 
+}
 
 export const useCreateUtilityMutation = () => {
   const qc = useQueryClient()

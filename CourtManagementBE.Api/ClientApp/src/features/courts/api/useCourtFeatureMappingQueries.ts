@@ -8,12 +8,13 @@ export const courtFeatureMappingKeys = {
   court: (courtId: number) => [...courtFeatureMappingKeys.all, 'court', courtId] as const,
 }
 
-export const useCourtFeatureMappingsByCourtQuery = (courtId: number, enabled = true) =>
-  useQuery({
+export const useCourtFeatureMappingsByCourtQuery = (courtId: number, enabled = true) => {
+  return useQuery({
     queryKey: courtFeatureMappingKeys.court(courtId),
     queryFn: () => courtFeatureMappingApi.getByCourt(courtId),
     enabled: enabled && courtId > 0,
   })
+}
 
 export const useCreateCourtFeatureMappingMutation = () => {
   const qc = useQueryClient()

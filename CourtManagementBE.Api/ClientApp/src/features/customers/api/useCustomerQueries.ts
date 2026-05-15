@@ -9,11 +9,20 @@ export const customerKeys = {
   detail: (id: number) => [...customerKeys.all, 'detail', id] as const,
 }
 
-export const useCustomersQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: customerKeys.list(params), queryFn: () => customerApi.getAll(params) })
+export const useCustomersQuery = (params?: PaginationQuery) => {
+  return useQuery({  
+    queryKey: customerKeys.list(params),  
+    queryFn: () => customerApi.getAll(params) 
+  })
+}
 
-export const useCustomerQuery = (id: number) =>
-  useQuery({ queryKey: customerKeys.detail(id), queryFn: () => customerApi.getById(id), enabled: id > 0 })
+export const useCustomerQuery = (id: number) => {
+  return useQuery({ 
+    queryKey: customerKeys.detail(id), 
+    queryFn: () => customerApi.getById(id), 
+    enabled: id > 0 
+  })
+}
 
 export const useCreateCustomerMutation = () => {
   const qc = useQueryClient()

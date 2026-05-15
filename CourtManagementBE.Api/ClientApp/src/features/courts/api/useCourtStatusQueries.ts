@@ -13,11 +13,19 @@ export const courtStatusKeys = {
   detail: (id: number) => [...courtStatusKeys.all, 'detail', id] as const,
 }
 
-export const useCourtStatusesQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: courtStatusKeys.list(params), queryFn: () => courtStatusApi.getAll(params) })
+export const useCourtStatusesQuery = (params?: PaginationQuery) => {
+  return useQuery({
+    queryKey: courtStatusKeys.list(params),
+    queryFn: () => courtStatusApi.getAll(params)
+  })
+}
 
-export const useCourtStatusQuery = (id: number) =>
-  useQuery({ queryKey: courtStatusKeys.detail(id), queryFn: () => courtStatusApi.getById(id), enabled: id > 0 })
+export const useCourtStatusQuery = (id: number) => {
+  return useQuery({  
+    queryKey: courtStatusKeys.detail(id), 
+    queryFn: () => courtStatusApi.getById(id), 
+    enabled: id > 0 });
+}
 
 export const useCreateCourtStatusMutation = () => {
   const qc = useQueryClient()

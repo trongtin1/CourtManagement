@@ -9,11 +9,20 @@ export const bookingKeys = {
   detail: (id: string) => [...bookingKeys.all, 'detail', id] as const,
 }
 
-export const useBookingsQuery = (params?: PaginationQuery) =>
-  useQuery({ queryKey: bookingKeys.list(params), queryFn: () => bookingApi.getAll(params) })
+export const useBookingsQuery = (params?: PaginationQuery) => {
+  return useQuery({
+    queryKey: bookingKeys.list(params),
+    queryFn: () => bookingApi.getAll(params)
+  })
+}
 
-export const useBookingQuery = (id: string) =>
-  useQuery({ queryKey: bookingKeys.detail(id), queryFn: () => bookingApi.getById(id), enabled: !!id })
+export const useBookingQuery = (id: string) => {
+  return useQuery({
+    queryKey: bookingKeys.detail(id),
+    queryFn: () => bookingApi.getById(id),
+    enabled: !!id
+  })
+}
 
 export const useCreateBookingMutation = () => {
   const qc = useQueryClient()
