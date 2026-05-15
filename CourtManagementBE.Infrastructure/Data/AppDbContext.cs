@@ -26,6 +26,8 @@ public class AppDbContext : DbContext
     public DbSet<CourtTypes> CourtTypes => Set<CourtTypes>();
     public DbSet<CourtStatus> CourtStatuses => Set<CourtStatus>();
     public DbSet<CourtFeatures> CourtFeatures => Set<CourtFeatures>();
+    public DbSet<CourtFeatureMappings> CourtFeatureMappings => Set<CourtFeatureMappings>();
+    public DbSet<CourtAssets> CourtAssets => Set<CourtAssets>();
     public DbSet<CourtAreaMapping> CourtAreaMappings => Set<CourtAreaMapping>();
     public DbSet<CourtUtilities> CourtUtilities => Set<CourtUtilities>();
     public DbSet<Utilities> Utilities => Set<Utilities>();
@@ -125,9 +127,34 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.CourtFeatureID);
             e.Property(x => x.FeatureCode).HasColumnType("varchar(20)").IsRequired();
             e.Property(x => x.FeatureName).HasColumnType("nvarchar(100)").IsRequired();
+            e.Property(x => x.Category).HasColumnType("varchar(50)").IsRequired();
             e.Property(x => x.Description).HasColumnType("nvarchar(500)");
             e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
             e.HasIndex(x => x.FeatureCode).IsUnique();
+        });
+
+        modelBuilder.Entity<CourtFeatureMappings>(e =>
+        {
+            e.HasKey(x => x.CourtFeatureMappingID);
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.HasIndex(x => new { x.CourtID, x.CourtFeatureID }).IsUnique();
+        });
+
+        modelBuilder.Entity<CourtAssets>(e =>
+        {
+            e.HasKey(x => x.CourtAssetID);
+            e.Property(x => x.AssetCode).HasColumnType("varchar(30)").IsRequired();
+            e.Property(x => x.AssetName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.Category).HasColumnType("varchar(50)");
+            e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
+            e.Property(x => x.Condition).HasColumnType("varchar(30)");
+            e.Property(x => x.PurchasePrice).HasColumnType("decimal(18,2)");
+            e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.ModifiedBy).HasColumnType("varchar(100)");
+            e.HasIndex(x => new { x.CourtID, x.AssetCode }).IsUnique();
+            e.HasIndex(x => x.Category);
+            e.HasIndex(x => x.Condition);
         });
 
         // ── Utilities ────────────────────────────────────────────────────────

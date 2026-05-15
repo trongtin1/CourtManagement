@@ -8,6 +8,8 @@ export const ROUTES = {
   courtTypes: '/court-types',
   courtStatuses: '/court-statuses',
   courtFeatures: '/court-features',
+  courtFeatureMappings: '/court-feature-mappings',
+  courtAssets: '/court-assets',
   utilities: '/utilities',
   timeSlots: '/time-slots',
   customers: '/customers',

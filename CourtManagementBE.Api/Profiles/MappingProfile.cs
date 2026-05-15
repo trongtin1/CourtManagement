@@ -36,6 +36,11 @@ public class MappingProfile : Profile
         CreateMap<CourtFeatures, CourtFeatureResponse>();
         CreateMap<CreateCourtFeatureRequest, CourtFeatures>();
         CreateMap<UpdateCourtFeatureRequest, CourtFeatures>();
+        CreateMap<CourtFeatureMappings, CourtFeatureMappingResponse>();
+        CreateMap<CreateCourtFeatureMappingRequest, CourtFeatureMappings>();
+        CreateMap<CourtAssets, CourtAssetResponse>();
+        CreateMap<CreateCourtAssetRequest, CourtAssets>();
+        CreateMap<UpdateCourtAssetRequest, CourtAssets>();
 
         // ── Utility ──────────────────────────────────────────────────────
         CreateMap<Utilities, UtilityResponse>();

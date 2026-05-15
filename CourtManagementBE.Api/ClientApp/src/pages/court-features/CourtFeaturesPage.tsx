@@ -7,6 +7,7 @@ import {
   Input,
   Modal,
   Popconfirm,
+  Select,
   Space,
   Switch,
   Table,
@@ -71,6 +72,7 @@ export function CourtFeaturesPage() {
         const data: UpdateCourtFeatureRequest = {
           featureCode: values.featureCode,
           featureName: values.featureName,
+          category: values.category,
           description: values.description,
           isActive: values.isActive,
         }
@@ -139,6 +141,12 @@ export function CourtFeaturesPage() {
               dataIndex: 'featureCode',
               width: 170,
               render: (value: string) => <Tag color="blue">{value}</Tag>,
+            },
+            {
+              title: 'Nhom',
+              dataIndex: 'category',
+              width: 150,
+              render: (value: string) => <Tag color="purple">{value || 'Other'}</Tag>,
             },
             { title: 'Ten dac diem', dataIndex: 'featureName', width: 220 },
             { title: 'Mo ta', dataIndex: 'description' },
@@ -215,6 +223,20 @@ export function CourtFeaturesPage() {
             rules={[{ required: true, message: 'Nhap ten dac diem' }]}
           >
             <Input maxLength={100} placeholder="Indoor" />
+          </Form.Item>
+          <Form.Item
+            label="Nhom"
+            name="category"
+            rules={[{ required: true, message: 'Chon nhom dac diem' }]}
+          >
+            <Select
+              options={[
+                { label: 'Environment', value: 'Environment' },
+                { label: 'Surface', value: 'Surface' },
+                { label: 'Property', value: 'Property' },
+              ]}
+              placeholder="Environment"
+            />
           </Form.Item>
           <Form.Item label="Mo ta" name="description">
             <Input.TextArea maxLength={500} rows={3} />

@@ -40,6 +40,18 @@ export const CourtFeaturesPage = lazy(() =>
   })),
 )
 
+export const CourtFeatureMappingsPage = lazy(() =>
+  import('@/pages/court-feature-mappings/CourtFeatureMappingsPage').then((m) => ({
+    default: m.CourtFeatureMappingsPage,
+  })),
+)
+
+export const CourtAssetsPage = lazy(() =>
+  import('@/pages/court-assets/CourtAssetsPage').then((m) => ({
+    default: m.CourtAssetsPage,
+  })),
+)
+
 export const UtilitiesPage = lazy(() =>
   import('@/pages/utilities/UtilitiesPage').then((m) => ({ default: m.UtilitiesPage })),
 )

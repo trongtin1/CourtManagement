@@ -85,6 +85,7 @@ export type CourtFeature = {
   courtFeatureID: number
   featureCode: string
   featureName: string
+  category: string
   description: string
   createDate: string
   createdBy: string
@@ -94,11 +95,63 @@ export type CourtFeature = {
 export type CreateCourtFeatureRequest = {
   featureCode: string
   featureName: string
+  category: string
   description?: string
   isActive?: boolean
 }
 
 export type UpdateCourtFeatureRequest = CreateCourtFeatureRequest
+
+export type CourtFeatureMapping = {
+  courtFeatureMappingID: number
+  courtID: number
+  courtFeatureID: number
+  createDate: string
+}
+
+export type CreateCourtFeatureMappingRequest = {
+  courtID: number
+  courtFeatureID: number
+}
+
+export type CourtAsset = {
+  courtAssetID: number
+  courtID: number
+  assetCode: string
+  assetName: string
+  category: string
+  quantity: number
+  unit: string
+  condition: string
+  purchaseDate?: string | null
+  purchasePrice?: number | null
+  lastMaintenanceDate?: string | null
+  nextMaintenanceDate?: string | null
+  note: string
+  isActive: boolean
+  createDate: string
+  createdBy: string
+  modifiedDate: string
+  modifiedBy: string
+}
+
+export type CreateCourtAssetRequest = {
+  courtID: number
+  assetCode: string
+  assetName: string
+  category?: string
+  quantity?: number
+  unit?: string
+  condition?: string
+  purchaseDate?: string | null
+  purchasePrice?: number | null
+  lastMaintenanceDate?: string | null
+  nextMaintenanceDate?: string | null
+  note?: string
+  isActive?: boolean
+}
+
+export type UpdateCourtAssetRequest = Omit<CreateCourtAssetRequest, 'courtID'>
 
 export type TimeSlot = {
   timeSlotID: number

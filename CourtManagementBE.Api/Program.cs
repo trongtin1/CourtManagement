@@ -172,6 +172,8 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<ICourtTypeService, CourtTypeService>();
             builder.Services.AddScoped<ICourtStatusService, CourtStatusService>();
             builder.Services.AddScoped<ICourtFeatureService, CourtFeatureService>();
+            builder.Services.AddScoped<ICourtFeatureMappingService, CourtFeatureMappingService>();
+            builder.Services.AddScoped<ICourtAssetService, CourtAssetService>();
             builder.Services.AddScoped<IUtilityService, UtilityService>();
             builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
             builder.Services.AddScoped<ICourtPriceService, CourtPriceService>();

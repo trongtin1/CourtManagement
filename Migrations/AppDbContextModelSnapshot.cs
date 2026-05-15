@@ -284,6 +284,114 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("CourtAreaMappings");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtAssets", b =>
+                {
+                    b.Property<int>("CourtAssetID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtAssetID"));
+
+                    b.Property<string>("AssetCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("AssetName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<int>("CourtID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastMaintenanceDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset>("ModifiedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("NextMaintenanceDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("PurchaseDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal?>("PurchasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("CourtAssetID");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("Condition");
+
+                    b.HasIndex("CourtID", "AssetCode")
+                        .IsUnique();
+
+                    b.ToTable("CourtAssets");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureMappings", b =>
+                {
+                    b.Property<int>("CourtFeatureMappingID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtFeatureMappingID"));
+
+                    b.Property<int>("CourtFeatureID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CourtID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("CourtFeatureMappingID");
+
+                    b.HasIndex("CourtID", "CourtFeatureID")
+                        .IsUnique();
+
+                    b.ToTable("CourtFeatureMappings");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatures", b =>
                 {
                     b.Property<int>("CourtFeatureID")
@@ -291,6 +399,10 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtFeatureID"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");

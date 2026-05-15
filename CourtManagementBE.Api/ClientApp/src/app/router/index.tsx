@@ -8,7 +8,9 @@ import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import {
   AreasPage,
   BookingsPage,
+  CourtAssetsPage,
   CourtFeaturesPage,
+  CourtFeatureMappingsPage,
   CourtStatusesPage,
   CourtTypesPage,
   CourtsPage,
@@ -48,6 +50,11 @@ export const router = createBrowserRouter([
       { path: ROUTES.courtTypes.replace('/', ''), element: withSuspense(<CourtTypesPage />) },
       { path: ROUTES.courtStatuses.replace('/', ''), element: withSuspense(<CourtStatusesPage />) },
       { path: ROUTES.courtFeatures.replace('/', ''), element: withSuspense(<CourtFeaturesPage />) },
+      {
+        path: ROUTES.courtFeatureMappings.replace('/', ''),
+        element: withSuspense(<CourtFeatureMappingsPage />),
+      },
+      { path: ROUTES.courtAssets.replace('/', ''), element: withSuspense(<CourtAssetsPage />) },
       { path: ROUTES.utilities.replace('/', ''), element: withSuspense(<UtilitiesPage />) },
       { path: ROUTES.timeSlots.replace('/', ''), element: withSuspense(<TimeSlotsPage />) },
       { path: ROUTES.customers.replace('/', ''), element: withSuspense(<CustomersPage />) },

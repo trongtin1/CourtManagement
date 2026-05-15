@@ -50,6 +50,7 @@ export const useToggleCourtFeatureMutation = () => {
       courtFeatureApi.update(feature.courtFeatureID, {
         featureCode: feature.featureCode,
         featureName: feature.featureName,
+        category: feature.category,
         description: feature.description,
         isActive: !feature.isActive,
       }),

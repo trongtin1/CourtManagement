@@ -15,7 +15,7 @@ public static class AppDbSeeder
         var facility = await GetOrCreateFacilityAsync(db, cancellationToken);
         var courtTypes = await GetOrCreateCourtTypesAsync(db, cancellationToken);
         var courtStatuses = await GetOrCreateCourtStatusesAsync(db, cancellationToken);
-        await GetOrCreateCourtFeaturesAsync(db, cancellationToken);
+        var courtFeatures = await GetOrCreateCourtFeaturesAsync(db, cancellationToken);
         var utilities = await GetOrCreateUtilitiesAsync(db, cancellationToken);
         var areas = await GetOrCreateAreasAsync(db, facility.FacilityID, cancellationToken);
         var courts = await GetOrCreateCourtsAsync(
@@ -29,7 +29,9 @@ public static class AppDbSeeder
         var customers = await GetOrCreateCustomersAsync(db, cancellationToken);
 
         await SeedCourtAreaMappingsAsync(db, courts, areas, cancellationToken);
+        await SeedCourtFeatureMappingsAsync(db, courts, courtFeatures, cancellationToken);
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
+        await SeedCourtAssetsAsync(db, courts, cancellationToken);
         await SeedCourtPricesAsync(db, courts, timeSlots, cancellationToken);
         await SeedServicePricesAsync(db, services, cancellationToken);
         await SeedBookingsAsync(db, courts, timeSlots, services, customers, cancellationToken);
@@ -145,11 +147,11 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Indoor", Description = "Indoor court", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Outdoor", Description = "Outdoor court", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "VIP", FeatureName = "VIP", Description = "VIP court", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Wooden Floor", Description = "Wooden floor surface", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Air Conditioned", Description = "Court has air conditioning", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Indoor", Category = "Environment", Description = "Indoor court", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Outdoor", Category = "Environment", Description = "Outdoor court", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "VIP", FeatureName = "VIP", Category = "Property", Description = "VIP court", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Wooden Floor", Category = "Surface", Description = "Wooden floor surface", CreatedBy = AdminLogin },
+            new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Air Conditioned", Category = "Environment", Description = "Court has air conditioning", CreatedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -157,6 +159,14 @@ public static class AppDbSeeder
             if (!await db.CourtFeatures.AnyAsync(x => x.FeatureCode == item.FeatureCode, cancellationToken))
             {
                 db.CourtFeatures.Add(item);
+            }
+            else
+            {
+                var existing = await db.CourtFeatures.FirstAsync(x => x.FeatureCode == item.FeatureCode, cancellationToken);
+                if (string.IsNullOrWhiteSpace(existing.Category))
+                {
+                    existing.Category = item.Category;
+                }
             }
         }
 
@@ -383,6 +393,79 @@ public static class AppDbSeeder
                         UtilityID = utilityId,
                         CreatedBy = AdminLogin,
                     });
+                }
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedCourtFeatureMappingsAsync(
+        AppDbContext db,
+        List<Courts> courts,
+        List<CourtFeatures> courtFeatures,
+        CancellationToken cancellationToken)
+    {
+        var featureByCode = courtFeatures.ToDictionary(x => x.FeatureCode);
+        var featureCodesByCourtCode = new Dictionary<string, string[]>
+        {
+            ["A01"] = ["INDOOR", "WOODEN_FLOOR", "AIR_CONDITIONED"],
+            ["A02"] = ["INDOOR", "WOODEN_FLOOR"],
+            ["B01"] = ["OUTDOOR"],
+        };
+
+        foreach (var court in courts)
+        {
+            if (!featureCodesByCourtCode.TryGetValue(court.CourtCode, out var featureCodes))
+            {
+                continue;
+            }
+
+            foreach (var featureCode in featureCodes)
+            {
+                if (!featureByCode.TryGetValue(featureCode, out var feature))
+                {
+                    continue;
+                }
+
+                if (!await db.CourtFeatureMappings.AnyAsync(
+                    x => x.CourtID == court.CourtID && x.CourtFeatureID == feature.CourtFeatureID,
+                    cancellationToken))
+                {
+                    db.CourtFeatureMappings.Add(new CourtFeatureMappings
+                    {
+                        CourtID = court.CourtID,
+                        CourtFeatureID = feature.CourtFeatureID,
+                        CreatedBy = AdminLogin,
+                    });
+                }
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedCourtAssetsAsync(
+        AppDbContext db,
+        List<Courts> courts,
+        CancellationToken cancellationToken)
+    {
+        foreach (var court in courts)
+        {
+            var seed = new[]
+            {
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-NET", AssetName = "Net", Category = "Equipment", Quantity = 1, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-LIGHT", AssetName = "Lighting Set", Category = "Lighting", Quantity = 1, Unit = "set", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-BENCH", AssetName = "Player Bench", Category = "Furniture", Quantity = 2, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            };
+
+            foreach (var item in seed)
+            {
+                if (!await db.CourtAssets.AnyAsync(
+                    x => x.CourtID == item.CourtID && x.AssetCode == item.AssetCode,
+                    cancellationToken))
+                {
+                    db.CourtAssets.Add(item);
                 }
             }
         }

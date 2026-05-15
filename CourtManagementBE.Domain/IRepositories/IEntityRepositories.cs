@@ -9,6 +9,8 @@ public interface ICourtRepository : IGenericRepository<Courts> { }
 public interface ICourtTypeRepository : IGenericRepository<CourtTypes> { }
 public interface ICourtStatusRepository : IGenericRepository<CourtStatus> { }
 public interface ICourtFeatureRepository : IGenericRepository<CourtFeatures> { }
+public interface ICourtFeatureMappingRepository : IGenericRepository<CourtFeatureMappings> { }
+public interface ICourtAssetRepository : IGenericRepository<CourtAssets> { }
 public interface IUtilityRepository : IGenericRepository<Utilities> { }
 public interface ITimeSlotRepository : IGenericRepository<TimeSlots> { }
 public interface ICourtPriceRepository : IGenericRepository<CourtPriceByTimeSlot> { }
