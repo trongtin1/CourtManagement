@@ -6,27 +6,56 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CourtManagementBE.Api.Controllers;
 
-[ApiController, Route("api/[controller]"), Authorize]
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
 public class CustomerController : ControllerBase
 {
     private readonly ICustomerService _service;
-    public CustomerController(ICustomerService service) => _service = service;
+    public CustomerController(ICustomerService service)
+    {
+        _service = service;
+    }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] QueryResource query) { var r = await _service.GetAll(query); return StatusCode((int)r.StatusCode, r); }
+    public async Task<IActionResult> GetAll([FromQuery] QueryResource query)
+    {
+        var r = await _service.GetAll(query);
+        return StatusCode((int)r.StatusCode, r);
+    }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchByPhone([FromQuery] string phone) { var r = await _service.SearchByPhone(phone); return StatusCode((int)r.StatusCode, r); }
+    public async Task<IActionResult> SearchByPhone([FromQuery] string phone)
+    {
+        var r = await _service.SearchByPhone(phone);
+        return StatusCode((int)r.StatusCode, r);
+    }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id) { var r = await _service.GetById(id); return StatusCode((int)r.StatusCode, r); }
+    public async Task<IActionResult> GetById(int id)
+    {
+        var r = await _service.GetById(id);
+        return StatusCode((int)r.StatusCode, r);
+    }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCustomerRequest req) { var r = await _service.Create(req); return StatusCode((int)r.StatusCode, r); }
+    public async Task<IActionResult> Create([FromBody] CreateCustomerRequest req)
+    {
+        var r = await _service.Create(req);
+        return StatusCode((int)r.StatusCode, r);
+    }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerRequest req) { var r = await _service.Update(id, req); return StatusCode((int)r.StatusCode, r); }
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerRequest req)
+    {
+        var r = await _service.Update(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id) { var r = await _service.Delete(id); return StatusCode((int)r.StatusCode, r); }
+    public async Task<IActionResult> Delete(int id)
+    {
+        var r = await _service.Delete(id);
+        return StatusCode((int)r.StatusCode, r);
+    }
 }
