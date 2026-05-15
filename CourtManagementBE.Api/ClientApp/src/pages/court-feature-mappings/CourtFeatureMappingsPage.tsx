@@ -1,5 +1,16 @@
 import { useMemo, useState } from 'react'
-import { App, Button, Card, Form, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Popconfirm,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd'
 import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'
@@ -17,15 +28,18 @@ export function CourtFeatureMappingsPage() {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const [courtId, setCourtId] = useState<number>(0)
-  const courtsQuery = useCourtsQuery({ page: 1, pageSize: 200 })
-  const featuresQuery = useCourtFeaturesQuery({ page: 1, pageSize: 500 })
+  const courtsQuery = useCourtsQuery()
+  const featuresQuery = useCourtFeaturesQuery()
   const mappingsQuery = useCourtFeatureMappingsByCourtQuery(courtId)
   const createMut = useCreateCourtFeatureMappingMutation()
   const deleteMut = useDeleteCourtFeatureMappingMutation()
 
-  const courts = courtsQuery.data?.items ?? []
-  const features = featuresQuery.data?.items ?? []
-  const mappings = mappingsQuery.data ?? []
+  const courts = useMemo(() => courtsQuery.data?.items ?? [], [courtsQuery.data?.items])
+  const features = useMemo(
+    () => featuresQuery.data?.items ?? [],
+    [featuresQuery.data?.items],
+  )
+  const mappings = useMemo(() => mappingsQuery.data ?? [], [mappingsQuery.data])
   const selectedFeatureIds = useMemo(
     () => new Set(mappings.map((item) => item.courtFeatureID)),
     [mappings],
@@ -38,7 +52,10 @@ export function CourtFeatureMappingsPage() {
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
-      await createMut.mutateAsync({ courtID: courtId, courtFeatureID: values.courtFeatureID })
+      await createMut.mutateAsync({
+        courtID: courtId,
+        courtFeatureID: values.courtFeatureID,
+      })
       form.resetFields(['courtFeatureID'])
       message.success('Gan dac tinh san thanh cong')
     } catch (error) {
@@ -71,7 +88,11 @@ export function CourtFeatureMappingsPage() {
         </div>
         <Button
           icon={<ReloadOutlined />}
-          loading={mappingsQuery.isRefetching || courtsQuery.isRefetching || featuresQuery.isRefetching}
+          loading={
+            mappingsQuery.isRefetching ||
+            courtsQuery.isRefetching ||
+            featuresQuery.isRefetching
+          }
           onClick={() => {
             courtsQuery.refetch()
             featuresQuery.refetch()
@@ -138,13 +159,18 @@ export function CourtFeatureMappingsPage() {
                 width: 160,
                 render: (_: unknown, record: CourtFeatureMapping) => {
                   const feature = featureById.get(record.courtFeatureID)
-                  return <Tag color="blue">{feature?.featureCode ?? record.courtFeatureID}</Tag>
+                  return (
+                    <Tag color="blue">
+                      {feature?.featureCode ?? record.courtFeatureID}
+                    </Tag>
+                  )
                 },
               },
               {
                 title: 'Ten dac tinh',
                 render: (_: unknown, record: CourtFeatureMapping) =>
-                  featureById.get(record.courtFeatureID)?.featureName ?? record.courtFeatureID,
+                  featureById.get(record.courtFeatureID)?.featureName ??
+                  record.courtFeatureID,
               },
               {
                 title: 'Nhom',
@@ -169,7 +195,9 @@ export function CourtFeatureMappingsPage() {
             ]}
             dataSource={courtId ? mappings : []}
             loading={mappingsQuery.isFetching}
-            locale={{ emptyText: courtId ? 'Chua co dac tinh' : 'Chon san de xem dac tinh' }}
+            locale={{
+              emptyText: courtId ? 'Chua co dac tinh' : 'Chon san de xem dac tinh',
+            }}
             pagination={false}
             rowKey="courtFeatureMappingID"
             scroll={{ x: 720 }}

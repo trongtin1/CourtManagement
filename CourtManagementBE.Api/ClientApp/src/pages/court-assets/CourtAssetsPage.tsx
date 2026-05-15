@@ -15,7 +15,12 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'
@@ -34,7 +39,8 @@ import type {
 } from '@/features/courts/model/types'
 import { toApiError } from '@/utils/errors'
 
-const cleanOptional = (value: unknown) => (value === '' || value === undefined ? null : value)
+const cleanOptional = (value: unknown) =>
+  value === '' || value === undefined ? null : value
 
 export function CourtAssetsPage() {
   const { message } = App.useApp()
@@ -43,7 +49,7 @@ export function CourtAssetsPage() {
   const [editing, setEditing] = useState<CourtAsset | null>(null)
   const [courtFilter, setCourtFilter] = useState<number | undefined>()
   const [tablePagination, setTablePagination] = useState<TablePaginationConfig>({})
-  const courtsQuery = useCourtsQuery({ page: 1, pageSize: 200 })
+  const courtsQuery = useCourtsQuery()
   const assetsQuery = useCourtAssetsQuery(
     tablePagination.current && tablePagination.pageSize
       ? { page: tablePagination.current, pageSize: tablePagination.pageSize }
@@ -55,7 +61,9 @@ export function CourtAssetsPage() {
   const deleteMut = useDeleteCourtAssetMutation()
 
   const courts = courtsQuery.data?.items ?? []
-  const dataSource = courtFilter ? courtAssetsQuery.data ?? [] : assetsQuery.data?.items ?? []
+  const dataSource = courtFilter
+    ? (courtAssetsQuery.data ?? [])
+    : (assetsQuery.data?.items ?? [])
   const loading = courtFilter ? courtAssetsQuery.isFetching : assetsQuery.isFetching
 
   const openCreate = () => {
@@ -93,7 +101,7 @@ export function CourtAssetsPage() {
   })
 
   const toUpdateRequest = (values: Record<string, unknown>): UpdateCourtAssetRequest => {
-    const { courtID: _courtID, ...data } = toCreateRequest(values)
+    const { ...data } = toCreateRequest(values)
     return data
   }
 
@@ -198,14 +206,23 @@ export function CourtAssetsPage() {
               {
                 title: 'SL',
                 width: 90,
-                render: (_: unknown, record: CourtAsset) => `${record.quantity} ${record.unit}`,
+                render: (_: unknown, record: CourtAsset) =>
+                  `${record.quantity} ${record.unit}`,
               },
               {
                 title: 'Tinh trang',
                 dataIndex: 'condition',
                 width: 130,
                 render: (value: string) => (
-                  <Tag color={value === 'Good' ? 'green' : value === 'Repairing' ? 'orange' : 'red'}>
+                  <Tag
+                    color={
+                      value === 'Good'
+                        ? 'green'
+                        : value === 'Repairing'
+                          ? 'orange'
+                          : 'red'
+                    }
+                  >
                     {value}
                   </Tag>
                 ),
@@ -215,7 +232,9 @@ export function CourtAssetsPage() {
                 title: 'Active',
                 dataIndex: 'isActive',
                 width: 90,
-                render: (value: boolean) => <Switch checked={value} disabled size="small" />,
+                render: (value: boolean) => (
+                  <Switch checked={value} disabled size="small" />
+                ),
               },
               {
                 title: '',

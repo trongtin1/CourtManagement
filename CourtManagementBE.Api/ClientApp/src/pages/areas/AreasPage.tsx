@@ -100,29 +100,37 @@ export function AreasPage() {
   const [selectedMappingId, setSelectedMappingId] = useState<number | null>(null)
   const [drafts, setDrafts] = useState<Record<number, MappingDraft>>({})
 
-  const areasQuery = useAreasQuery()
+  const {
+    data: areasData,
+    isLoading: areasLoading,
+    refetch: refetchAreas,
+  } = useAreasQuery()
   const shouldLoadCourts = mappingDrawerOpen || mappingModalOpen
   const shouldLoadFacilities = areaModalOpen && !editingAreaId
 
-  const courtsQuery = useCourtsQuery(undefined, shouldLoadCourts)
-  const facilitiesQuery = useFacilitiesQuery(undefined, shouldLoadFacilities)
-  const createArea = useCreateAreaMutation()
-  const updateArea = useUpdateAreaMutation()
-  const deleteArea = useDeleteAreaMutation()
-  const createMapping = useCreateCourtAreaMappingMutation()
-  const updateMapping = useUpdateCourtAreaMappingMutation()
-  const deleteMapping = useDeleteCourtAreaMappingMutation()
+  const { data: courtsData } = useCourtsQuery(undefined, shouldLoadCourts)
+  const { data: facilitiesData } = useFacilitiesQuery(undefined, shouldLoadFacilities)
+  const { mutateAsync: createArea, isPending: createAreaLoading } =
+    useCreateAreaMutation()
+  const { mutateAsync: updateArea, isPending: updateAreaLoading } =
+    useUpdateAreaMutation()
+  const { mutate: deleteArea } = useDeleteAreaMutation()
+  const { mutateAsync: createMapping, isPending: createMappingLoading } =
+    useCreateCourtAreaMappingMutation()
+  const { mutateAsync: updateMapping, isPending: updateMappingLoading } =
+    useUpdateCourtAreaMappingMutation()
+  const { mutateAsync: deleteMapping } = useDeleteCourtAreaMappingMutation()
 
-  const areas = areasQuery.data?.items ?? emptyAreas
-  const courts = courtsQuery.data?.items ?? emptyCourts
-  const facilities = facilitiesQuery.data?.items ?? emptyFacilities
+  const areas = areasData?.items ?? emptyAreas
+  const courts = courtsData?.items ?? emptyCourts
+  const facilities = facilitiesData?.items ?? emptyFacilities
   const selectedArea = areas.find((area) => area.areaID === selectedAreaId) ?? areas[0]
   const activeAreaId = selectedArea?.areaID ?? 0
-  const selectedMappingsQuery = useCourtAreaMappingsByAreaQuery(
+  const { data: mappingsData } = useCourtAreaMappingsByAreaQuery(
     activeAreaId,
     mappingDrawerOpen,
   )
-  const mappings = selectedMappingsQuery.data ?? emptyMappings
+  const mappings = mappingsData ?? emptyMappings
 
   const courtById = useMemo(() => {
     return new Map(courts.map((court) => [court.courtID, court]))
@@ -147,15 +155,19 @@ export function AreasPage() {
   const selectedCourt = selectedMapping
     ? courtById.get(selectedMapping.courtID)
     : undefined
-  const dirtyDrafts = useMemo(() => Object.entries(drafts).filter(([id, draft]) => {
-    const mapping = mappings.find((item) => item.courtAreaMappingID === Number(id))
-    return (
-      mapping &&
-      (mapping.positionX !== draft.positionX ||
-        mapping.positionY !== draft.positionY ||
-        mapping.displayOrder !== draft.displayOrder)
-    )
-  }), [drafts, mappings])
+  const dirtyDrafts = useMemo(
+    () =>
+      Object.entries(drafts).filter(([id, draft]) => {
+        const mapping = mappings.find((item) => item.courtAreaMappingID === Number(id))
+        return (
+          mapping &&
+          (mapping.positionX !== draft.positionX ||
+            mapping.positionY !== draft.positionY ||
+            mapping.displayOrder !== draft.displayOrder)
+        )
+      }),
+    [drafts, mappings],
+  )
 
   const openCreateArea = () => {
     setEditingAreaId(null)
@@ -194,7 +206,7 @@ export function AreasPage() {
           description: values.description,
           isActive: values.isActive,
         }
-        await updateArea.mutateAsync({ id: editingAreaId, data })
+        await updateArea({ id: editingAreaId, data })
         message.success('Cập nhật khu vực thành công')
       } else {
         const data: CreateAreaRequest = {
@@ -206,7 +218,7 @@ export function AreasPage() {
           description: values.description,
           isActive: values.isActive,
         }
-        const created = await createArea.mutateAsync(data)
+        const created = await createArea(data)
         setSelectedAreaId(created.areaID)
         setSelectedMappingId(null)
         setDrafts({})
@@ -221,7 +233,7 @@ export function AreasPage() {
 
   const toggleArea = async (area: Area) => {
     try {
-      await updateArea.mutateAsync({
+      await updateArea({
         id: area.areaID,
         data: {
           areaCode: area.areaCode,
@@ -259,7 +271,7 @@ export function AreasPage() {
   const submitMapping = async () => {
     try {
       const values = await mappingForm.validateFields()
-      await createMapping.mutateAsync({
+      await createMapping({
         courtID: values.courtID,
         areaID: activeAreaId,
         positionX: values.positionX ?? 0,
@@ -288,7 +300,7 @@ export function AreasPage() {
   }
 
   const saveMapping = async (mapping: CourtAreaMapping, draft: MappingDraft) => {
-    await updateMapping.mutateAsync({
+    await updateMapping({
       id: mapping.courtAreaMappingID,
       data: {
         positionX: draft.positionX,
@@ -359,7 +371,7 @@ export function AreasPage() {
 
   const removeMapping = async (mappingId: number) => {
     try {
-      await deleteMapping.mutateAsync(mappingId)
+      await deleteMapping(mappingId)
       setSelectedMappingId(null)
       message.success('Đã xóa sân khỏi sơ đồ')
     } catch (error) {
@@ -375,7 +387,7 @@ export function AreasPage() {
     [courts, mappings],
   )
 
-  if (areasQuery.isPending) {
+  if (areasLoading) {
     return <LoadingSpin tip="Đang tải khu vực..." />
   }
 
@@ -407,8 +419,8 @@ export function AreasPage() {
           />
           <Button
             icon={<ReloadOutlined />}
-            loading={areasQuery.isRefetching}
-            onClick={() => areasQuery.refetch()}
+            loading={areasLoading}
+            onClick={() => refetchAreas()}
           >
             Làm mới
           </Button>
@@ -451,7 +463,7 @@ export function AreasPage() {
                 <Switch
                   checked={area.isActive}
                   checkedChildren="Hoạt động"
-                  loading={updateArea.isPending}
+                  loading={updateAreaLoading}
                   onChange={() => toggleArea(area)}
                   unCheckedChildren="Tắt"
                 />
@@ -483,7 +495,7 @@ export function AreasPage() {
                     />
                   </Tooltip>
                   <Popconfirm
-                    onConfirm={() => deleteArea.mutate(area.areaID)}
+                    onConfirm={() => deleteArea(area.areaID)}
                     title="Xóa khu vực này?"
                   >
                     <Button
@@ -537,7 +549,7 @@ export function AreasPage() {
             <Button
               disabled={dirtyDrafts.length === 0}
               icon={<SaveOutlined />}
-              loading={updateMapping.isPending}
+              loading={updateMappingLoading}
               onClick={saveDrafts}
               type="primary"
             >
@@ -826,7 +838,7 @@ export function AreasPage() {
       </Drawer>
 
       <Modal
-        confirmLoading={createArea.isPending || updateArea.isPending}
+        confirmLoading={createAreaLoading || updateAreaLoading}
         destroyOnClose
         onCancel={() => setAreaModalOpen(false)}
         onOk={submitArea}
@@ -870,7 +882,7 @@ export function AreasPage() {
       </Modal>
 
       <Modal
-        confirmLoading={createMapping.isPending}
+        confirmLoading={createMappingLoading}
         destroyOnClose
         onCancel={() => setMappingModalOpen(false)}
         onOk={submitMapping}

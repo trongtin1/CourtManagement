@@ -1,36 +1,61 @@
-import { Layout } from 'antd'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
-
-import { HeaderBar } from '@/layouts/components/HeaderBar'
-import { PageBreadcrumb } from '@/components/common/PageBreadcrumb'
-import { Sidebar } from '@/layouts/components/Sidebar'
+import { Layout } from 'antd'
+import Sidebar from '@/layouts/components/Sidebar'
+import HeaderBar from '@/layouts/components/HeaderBar'
+import React from 'react'
 
 const { Content } = Layout
-const SIDEBAR_WIDTH = 260
-const SIDEBAR_COLLAPSED_WIDTH = 80
-export function MainLayout() {
+
+export const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState<boolean>(false)
-  const sidebarWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH
+  const [isMobile, setIsMobile] = useState<boolean>(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+      if (window.innerWidth <= 768) {
+        setCollapsed(true)
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed)
+  }
 
   return (
-    <Layout className="min-h-screen bg-slate-50">
-      <Sidebar collapsed={collapsed} />
-
+    <Layout className="min-h-screen">
+      <Sidebar
+        collapsed={collapsed}
+        isMobile={isMobile}
+        toggleCollapsed={toggleCollapsed}
+      />
       <Layout
-        className="min-h-screen transition-[margin-left] duration-200"
-        style={{ marginLeft: sidebarWidth }}
+        className={`transition-all duration-300 ${
+          collapsed ? 'ml-20' : 'ml-62.5'
+        } ${isMobile ? 'ml-0' : ''}`}
       >
         <HeaderBar
           collapsed={collapsed}
-          onToggleSidebar={() => setCollapsed((value) => !value)}
+          toggleCollapsed={toggleCollapsed}
+          isMobile={isMobile}
         />
-
-        <Content className="p-4 md:p-6">
-          <PageBreadcrumb />
+        <Content
+          className="m-6 p-6 bg-white rounded-lg shadow-sm"
+          style={{
+            minHeight: 280,
+          }}
+        >
           <Outlet />
         </Content>
       </Layout>
     </Layout>
   )
 }
+
+export default MainLayout

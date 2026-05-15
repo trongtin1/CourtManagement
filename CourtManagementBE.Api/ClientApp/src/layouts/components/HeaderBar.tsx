@@ -1,56 +1,64 @@
-import { LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
-import { Avatar, Button, Layout, Space, Typography } from 'antd'
+import { Avatar, Button, Dropdown, Layout, type MenuProps } from 'antd'
+import {
+  LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 
 import { ROUTES } from '@/constants/routes'
-import { logout, selectCurrentUser } from '@/features/auth/model/authSlice'
-import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { logout } from '@/features/auth/model/authSlice'
+import { useAppDispatch } from '@/hooks/redux'
+import React from 'react'
 
 const { Header } = Layout
 
-type HeaderBarProps = {
+interface HeaderBarProps {
   collapsed: boolean
-  onToggleSidebar: () => void
+  toggleCollapsed: () => void
+  isMobile: boolean
 }
 
-export function HeaderBar({ collapsed, onToggleSidebar }: HeaderBarProps) {
-  const navigate = useNavigate()
+const HeaderBar: React.FC<HeaderBarProps> = ({
+  collapsed,
+  toggleCollapsed,
+}) => {
   const dispatch = useAppDispatch()
-  const user = useAppSelector(selectCurrentUser)
+  const navigate = useNavigate()
 
-  const handleLogout = () => {
-    dispatch(logout())
-    navigate(ROUTES.login, { replace: true })
-  }
+  const userMenuItems: MenuProps['items'] = [
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Logout',
+      onClick: () => {
+        dispatch(logout())
+        navigate(ROUTES.login, { replace: true })
+      },
+    },
+  ]
 
   return (
-    <Header
-      className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-gray-200 px-4 md:px-6"
-      style={{ background: '#ffffff' }}
-    >
+    <Header className="p-0 bg-white shadow-sm flex items-center justify-between sticky top-0 z-50">
       <Button
-        aria-label="Toggle navigation"
-        icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        onClick={onToggleSidebar}
         type="text"
+        icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        onClick={toggleCollapsed}
+        className="w-16 h-16"
       />
-
-      <Space size={16}>
-        <Space>
-          <Avatar>{user?.fullName?.[0] ?? 'U'}</Avatar>
-
-          <div className="hidden flex-col leading-tight md:flex">
-            <Typography.Text strong>{user?.fullName ?? 'User'}</Typography.Text>
-            <Typography.Text type="secondary">
-              {user?.email ?? 'Authenticated'}
-            </Typography.Text>
+      <div className="flex items-center mr-6 gap-4">
+        <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+          <div className="flex items-center cursor-pointer">
+            <Avatar icon={<UserOutlined />} className="bg-blue-500" />
+            {/* <span className="ml-2 font-medium hidden md:inline">
+              Hello User
+            </span> */}
           </div>
-        </Space>
-
-        <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-          Logout
-        </Button>
-      </Space>
+        </Dropdown>
+      </div>
     </Header>
   )
 }
+
+export default HeaderBar

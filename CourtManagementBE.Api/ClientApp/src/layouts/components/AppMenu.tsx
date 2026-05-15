@@ -1,128 +1,108 @@
+import { Link } from 'react-router-dom'
 import {
-  BankOutlined,
-  CalendarOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  CreditCardOutlined,
   DashboardOutlined,
-  EnvironmentOutlined,
-  InboxOutlined,
-  PartitionOutlined,
-  TagsOutlined,
-  TeamOutlined,
+  AppstoreOutlined,
+  CalendarOutlined,
   ToolOutlined,
-  TrophyOutlined,
+  UserOutlined,
+  CreditCardOutlined,
 } from '@ant-design/icons'
-import { Menu } from 'antd'
-import type { MenuProps } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React from 'react'
 
-import { ROUTES } from '@/constants/routes'
-
-const menuItems: NonNullable<MenuProps['items']> = [
-  { key: ROUTES.dashboard, icon: <DashboardOutlined />, label: 'Dashboard' },
-  {
-    key: 'system',
-    icon: <BankOutlined />,
-    label: 'He thong',
-    children: [
-      { key: ROUTES.facilities, icon: <EnvironmentOutlined />, label: 'Co so' },
-      { key: ROUTES.areas, icon: <PartitionOutlined />, label: 'Khu vuc' },
-    ],
-  },
-  {
-    key: 'courts',
-    icon: <TrophyOutlined />,
-    label: 'Quan ly san',
-    children: [
-      { key: ROUTES.courts, icon: <TrophyOutlined />, label: 'Danh sach san' },
-      { key: ROUTES.courtTypes, icon: <TagsOutlined />, label: 'Loai san' },
-      { key: ROUTES.courtStatuses, icon: <CheckCircleOutlined />, label: 'Trang thai san' },
-      { key: ROUTES.courtFeatures, icon: <TagsOutlined />, label: 'Dac diem san' },
-      { key: ROUTES.courtFeatureMappings, icon: <TagsOutlined />, label: 'Gan dac tinh' },
-      { key: ROUTES.courtAssets, icon: <InboxOutlined />, label: 'Tai san san' },
-      { key: ROUTES.utilities, icon: <ToolOutlined />, label: 'Tien ich' },
-      { key: ROUTES.timeSlots, icon: <ClockCircleOutlined />, label: 'Khung gio' },
-    ],
-  },
-  {
-    key: 'booking',
-    icon: <CalendarOutlined />,
-    label: 'Khach & dat san',
-    children: [
-      { key: ROUTES.customers, icon: <TeamOutlined />, label: 'Khach hang' },
-      { key: ROUTES.bookings, icon: <CalendarOutlined />, label: 'Dat san' },
-    ],
-  },
-  {
-    key: 'commerce',
-    icon: <CreditCardOutlined />,
-    label: 'Dich vu & thu tien',
-    children: [
-      { key: ROUTES.services, icon: <ToolOutlined />, label: 'Dich vu' },
-      { key: ROUTES.payments, icon: <CreditCardOutlined />, label: 'Thanh toan' },
-    ],
-  },
-]
-
-const routeKeys = [
-  ROUTES.dashboard,
-  ROUTES.facilities,
-  ROUTES.areas,
-  ROUTES.courts,
-  ROUTES.courtTypes,
-  ROUTES.courtStatuses,
-  ROUTES.courtFeatures,
-  ROUTES.courtFeatureMappings,
-  ROUTES.courtAssets,
-  ROUTES.utilities,
-  ROUTES.timeSlots,
-  ROUTES.customers,
-  ROUTES.bookings,
-  ROUTES.services,
-  ROUTES.payments,
-]
-
-export function AppMenu() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [openKeys, setOpenKeys] = useState<string[]>([])
-
-  const selectedKeys = useMemo(() => {
-    const matched = routeKeys.find(
-      (key) => location.pathname === key || location.pathname.startsWith(`${key}/`),
-    )
-    return matched ? [matched] : [ROUTES.dashboard]
-  }, [location.pathname])
-
-  const routeOpenKeys = useMemo(() => {
-    const [selectedKey] = selectedKeys
-    return menuItems
-      .filter(
-        (item) =>
-          item &&
-          'children' in item &&
-          item.children?.some((child) => child?.key === selectedKey),
-      )
-      .map((item) => String(item?.key))
-  }, [selectedKeys])
-
-  useEffect(() => {
-    setOpenKeys((current) => Array.from(new Set([...current, ...routeOpenKeys])))
-  }, [routeOpenKeys])
-
-  return (
-    <Menu
-      items={menuItems}
-      mode="inline"
-      onClick={({ key }) => {
-        if (key.startsWith('/')) navigate(key)
-      }}
-      onOpenChange={(keys) => setOpenKeys(keys)}
-      openKeys={openKeys}
-      selectedKeys={selectedKeys}
-      theme="dark"
-    />
-  )
+export type MenuItem = {
+  key: string
+  icon?: React.ReactNode
+  label: React.ReactNode | string
+  children?: MenuItem[]
 }
+
+export const getMenuItems = (): MenuItem[] => {
+  return [
+    {
+      key: 'dashboard',
+      icon: <DashboardOutlined />,
+      label: <Link to="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: 'court-management',
+      icon: <AppstoreOutlined />,
+      label: 'Court Management',
+      children: [
+        {
+          key: 'facilities',
+          label: <Link to="/facilities">Facilities</Link>,
+        },
+        {
+          key: 'areas',
+          label: <Link to="/areas">Areas</Link>,
+        },
+        {
+          key: 'courts',
+          label: <Link to="/courts">Courts</Link>,
+        },
+        {
+          key: 'court-types',
+          label: <Link to="/court-types">Court Types</Link>,
+        },
+        {
+          key: 'court-statuses',
+          label: <Link to="/court-statuses">Court Statuses</Link>,
+        },
+        {
+          key: 'court-features',
+          label: <Link to="/court-features">Court Features</Link>,
+        },
+        {
+          key: 'court-feature-mappings',
+          label: <Link to="/court-feature-mappings">Court Feature Mappings</Link>,
+        },
+        {
+          key: 'court-assets',
+          label: <Link to="/court-assets">Court Assets</Link>,
+        },
+      ],
+    },
+    {
+      key: 'booking-management',
+      icon: <CalendarOutlined />,
+      label: 'Booking Management',
+      children: [
+        {
+          key: 'bookings',
+          label: <Link to="/bookings">Bookings</Link>,
+        },
+        {
+          key: 'time-slots',
+          label: <Link to="/time-slots">Time Slots</Link>,
+        },
+      ],
+    },
+    {
+      key: 'services-utilities',
+      icon: <ToolOutlined />,
+      label: 'Services & Utilities',
+      children: [
+        {
+          key: 'services',
+          label: <Link to="/services">Services</Link>,
+        },
+        {
+          key: 'utilities',
+          label: <Link to="/utilities">Utilities</Link>,
+        },
+      ],
+    },
+    {
+      key: 'customers',
+      icon: <UserOutlined />,
+      label: <Link to="/customers">Customers</Link>,
+    },
+    {
+      key: 'payments',
+      icon: <CreditCardOutlined />,
+      label: <Link to="/payments">Payments</Link>,
+    },
+  ]
+}
+
+export default getMenuItems

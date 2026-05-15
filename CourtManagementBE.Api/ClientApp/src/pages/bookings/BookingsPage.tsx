@@ -1,18 +1,6 @@
 import { useState } from 'react'
-import {
-  App,
-  Button,
-  Popconfirm,
-  Space,
-  Table,
-  Tag,
-  Typography,
-} from 'antd'
-import {
-  DeleteOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons'
+import { App, Button, Popconfirm, Space, Table, Tag, Typography } from 'antd'
+import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'
@@ -43,24 +31,28 @@ export function BookingsPage() {
   const [open, setOpen] = useState(false)
   const [tablePagination, setTablePagination] = useState<TablePaginationConfig>({})
 
-  const query = useBookingsQuery(
+  const {
+    data: bookingData,
+    isPending: isPendingBookings,
+    refetch: refetchBookings,
+  } = useBookingsQuery(
     tablePagination.current && tablePagination.pageSize
       ? { page: tablePagination.current, pageSize: tablePagination.pageSize }
       : undefined,
   )
-  const cancelMut = useCancelBookingMutation()
-  const deleteMut = useDeleteBookingMutation()
+  const { mutateAsync: cancelMut } = useCancelBookingMutation()
+  const { mutate: deleteMut } = useDeleteBookingMutation()
 
   const handleCancel = async (id: string) => {
     try {
-      await cancelMut.mutateAsync({ id, data: { cancellationReason: 'Admin cancelled' } })
+      await cancelMut({ id, data: { cancellationReason: 'Admin cancelled' } })
       message.success('Đã huỷ booking')
     } catch (e) {
       message.error(toApiError(e).message)
     }
   }
 
-  if (query.isPending) return <LoadingSpin tip="Đang tải bookings..." />
+  if (isPendingBookings) return <LoadingSpin tip="Đang tải bookings..." />
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
@@ -68,13 +60,15 @@ export function BookingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <Typography.Title level={2}>Quản lý Đặt sân</Typography.Title>
-          <Typography.Paragraph type="secondary">Danh sách lượt đặt sân</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">
+            Danh sách lượt đặt sân
+          </Typography.Paragraph>
         </div>
         <Space>
           <Button
             icon={<ReloadOutlined />}
-            loading={query.isRefetching}
-            onClick={() => query.refetch()}
+            loading={isPendingBookings}
+            onClick={() => refetchBookings()}
           >
             Làm mới
           </Button>
@@ -125,20 +119,20 @@ export function BookingsPage() {
                       </Button>
                     </Popconfirm>
                   )}
-                  <Popconfirm title="Xoá?" onConfirm={() => deleteMut.mutate(r.bookingID)}>
+                  <Popconfirm title="Xoá?" onConfirm={() => deleteMut(r.bookingID)}>
                     <Button danger icon={<DeleteOutlined />} size="small" type="link" />
                   </Popconfirm>
                 </Space>
               ),
             },
           ]}
-          dataSource={query.data?.items ?? []}
-          loading={query.isFetching}
+          dataSource={bookingData?.items ?? []}
+          loading={isPendingBookings}
           onChange={(pagination) => setTablePagination(pagination)}
           pagination={{
             current: tablePagination.current ?? 1,
             pageSize: tablePagination.pageSize ?? 10,
-            total: query.data?.totalCount ?? 0,
+            total: bookingData?.totalCount ?? 0,
             showTotal: (t) => `Tổng ${t}`,
           }}
           rowKey="bookingID"
