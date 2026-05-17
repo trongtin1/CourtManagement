@@ -9,9 +9,12 @@ public class CourtAssets
     public int CourtID { get; set; }
     public string AssetCode { get; set; } = string.Empty;
     public string AssetName { get; set; } = string.Empty;
+    public int? AssetCategoryID { get; set; }
     public string Category { get; set; } = string.Empty;
     public int Quantity { get; set; }
+    public int? UnitID { get; set; }
     public string Unit { get; set; } = string.Empty;
+    public int? AssetConditionID { get; set; }
     public string Condition { get; set; } = string.Empty;
     public DateTimeOffset? PurchaseDate { get; set; }
     public decimal? PurchasePrice { get; set; }

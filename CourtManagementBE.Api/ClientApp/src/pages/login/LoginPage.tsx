@@ -7,6 +7,8 @@ import { useLoginMutation } from '@/features/auth/api/useAuthQueries'
 import { setCredentials } from '@/features/auth/model/authSlice'
 import type { LoginRequest } from '@/features/auth/model/types'
 import { useAppDispatch } from '@/hooks/redux'
+import { AUTH_STORAGE_KEYS } from '@/constants/auth'
+import { storage } from '@/utils/storage'
 
 type LocationState = {
   from?: {
@@ -27,6 +29,24 @@ export function LoginPage() {
   const handleSubmit = async (values: LoginRequest) => {
     const credentials = await loginMutation.mutateAsync(values)
     dispatch(setCredentials(credentials))
+    const isSuperAdmin = credentials.user.roles.some((role) =>
+      ['SuperAdmin', 'Administrator'].includes(role),
+    )
+
+    if (isSuperAdmin) {
+      storage.remove(AUTH_STORAGE_KEYS.workingFacilityId)
+      message.success('Signed in successfully')
+      navigate(ROUTES.selectFacility, { replace: true })
+      return
+    }
+
+    if (credentials.user.facilityID) {
+      storage.set(
+        AUTH_STORAGE_KEYS.workingFacilityId,
+        String(credentials.user.facilityID),
+      )
+    }
+
     message.success('Signed in successfully')
     navigate(from, { replace: true })
   }

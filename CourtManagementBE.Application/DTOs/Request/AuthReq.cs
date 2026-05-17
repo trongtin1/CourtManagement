@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CourtManagementBE.Application.Common;
 
 namespace CourtManagementBE.Application.DTOs;
 
@@ -12,6 +13,10 @@ public class RegisterRequest
 
     [Required, MinLength(6)]
     public string Password { get; set; } = string.Empty;
+
+    public int? FacilityID { get; set; }
+
+    public string Role { get; set; } = CurrentUserContext.FacilityManagerRole;
 }
 
 public class LoginRequest

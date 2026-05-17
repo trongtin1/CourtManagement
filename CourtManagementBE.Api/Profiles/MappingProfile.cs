@@ -102,5 +102,50 @@ public class MappingProfile : Profile
 
         // ── CourtPriceHistory (read-only) ────────────────────────────────
         CreateMap<CourtPriceHistory, CourtPriceHistoryResponse>();
+
+        // ── Master Data ──────────────────────────────────────────────────
+        CreateMap<BookingStatuses, BookingStatusResponse>();
+        CreateMap<CreateBookingStatusRequest, BookingStatuses>();
+        CreateMap<UpdateBookingStatusRequest, BookingStatuses>();
+
+        CreateMap<PaymentStatuses, PaymentStatusResponse>();
+        CreateMap<CreatePaymentStatusRequest, PaymentStatuses>();
+        CreateMap<UpdatePaymentStatusRequest, PaymentStatuses>();
+
+        CreateMap<PaymentMethods, PaymentMethodResponse>();
+        CreateMap<CreatePaymentMethodRequest, PaymentMethods>();
+        CreateMap<UpdatePaymentMethodRequest, PaymentMethods>();
+
+        CreateMap<CustomerTypes, CustomerTypeResponse>();
+        CreateMap<CreateCustomerTypeRequest, CustomerTypes>();
+        CreateMap<UpdateCustomerTypeRequest, CustomerTypes>();
+
+        CreateMap<ServiceTypes, ServiceTypeResponse>();
+        CreateMap<CreateServiceTypeRequest, ServiceTypes>();
+        CreateMap<UpdateServiceTypeRequest, ServiceTypes>();
+
+        CreateMap<Units, UnitResponse>();
+        CreateMap<CreateUnitRequest, Units>();
+        CreateMap<UpdateUnitRequest, Units>();
+
+        CreateMap<AssetCategories, AssetCategoryResponse>();
+        CreateMap<CreateAssetCategoryRequest, AssetCategories>();
+        CreateMap<UpdateAssetCategoryRequest, AssetCategories>();
+
+        CreateMap<AssetConditions, AssetConditionResponse>();
+        CreateMap<CreateAssetConditionRequest, AssetConditions>();
+        CreateMap<UpdateAssetConditionRequest, AssetConditions>();
+
+        CreateMap<CourtFeatureCategories, CourtFeatureCategoryResponse>();
+        CreateMap<CreateCourtFeatureCategoryRequest, CourtFeatureCategories>();
+        CreateMap<UpdateCourtFeatureCategoryRequest, CourtFeatureCategories>();
+
+        CreateMap<CancellationReasons, CancellationReasonResponse>();
+        CreateMap<CreateCancellationReasonRequest, CancellationReasons>();
+        CreateMap<UpdateCancellationReasonRequest, CancellationReasons>();
+
+        CreateMap<RefundReasons, RefundReasonResponse>();
+        CreateMap<CreateRefundReasonRequest, RefundReasons>();
+        CreateMap<UpdateRefundReasonRequest, RefundReasons>();
     }
 }

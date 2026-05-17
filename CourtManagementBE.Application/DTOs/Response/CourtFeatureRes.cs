@@ -5,6 +5,7 @@ public class CourtFeatureResponse
     public int CourtFeatureID { get; set; }
     public string FeatureCode { get; set; } = string.Empty;
     public string FeatureName { get; set; } = string.Empty;
+    public int? CourtFeatureCategoryID { get; set; }
     public string Category { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public DateTimeOffset CreateDate { get; set; }

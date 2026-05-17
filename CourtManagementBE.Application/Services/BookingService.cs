@@ -10,37 +10,43 @@ namespace CourtManagementBE.Application.Services;
 
 public class BookingService : BaseService, IBookingService
 {
-    public BookingService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper) { }
+    public BookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
+        : base(unitOfWork, mapper, currentUser) { }
 
     public async Task<Result<PageList<BookingResponse>>> GetAll(QueryResource query)
     {
+        var courtIds = await GetScopedCourtIds();
         var page = await _unitOfWork.IBookingRepository.FindAll(
-            _ => true,
+            x => courtIds.Contains(x.CourtID),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Bookings, BookingResponse>(page));
     }
 
     public async Task<Result<List<BookingResponse>>> GetByCustomer(int customerId)
     {
-        var list = await _unitOfWork.IBookingRepository.FindList(x => x.CustomerID == customerId);
+        var courtIds = await GetScopedCourtIds();
+        var list = await _unitOfWork.IBookingRepository.FindList(x => x.CustomerID == customerId && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
     public async Task<Result<List<BookingResponse>>> GetByCourt(int courtId)
     {
+        if (!await CanAccessCourt(courtId)) return Unauthorized<List<BookingResponse>>("Bạn không có quyền truy cập sân này.");
         var list = await _unitOfWork.IBookingRepository.FindList(x => x.CourtID == courtId);
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
     public async Task<Result<List<BookingResponse>>> GetByStatus(string status)
     {
-        var list = await _unitOfWork.IBookingRepository.FindList(x => x.Status == status);
+        var courtIds = await GetScopedCourtIds();
+        var list = await _unitOfWork.IBookingRepository.FindList(x => x.Status == status && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
     public async Task<Result<List<BookingResponse>>> GetByDate(DateTime date)
     {
-        var list = await _unitOfWork.IBookingRepository.FindList(x => x.BookingDate.Date == date.Date);
+        var courtIds = await GetScopedCourtIds();
+        var list = await _unitOfWork.IBookingRepository.FindList(x => x.BookingDate.Date == date.Date && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
@@ -48,11 +54,14 @@ public class BookingService : BaseService, IBookingService
     {
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền truy cập booking này.");
         return Success(_mapper.Map<BookingResponse>(entity));
     }
 
     public async Task<Result<BookingResponse>> Create(CreateBookingRequest request)
     {
+        if (!await CanAccessCourt(request.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền tạo booking cho sân này.");
+
         var entity = _mapper.Map<Bookings>(request);
         entity.BookingID = Guid.NewGuid();
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -66,6 +75,7 @@ public class BookingService : BaseService, IBookingService
     {
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền cập nhật booking này.");
         _mapper.Map(request, entity);
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         _unitOfWork.IBookingRepository.Update(entity);
@@ -77,6 +87,7 @@ public class BookingService : BaseService, IBookingService
     {
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền hủy booking này.");
         if (entity.Status == "cancelled") return BadRequest<BookingResponse>("Đơn đặt sân đã bị hủy trước đó.");
 
         entity.Status = "cancelled";
@@ -92,6 +103,7 @@ public class BookingService : BaseService, IBookingService
     {
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<bool>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<bool>("Bạn không có quyền xóa booking này.");
         _unitOfWork.IBookingRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(true, "Xóa đơn đặt sân thành công.");

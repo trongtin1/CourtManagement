@@ -2,6 +2,7 @@ export type AuthUser = {
   id: string
   fullName: string
   email: string
+  facilityID?: number | null
   roles: string[]
 }
 

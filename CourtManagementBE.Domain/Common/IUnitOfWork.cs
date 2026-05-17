@@ -27,8 +27,20 @@ public interface IUnitOfWork : IDisposable
     ICourtAreaMappingRepository ICourtAreaMappingRepository { get; }
     ICourtUtilityRepository ICourtUtilityRepository { get; }
     ICourtPriceHistoryRepository ICourtPriceHistoryRepository { get; }
+    IBookingStatusRepository IBookingStatusRepository { get; }
+    IPaymentStatusRepository IPaymentStatusRepository { get; }
+    IPaymentMethodRepository IPaymentMethodRepository { get; }
+    ICustomerTypeRepository ICustomerTypeRepository { get; }
+    IServiceTypeRepository IServiceTypeRepository { get; }
+    IUnitRepository IUnitRepository { get; }
+    IAssetCategoryRepository IAssetCategoryRepository { get; }
+    IAssetConditionRepository IAssetConditionRepository { get; }
+    ICourtFeatureCategoryRepository ICourtFeatureCategoryRepository { get; }
+    ICancellationReasonRepository ICancellationReasonRepository { get; }
+    IRefundReasonRepository IRefundReasonRepository { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+
 }

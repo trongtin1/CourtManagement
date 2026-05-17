@@ -11,6 +11,7 @@ public static class AppDbSeeder
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
         await SeedAdminAsync(db, cancellationToken);
+        await SeedMasterDataAsync(db, cancellationToken);
 
         var facility = await GetOrCreateFacilityAsync(db, cancellationToken);
         var courtTypes = await GetOrCreateCourtTypesAsync(db, cancellationToken);
@@ -48,6 +49,7 @@ public static class AppDbSeeder
                 FullName = "Administrator",
                 Email = AdminLogin,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(AdminPassword),
+                Role = "SuperAdmin",
             });
 
             await db.SaveChangesAsync(cancellationToken);
@@ -57,6 +59,8 @@ public static class AppDbSeeder
         if (!BCrypt.Net.BCrypt.Verify(AdminPassword, admin.PasswordHash))
         {
             admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(AdminPassword);
+            admin.Role = "SuperAdmin";
+            admin.FacilityID = null;
             await db.SaveChangesAsync(cancellationToken);
         }
     }
@@ -89,6 +93,101 @@ public static class AppDbSeeder
         db.Facilities.Add(facility);
         await db.SaveChangesAsync(cancellationToken);
         return facility;
+    }
+
+    private static async Task SeedMasterDataAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        await SeedMasterAsync(db.BookingStatuses, [
+            new BookingStatuses { Code = "pending", Name = "Pending", ColorCode = "#f59e0b", CanCancel = true, IsFinal = false, SortOrder = 1 },
+            new BookingStatuses { Code = "confirmed", Name = "Confirmed", ColorCode = "#2563eb", CanCancel = true, IsFinal = false, SortOrder = 2 },
+            new BookingStatuses { Code = "completed", Name = "Completed", ColorCode = "#16a34a", CanCancel = false, IsFinal = true, SortOrder = 3 },
+            new BookingStatuses { Code = "cancelled", Name = "Cancelled", ColorCode = "#dc2626", CanCancel = false, IsFinal = true, SortOrder = 4 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.PaymentStatuses, [
+            new PaymentStatuses { Code = "pending", Name = "Pending", ColorCode = "#f59e0b", IsFinal = false, SortOrder = 1 },
+            new PaymentStatuses { Code = "success", Name = "Success", ColorCode = "#16a34a", IsFinal = true, SortOrder = 2 },
+            new PaymentStatuses { Code = "paid", Name = "Paid", ColorCode = "#16a34a", IsFinal = true, SortOrder = 3 },
+            new PaymentStatuses { Code = "failed", Name = "Failed", ColorCode = "#dc2626", IsFinal = true, SortOrder = 4 },
+            new PaymentStatuses { Code = "refunded", Name = "Refunded", ColorCode = "#7c3aed", IsFinal = true, SortOrder = 5 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.PaymentMethods, [
+            new PaymentMethods { Code = "cash", Name = "Cash", IsOnline = false, SortOrder = 1 },
+            new PaymentMethods { Code = "bank_transfer", Name = "Bank Transfer", IsOnline = true, SortOrder = 2 },
+            new PaymentMethods { Code = "qr", Name = "QR Payment", IsOnline = true, SortOrder = 3 },
+            new PaymentMethods { Code = "momo", Name = "MoMo", IsOnline = true, SortOrder = 4 },
+            new PaymentMethods { Code = "vnpay", Name = "VNPay", IsOnline = true, SortOrder = 5 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.CustomerTypes, [
+            new CustomerTypes { Code = "normal", Name = "Normal", DiscountPercent = 0, SortOrder = 1 },
+            new CustomerTypes { Code = "member", Name = "Member", DiscountPercent = 5, SortOrder = 2 },
+            new CustomerTypes { Code = "vip", Name = "VIP", DiscountPercent = 10, SortOrder = 3 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.ServiceTypes, [
+            new ServiceTypes { Code = "drink", Name = "Drink", SortOrder = 1 },
+            new ServiceTypes { Code = "rental", Name = "Rental", SortOrder = 2 },
+            new ServiceTypes { Code = "equipment", Name = "Equipment", SortOrder = 3 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.Units, [
+            new Units { Code = "bottle", Name = "Bottle", Symbol = "bottle", SortOrder = 1 },
+            new Units { Code = "racket", Name = "Racket", Symbol = "racket", SortOrder = 2 },
+            new Units { Code = "tube", Name = "Tube", Symbol = "tube", SortOrder = 3 },
+            new Units { Code = "piece", Name = "Piece", Symbol = "pc", SortOrder = 4 },
+            new Units { Code = "set", Name = "Set", Symbol = "set", SortOrder = 5 },
+            new Units { Code = "hour", Name = "Hour", Symbol = "h", SortOrder = 6 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.AssetCategories, [
+            new AssetCategories { Code = "Equipment", Name = "Equipment", SortOrder = 1 },
+            new AssetCategories { Code = "Lighting", Name = "Lighting", SortOrder = 2 },
+            new AssetCategories { Code = "Furniture", Name = "Furniture", SortOrder = 3 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.AssetConditions, [
+            new AssetConditions { Code = "Good", Name = "Good", ColorCode = "#16a34a", IsUsable = true, SortOrder = 1 },
+            new AssetConditions { Code = "Maintenance", Name = "Maintenance", ColorCode = "#f59e0b", IsUsable = false, SortOrder = 2 },
+            new AssetConditions { Code = "Broken", Name = "Broken", ColorCode = "#dc2626", IsUsable = false, SortOrder = 3 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.CourtFeatureCategories, [
+            new CourtFeatureCategories { Code = "Environment", Name = "Environment", SortOrder = 1 },
+            new CourtFeatureCategories { Code = "Property", Name = "Property", SortOrder = 2 },
+            new CourtFeatureCategories { Code = "Surface", Name = "Surface", SortOrder = 3 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.CancellationReasons, [
+            new CancellationReasons { Code = "customer_request", Name = "Customer request", SortOrder = 1 },
+            new CancellationReasons { Code = "court_maintenance", Name = "Court maintenance", SortOrder = 2 },
+            new CancellationReasons { Code = "weather", Name = "Weather issue", SortOrder = 3 },
+            new CancellationReasons { Code = "admin_cancelled", Name = "Admin cancelled", SortOrder = 4 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.RefundReasons, [
+            new RefundReasons { Code = "booking_cancelled", Name = "Booking cancelled", SortOrder = 1 },
+            new RefundReasons { Code = "duplicate_payment", Name = "Duplicate payment", SortOrder = 2 },
+            new RefundReasons { Code = "service_issue", Name = "Service issue", SortOrder = 3 },
+        ], cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedMasterAsync<T>(
+        DbSet<T> dbSet,
+        IEnumerable<T> seed,
+        CancellationToken cancellationToken)
+        where T : MasterDataBase
+    {
+        foreach (var item in seed)
+        {
+            if (!await dbSet.AnyAsync(x => x.Code == item.Code, cancellationToken))
+            {
+                dbSet.Add(item);
+            }
+        }
     }
 
     private static async Task<List<CourtTypes>> GetOrCreateCourtTypesAsync(

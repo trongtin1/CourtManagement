@@ -1,5 +1,6 @@
 export type Service = {
   serviceID: number
+  facilityID?: number | null
   serviceCode: string
   serviceName: string
   serviceType: string
@@ -11,6 +12,7 @@ export type Service = {
 }
 
 export type CreateServiceRequest = {
+  facilityID?: number | null
   serviceCode: string
   serviceName: string
   serviceType?: string

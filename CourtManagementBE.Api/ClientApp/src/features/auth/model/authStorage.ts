@@ -12,5 +12,6 @@ export const authStorage = {
   clearSession() {
     storage.remove(AUTH_STORAGE_KEYS.token)
     storage.remove(AUTH_STORAGE_KEYS.user)
+    storage.remove(AUTH_STORAGE_KEYS.workingFacilityId)
   },
 }

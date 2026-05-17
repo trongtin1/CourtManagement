@@ -29,22 +29,22 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, isMobile, toggleCollapsed 
 
   const sidebarContent = (
     <>
-      <div className="flex justify-center py-5">
+      <div className="flex items-center justify-center border-b border-slate-100 px-4 py-5">
         <h1
-          className={`text-blue-600 font-bold transition-opacity duration-300 ${
+          className={`font-bold tracking-wide text-blue-600 transition-opacity duration-300 ${
             collapsed ? 'opacity-0 w-0' : 'opacity-100'
           }`}
         >
-          ADMIN
+          Court Admin
         </h1>
-        {collapsed && <span className="text-2xl font-bold text-blue-600">A</span>}
+        {collapsed && <span className="text-2xl font-bold text-blue-600">CA</span>}
       </div>
       <Menu
         mode="inline"
         selectedKeys={[currentPath]}
         defaultOpenKeys={findOpenKeys()}
         items={menuItems}
-        className="border-r-0"
+        className="border-r-0 px-2 py-3"
       />
     </>
   )
@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, isMobile, toggleCollapsed 
         open={!collapsed}
         onClose={toggleCollapsed}
         width={250}
-        className="p-0"
+        styles={{ body: { padding: 0 } }}
       >
         {sidebarContent}
       </Drawer>

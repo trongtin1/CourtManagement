@@ -48,6 +48,18 @@ public class AppDbContext : DbContext
     public DbSet<Services> Services => Set<Services>();
     public DbSet<ServicePrice> ServicePrices => Set<ServicePrice>();
 
+    public DbSet<BookingStatuses> BookingStatuses => Set<BookingStatuses>();
+    public DbSet<PaymentStatuses> PaymentStatuses => Set<PaymentStatuses>();
+    public DbSet<PaymentMethods> PaymentMethods => Set<PaymentMethods>();
+    public DbSet<CustomerTypes> CustomerTypes => Set<CustomerTypes>();
+    public DbSet<ServiceTypes> ServiceTypes => Set<ServiceTypes>();
+    public DbSet<Units> Units => Set<Units>();
+    public DbSet<AssetCategories> AssetCategories => Set<AssetCategories>();
+    public DbSet<AssetConditions> AssetConditions => Set<AssetConditions>();
+    public DbSet<CourtFeatureCategories> CourtFeatureCategories => Set<CourtFeatureCategories>();
+    public DbSet<CancellationReasons> CancellationReasons => Set<CancellationReasons>();
+    public DbSet<RefundReasons> RefundReasons => Set<RefundReasons>();
+
     // ── Audit Log ─────────────────────────────────────────────────────────────
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
@@ -66,7 +78,9 @@ public class AppDbContext : DbContext
             e.Property(x => x.Email).HasColumnType("varchar(255)").IsRequired();
             e.Property(x => x.PasswordHash).HasColumnType("varchar(500)").IsRequired();
             e.Property(x => x.FullName).HasColumnType("nvarchar(255)");
+            e.Property(x => x.Role).HasColumnType("varchar(50)").HasDefaultValue("SuperAdmin");
             e.HasIndex(x => x.Email).IsUnique();
+            e.HasIndex(x => x.FacilityID);
         });
 
         // ── UserToken ────────────────────────────────────────────────────────
@@ -288,7 +302,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.ServiceName).HasColumnType("nvarchar(200)").IsRequired();
             e.Property(x => x.ServiceType).HasColumnType("varchar(50)");
             e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
-            e.HasIndex(x => x.ServiceCode).IsUnique();
+            e.HasIndex(x => new { x.FacilityID, x.ServiceCode }).IsUnique();
         });
 
         // ── ServicePrice ─────────────────────────────────────────────────────
@@ -298,6 +312,22 @@ public class AppDbContext : DbContext
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
             e.HasIndex(x => new { x.ServiceID, x.EffectiveDate });
         });
+
+        ConfigureMasterData<BookingStatuses>(modelBuilder, "BookingStatusID");
+        ConfigureMasterData<PaymentStatuses>(modelBuilder, "PaymentStatusID");
+        ConfigureMasterData<PaymentMethods>(modelBuilder, "PaymentMethodID");
+        ConfigureMasterData<CustomerTypes>(modelBuilder, "CustomerTypeID");
+        modelBuilder.Entity<CustomerTypes>(e =>
+        {
+            e.Property(x => x.DiscountPercent).HasColumnType("decimal(5,2)");
+        });
+        ConfigureMasterData<ServiceTypes>(modelBuilder, "ServiceTypeID");
+        ConfigureMasterData<Units>(modelBuilder, "UnitID");
+        ConfigureMasterData<AssetCategories>(modelBuilder, "AssetCategoryID");
+        ConfigureMasterData<AssetConditions>(modelBuilder, "AssetConditionID");
+        ConfigureMasterData<CourtFeatureCategories>(modelBuilder, "CourtFeatureCategoryID");
+        ConfigureMasterData<CancellationReasons>(modelBuilder, "CancellationReasonID");
+        ConfigureMasterData<RefundReasons>(modelBuilder, "RefundReasonID");
 
         // ── AuditLog ─────────────────────────────────────────────────────────
         modelBuilder.Entity<AuditLog>(e =>
@@ -315,6 +345,19 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.TableName);
             e.HasIndex(x => x.PerformedBy);
             e.HasIndex(x => x.CreatedAt);
+        });
+    }
+
+    private static void ConfigureMasterData<T>(ModelBuilder modelBuilder, string keyName)
+        where T : MasterDataBase
+    {
+        modelBuilder.Entity<T>(e =>
+        {
+            e.HasKey(keyName);
+            e.Property(x => x.Code).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.Name).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.Description).HasColumnType("nvarchar(500)");
+            e.HasIndex(x => x.Code).IsUnique();
         });
     }
 }

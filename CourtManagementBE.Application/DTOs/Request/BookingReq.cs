@@ -8,14 +8,17 @@ public class CreateBookingRequest
     [Required] public int CustomerID { get; set; }
     [Required] public DateTime BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
+    public int? BookingStatusID { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
 }
 
 public class UpdateBookingRequest
 {
+    public int? BookingStatusID { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = string.Empty;
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
+    public int? CancellationReasonID { get; set; }
     [MaxLength(500)] public string CancellationReason { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
 }
@@ -23,4 +26,5 @@ public class UpdateBookingRequest
 public class CancelBookingRequest
 {
     [Required, MaxLength(500)] public string CancellationReason { get; set; } = string.Empty;
+    public int? CancellationReasonID { get; set; }
 }

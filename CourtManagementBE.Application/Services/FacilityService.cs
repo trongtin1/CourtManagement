@@ -10,12 +10,13 @@ namespace CourtManagementBE.Application.Services;
 
 public class FacilityService : BaseService, IFacilityService
 {
-    public FacilityService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper) { }
+    public FacilityService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
+        : base(unitOfWork, mapper, currentUser) { }
 
     public async Task<Result<PageList<FacilityResponse>>> GetAll(QueryResource query)
     {
         var page = await _unitOfWork.IFacilityRepository.FindAll(
-            _ => true,
+            x => _currentUser == null || _currentUser.IsSuperAdmin || x.FacilityID == _currentUser.FacilityId,
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Facilities, FacilityResponse>(page));
     }
@@ -24,11 +25,17 @@ public class FacilityService : BaseService, IFacilityService
     {
         var entity = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == id);
         if (entity is null) return NotFound<FacilityResponse>("Không tìm thấy cơ sở.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<FacilityResponse>("Bạn không có quyền truy cập cơ sở này.");
         return Success(_mapper.Map<FacilityResponse>(entity));
     }
 
     public async Task<Result<FacilityResponse>> Create(CreateFacilityRequest request)
     {
+        if (_currentUser is { IsSuperAdmin: false })
+        {
+            return Unauthorized<FacilityResponse>("Chỉ Super Admin mới được tạo cơ sở.");
+        }
+
         var entity = _mapper.Map<Facilities>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
         await _unitOfWork.IFacilityRepository.Add(entity);
@@ -40,6 +47,7 @@ public class FacilityService : BaseService, IFacilityService
     {
         var entity = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == id);
         if (entity is null) return NotFound<FacilityResponse>("Không tìm thấy cơ sở.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<FacilityResponse>("Bạn không có quyền cập nhật cơ sở này.");
         _mapper.Map(request, entity);
         _unitOfWork.IFacilityRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
@@ -50,6 +58,7 @@ public class FacilityService : BaseService, IFacilityService
     {
         var entity = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == id);
         if (entity is null) return NotFound<bool>("Không tìm thấy cơ sở.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<bool>("Bạn không có quyền xóa cơ sở này.");
         _unitOfWork.IFacilityRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(true, "Xóa cơ sở thành công.");
@@ -59,6 +68,7 @@ public class FacilityService : BaseService, IFacilityService
     {
         var entity = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == id);
         if (entity is null) return NotFound<bool>("Không tìm thấy cơ sở.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<bool>("Bạn không có quyền cập nhật cơ sở này.");
         entity.IsActive = !entity.IsActive;
         _unitOfWork.IFacilityRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();

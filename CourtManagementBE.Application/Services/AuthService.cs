@@ -38,7 +38,11 @@ public class AuthService : BaseService, IAuthService
         {
             FullName = request.FullName,
             Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            FacilityID = request.FacilityID,
+            Role = string.IsNullOrWhiteSpace(request.Role)
+                ? CurrentUserContext.FacilityManagerRole
+                : request.Role
         };
 
         await userRepo.Add(user);
@@ -142,7 +146,8 @@ public class AuthService : BaseService, IAuthService
             Id = user.Id.ToString(),
             FullName = user.FullName,
             Email = user.Email,
-            Roles = ["Administrator"]
+            FacilityID = user.FacilityID,
+            Roles = [user.Role]
         };
     }
 
@@ -155,7 +160,9 @@ public class AuthService : BaseService, IAuthService
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.FullName)
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Role, user.Role),
+            new Claim(CurrentUserContext.FacilityClaimType, user.FacilityID?.ToString() ?? string.Empty)
         };
 
         var token = new JwtSecurityToken(

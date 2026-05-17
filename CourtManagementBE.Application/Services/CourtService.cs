@@ -10,25 +10,30 @@ namespace CourtManagementBE.Application.Services;
 
 public class CourtService : BaseService, ICourtService
 {
-    public CourtService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper) { }
+    public CourtService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
+        : base(unitOfWork, mapper, currentUser) { }
 
     public async Task<Result<PageList<CourtResponse>>> GetAll(QueryResource query)
     {
+        var workingFacilityId = WorkingFacilityId;
         var page = await _unitOfWork.ICourtRepository.FindAll(
-            _ => true,
+            x => workingFacilityId == null || x.FacilityID == workingFacilityId,
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Courts, CourtResponse>(page));
     }
 
     public async Task<Result<List<CourtResponse>>> GetByFacility(int facilityId)
     {
+        if (!CanAccessFacility(facilityId)) return Unauthorized<List<CourtResponse>>("Bạn không có quyền truy cập cơ sở này.");
         var list = await _unitOfWork.ICourtRepository.FindList(x => x.FacilityID == facilityId);
         return Success(_mapper.Map<List<CourtResponse>>(list));
     }
 
     public async Task<Result<List<CourtResponse>>> GetByStatus(int statusId)
     {
-        var list = await _unitOfWork.ICourtRepository.FindList(x => x.StatusID == statusId);
+        var workingFacilityId = WorkingFacilityId;
+        var list = await _unitOfWork.ICourtRepository.FindList(
+            x => x.StatusID == statusId && (workingFacilityId == null || x.FacilityID == workingFacilityId));
         return Success(_mapper.Map<List<CourtResponse>>(list));
     }
 
@@ -36,11 +41,16 @@ public class CourtService : BaseService, ICourtService
     {
         var entity = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == id);
         if (entity is null) return NotFound<CourtResponse>("Không tìm thấy sân.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<CourtResponse>("Bạn không có quyền truy cập sân này.");
         return Success(_mapper.Map<CourtResponse>(entity));
     }
 
     public async Task<Result<CourtResponse>> Create(CreateCourtRequest request)
     {
+        var facilityId = WorkingFacilityId ?? request.FacilityID;
+        if (!CanAccessFacility(facilityId)) return Unauthorized<CourtResponse>("Bạn không có quyền tạo sân cho cơ sở này.");
+
+        request.FacilityID = facilityId;
         var entity = _mapper.Map<Courts>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
         await _unitOfWork.ICourtRepository.Add(entity);
@@ -52,6 +62,7 @@ public class CourtService : BaseService, ICourtService
     {
         var entity = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == id);
         if (entity is null) return NotFound<CourtResponse>("Không tìm thấy sân.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<CourtResponse>("Bạn không có quyền cập nhật sân này.");
         _mapper.Map(request, entity);
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         _unitOfWork.ICourtRepository.Update(entity);
@@ -63,6 +74,7 @@ public class CourtService : BaseService, ICourtService
     {
         var entity = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == id);
         if (entity is null) return NotFound<bool>("Không tìm thấy sân.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<bool>("Bạn không có quyền xóa sân này.");
         _unitOfWork.ICourtRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(true, "Xóa sân thành công.");
@@ -72,6 +84,7 @@ public class CourtService : BaseService, ICourtService
     {
         var entity = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == id);
         if (entity is null) return NotFound<bool>("Không tìm thấy sân.");
+        if (!CanAccessFacility(entity.FacilityID)) return Unauthorized<bool>("Bạn không có quyền cập nhật sân này.");
         entity.IsActive = !entity.IsActive;
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         _unitOfWork.ICourtRepository.Update(entity);

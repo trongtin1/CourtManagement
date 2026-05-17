@@ -36,7 +36,7 @@ namespace CourtManagementBE.Api
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // URL frontend Vite
+                    policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173") // URL frontend Vite
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials(); // BẮT BUỘC để gửi/nhận cookie
@@ -164,6 +164,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddHttpContextAccessor();                            // cần cho CurrentUserService
 
             builder.Services.AddScoped<IHttpContextHelper, HttpContextHelper>();
+            builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IFacilityService, FacilityService>();
@@ -188,6 +189,17 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<IServicePriceService, ServicePriceService>();
             builder.Services.AddScoped<ICourtPriceHistoryService, CourtPriceHistoryService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();
+            builder.Services.AddScoped<IBookingStatusService, BookingStatusService>();
+            builder.Services.AddScoped<IPaymentStatusService, PaymentStatusService>();
+            builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+            builder.Services.AddScoped<ICustomerTypeService, CustomerTypeService>();
+            builder.Services.AddScoped<IServiceTypeService, ServiceTypeService>();
+            builder.Services.AddScoped<IUnitService, UnitService>();
+            builder.Services.AddScoped<IAssetCategoryService, AssetCategoryService>();
+            builder.Services.AddScoped<IAssetConditionService, AssetConditionService>();
+            builder.Services.AddScoped<ICourtFeatureCategoryService, CourtFeatureCategoryService>();
+            builder.Services.AddScoped<ICancellationReasonService, CancellationReasonService>();
+            builder.Services.AddScoped<IRefundReasonService, RefundReasonService>();
 
             builder.Services.AddControllers();
 

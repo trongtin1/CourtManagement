@@ -65,6 +65,87 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Areas");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AssetCategories", b =>
+                {
+                    b.Property<int>("AssetCategoryID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssetCategoryID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("AssetCategoryID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("AssetCategories");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AssetConditions", b =>
+                {
+                    b.Property<int>("AssetConditionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssetConditionID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsUsable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("AssetConditionID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("AssetConditions");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<long>("AuditLogID")
@@ -192,6 +273,53 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("BookingSlots");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingStatuses", b =>
+                {
+                    b.Property<int>("BookingStatusID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingStatusID"));
+
+                    b.Property<bool>("CanCancel")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("BookingStatusID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("BookingStatuses");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
                 {
                     b.Property<Guid>("BookingID")
@@ -201,9 +329,15 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTime>("BookingDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("BookingStatusID")
+                        .HasColumnType("int");
+
                     b.Property<string>("CancellationReason")
                         .IsRequired()
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("CancellationReasonID")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("datetimeoffset");
@@ -250,6 +384,43 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Bookings");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CancellationReasons", b =>
+                {
+                    b.Property<int>("CancellationReasonID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CancellationReasonID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("CancellationReasonID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CancellationReasons");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtAreaMapping", b =>
                 {
                     b.Property<int>("CourtAreaMappingID")
@@ -292,9 +463,15 @@ namespace CourtManagementBE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtAssetID"));
 
+                    b.Property<int?>("AssetCategoryID")
+                        .HasColumnType("int");
+
                     b.Property<string>("AssetCode")
                         .IsRequired()
                         .HasColumnType("varchar(30)");
+
+                    b.Property<int?>("AssetConditionID")
+                        .HasColumnType("int");
 
                     b.Property<string>("AssetName")
                         .IsRequired()
@@ -351,6 +528,9 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("UnitID")
+                        .HasColumnType("int");
+
                     b.HasKey("CourtAssetID");
 
                     b.HasIndex("Category");
@@ -361,6 +541,43 @@ namespace CourtManagementBE.Migrations
                         .IsUnique();
 
                     b.ToTable("CourtAssets");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
+                {
+                    b.Property<int>("CourtFeatureCategoryID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtFeatureCategoryID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("CourtFeatureCategoryID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CourtFeatureCategories");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureMappings", b =>
@@ -403,6 +620,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("varchar(50)");
+
+                    b.Property<int?>("CourtFeatureCategoryID")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
@@ -688,6 +908,46 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Courts");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CustomerTypes", b =>
+                {
+                    b.Property<int>("CustomerTypeID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerTypeID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("CustomerTypeID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CustomerTypes");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Customers", b =>
                 {
                     b.Property<int>("CustomerID")
@@ -708,6 +968,9 @@ namespace CourtManagementBE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("varchar(20)")
                         .HasDefaultValue("normal");
+
+                    b.Property<int?>("CustomerTypeID")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -783,6 +1046,90 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Facilities");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.PaymentMethods", b =>
+                {
+                    b.Property<int>("PaymentMethodID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentMethodID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaymentMethodID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("PaymentMethods");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.PaymentStatuses", b =>
+                {
+                    b.Property<int>("PaymentStatusID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentStatusID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaymentStatusID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("PaymentStatuses");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Payments", b =>
                 {
                     b.Property<int>("PaymentID")
@@ -815,6 +1162,15 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(30)");
 
+                    b.Property<int?>("PaymentMethodID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PaymentStatusID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RefundReasonID")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("RefundedAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -833,6 +1189,43 @@ namespace CourtManagementBE.Migrations
                     b.HasIndex("TransactionID");
 
                     b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.RefundReasons", b =>
+                {
+                    b.Property<int>("RefundReasonID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RefundReasonID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("RefundReasonID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("RefundReasons");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.ServicePrice", b =>
@@ -869,6 +1262,43 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("ServicePrices");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ServiceTypes", b =>
+                {
+                    b.Property<int>("ServiceTypeID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ServiceTypeID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("ServiceTypeID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ServiceTypes");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Services", b =>
                 {
                     b.Property<int>("ServiceID")
@@ -883,6 +1313,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -912,14 +1345,21 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
+                    b.Property<int?>("ServiceTypeID")
+                        .HasColumnType("int");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("UnitID")
+                        .HasColumnType("int");
+
                     b.HasKey("ServiceID");
 
-                    b.HasIndex("ServiceCode")
-                        .IsUnique();
+                    b.HasIndex("FacilityID", "ServiceCode")
+                        .IsUnique()
+                        .HasFilter("[FacilityID] IS NOT NULL");
 
                     b.ToTable("Services");
                 });
@@ -950,6 +1390,47 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("TimeSlots");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Units", b =>
+                {
+                    b.Property<int>("UnitID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UnitID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UnitID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Units");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -962,6 +1443,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -977,10 +1461,18 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(500)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("SuperAdmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("FacilityID");
 
                     b.ToTable("Users");
                 });

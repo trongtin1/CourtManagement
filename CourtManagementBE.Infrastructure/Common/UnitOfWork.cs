@@ -44,6 +44,21 @@ public class UnitOfWork : IUnitOfWork
     public ICourtAreaMappingRepository ICourtAreaMappingRepository => new CourtAreaMappingRepository(_context);
     public ICourtUtilityRepository ICourtUtilityRepository => new CourtUtilityRepository(_context);
     public ICourtPriceHistoryRepository ICourtPriceHistoryRepository => new CourtPriceHistoryRepository(_context);
+    public IUnitRepository IUnitRepository => new UnitRepository(_context);
+    public IAssetCategoryRepository IAssetCategoryRepository => new AssetCategoryRepository(_context);
+    public IAssetConditionRepository IAssetConditionRepository => new AssetConditionRepository(_context);
+    public ICourtFeatureCategoryRepository ICourtFeatureCategoryRepository => new CourtFeatureCategoryRepository(_context);
+    public ICancellationReasonRepository ICancellationReasonRepository => new CancellationReasonRepository(_context);
+    public IRefundReasonRepository IRefundReasonRepository => new RefundReasonRepository(_context);
+    public IServiceTypeRepository IServiceTypeRepository => new ServiceTypeRepository(_context);
+    public IBookingStatusRepository IBookingStatusRepository => new BookingStatusRepository(_context);
+    public IPaymentStatusRepository IPaymentStatusRepository => new PaymentStatusRepository(_context);
+    public IPaymentMethodRepository IPaymentMethodRepository => new PaymentMethodRepository(_context);
+    public ICustomerTypeRepository ICustomerTypeRepository => new CustomerTypeRepository(_context);
+    public IGenericRepository<T> GetRepository<T>() where T : class
+    {
+        return new GenericRepository<T>(_context);
+    }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

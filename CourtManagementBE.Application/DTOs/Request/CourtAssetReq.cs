@@ -7,9 +7,12 @@ public class CreateCourtAssetRequest
     [Required] public int CourtID { get; set; }
     [Required, MaxLength(30)] public string AssetCode { get; set; } = string.Empty;
     [Required, MaxLength(200)] public string AssetName { get; set; } = string.Empty;
+    public int? AssetCategoryID { get; set; }
     [MaxLength(50)] public string Category { get; set; } = string.Empty;
     [Range(0, int.MaxValue)] public int Quantity { get; set; }
+    public int? UnitID { get; set; }
     [MaxLength(50)] public string Unit { get; set; } = string.Empty;
+    public int? AssetConditionID { get; set; }
     [MaxLength(30)] public string Condition { get; set; } = "Good";
     public DateTimeOffset? PurchaseDate { get; set; }
     [Range(0, double.MaxValue)] public decimal? PurchasePrice { get; set; }
@@ -23,9 +26,12 @@ public class UpdateCourtAssetRequest
 {
     [Required, MaxLength(30)] public string AssetCode { get; set; } = string.Empty;
     [Required, MaxLength(200)] public string AssetName { get; set; } = string.Empty;
+    public int? AssetCategoryID { get; set; }
     [MaxLength(50)] public string Category { get; set; } = string.Empty;
     [Range(0, int.MaxValue)] public int Quantity { get; set; }
+    public int? UnitID { get; set; }
     [MaxLength(50)] public string Unit { get; set; } = string.Empty;
+    public int? AssetConditionID { get; set; }
     [MaxLength(30)] public string Condition { get; set; } = "Good";
     public DateTimeOffset? PurchaseDate { get; set; }
     [Range(0, double.MaxValue)] public decimal? PurchasePrice { get; set; }

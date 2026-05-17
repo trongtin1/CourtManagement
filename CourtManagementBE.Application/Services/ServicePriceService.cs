@@ -9,16 +9,20 @@ namespace CourtManagementBE.Application.Services;
 
 public class ServicePriceService : BaseService, IServicePriceService
 {
-    public ServicePriceService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper) { }
+    public ServicePriceService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
+        : base(unitOfWork, mapper, currentUser) { }
 
     public async Task<Result<List<ServicePriceResponse>>> GetByService(int serviceId)
     {
+        if (!await CanAccessService(serviceId)) return Unauthorized<List<ServicePriceResponse>>("Bạn không có quyền truy cập dịch vụ này.");
         var list = await _unitOfWork.IServicePriceRepository.FindList(x => x.ServiceID == serviceId);
         return Success(_mapper.Map<List<ServicePriceResponse>>(list));
     }
 
     public async Task<Result<ServicePriceResponse>> GetCurrentPrice(int serviceId)
     {
+        if (!await CanAccessService(serviceId)) return Unauthorized<ServicePriceResponse>("Bạn không có quyền truy cập dịch vụ này.");
+
         var now = DateTimeOffset.UtcNow;
         var entity = await _unitOfWork.IServicePriceRepository.FindFirst(
             x => x.ServiceID == serviceId && x.EffectiveDate <= now && (x.ExpiryDate == null || x.ExpiryDate > now));
@@ -28,6 +32,8 @@ public class ServicePriceService : BaseService, IServicePriceService
 
     public async Task<Result<ServicePriceResponse>> Create(CreateServicePriceRequest request)
     {
+        if (!await CanAccessService(request.ServiceID)) return Unauthorized<ServicePriceResponse>("Bạn không có quyền tạo giá cho dịch vụ này.");
+
         var entity = _mapper.Map<ServicePrice>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
         await _unitOfWork.IServicePriceRepository.Add(entity);
@@ -39,9 +45,16 @@ public class ServicePriceService : BaseService, IServicePriceService
     {
         var entity = await _unitOfWork.IServicePriceRepository.FindFirst(x => x.ID == id);
         if (entity is null) return NotFound<ServicePriceResponse>("Không tìm thấy giá dịch vụ.");
+        if (!await CanAccessService(entity.ServiceID)) return Unauthorized<ServicePriceResponse>("Bạn không có quyền cập nhật giá dịch vụ này.");
         _mapper.Map(request, entity);
         _unitOfWork.IServicePriceRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(_mapper.Map<ServicePriceResponse>(entity));
+    }
+
+    private async Task<bool> CanAccessService(int serviceId)
+    {
+        var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == serviceId);
+        return service is not null && (service.FacilityID is null || CanAccessFacility(service.FacilityID.Value));
     }
 }

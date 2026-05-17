@@ -9,10 +9,13 @@ public class Payments
     public Guid BookingID { get; set; }           // FK → Bookings.BookingID
     public decimal Amount { get; set; }
     public decimal RefundedAmount { get; set; } = 0;
+    public int? PaymentMethodID { get; set; }
     public string PaymentMethod { get; set; } = string.Empty;  // cash | bank_transfer | qr
     public string PaymentGateway { get; set; } = string.Empty; // VNPAY | MoMo | ZaloPay | Cash
     public string TransactionID { get; set; } = string.Empty;  // mã giao dịch từ cổng TT
+    public int? PaymentStatusID { get; set; }
     public string Status { get; set; } = string.Empty;         // pending | success | failed | refunded
+    public int? RefundReasonID { get; set; }
     public string Note { get; set; } = string.Empty;
     public DateTime PaymentDate { get; set; }
     public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Layout } from 'antd'
 import Sidebar from '@/layouts/components/Sidebar'
 import HeaderBar from '@/layouts/components/HeaderBar'
+import { pageMeta } from '@/layouts/components/AppMenu'
 import React from 'react'
 
 const { Content } = Layout
@@ -10,11 +11,15 @@ const { Content } = Layout
 export const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState<boolean>(false)
   const [isMobile, setIsMobile] = useState<boolean>(false)
+  const location = useLocation()
+  const currentPath = location.pathname.split('/')[1] || 'dashboard'
+  const currentPage = pageMeta[currentPath] ?? pageMeta.dashboard
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768)
-      if (window.innerWidth <= 768) {
+      const nextIsMobile = window.innerWidth <= 768
+      setIsMobile(nextIsMobile)
+      if (nextIsMobile) {
         setCollapsed(true)
       }
     }
@@ -29,24 +34,27 @@ export const MainLayout: React.FC = () => {
   }
 
   return (
-    <Layout className="min-h-screen">
+    <Layout className="min-h-screen bg-slate-50">
       <Sidebar
         collapsed={collapsed}
         isMobile={isMobile}
         toggleCollapsed={toggleCollapsed}
       />
       <Layout
-        className={`transition-all duration-300 ${
-          collapsed ? 'ml-20' : 'ml-62.5'
-        } ${isMobile ? 'ml-0' : ''}`}
+        className="min-h-screen transition-all duration-300"
+        style={{
+          marginLeft: isMobile ? 0 : collapsed ? 80 : 250,
+        }}
       >
         <HeaderBar
           collapsed={collapsed}
           toggleCollapsed={toggleCollapsed}
           isMobile={isMobile}
+          title={currentPage.title}
+          description={currentPage.description}
         />
         <Content
-          className="m-6 p-6 bg-white rounded-lg shadow-sm"
+          className="mx-4 my-5 md:mx-6 md:my-6"
           style={{
             minHeight: 280,
           }}

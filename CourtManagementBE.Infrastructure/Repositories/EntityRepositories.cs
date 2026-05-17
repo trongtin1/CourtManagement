@@ -67,3 +67,26 @@ public class CourtUtilityRepository : GenericRepository<CourtUtilities>, ICourtU
 
 public class CourtPriceHistoryRepository : GenericRepository<CourtPriceHistory>, ICourtPriceHistoryRepository
 { public CourtPriceHistoryRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class BookingStatusRepository : GenericRepository<BookingStatuses>, IBookingStatusRepository
+{ public BookingStatusRepository(AppDbContext ctx) : base(ctx) { } }
+public class PaymentStatusRepository : GenericRepository<PaymentStatuses>, IPaymentStatusRepository
+{ public PaymentStatusRepository(AppDbContext ctx) : base(ctx) { } }
+public class PaymentMethodRepository : GenericRepository<PaymentMethods>, IPaymentMethodRepository
+{ public PaymentMethodRepository(AppDbContext ctx) : base(ctx) { } }
+public class CustomerTypeRepository : GenericRepository<CustomerTypes>, ICustomerTypeRepository
+{ public CustomerTypeRepository(AppDbContext ctx) : base(ctx) { } }
+public class ServiceTypeRepository : GenericRepository<ServiceTypes>, IServiceTypeRepository
+{ public ServiceTypeRepository(AppDbContext ctx) : base(ctx) { } }
+public class UnitRepository : GenericRepository<Units>, IUnitRepository
+{ public UnitRepository(AppDbContext ctx) : base(ctx) { } }
+public class AssetCategoryRepository : GenericRepository<AssetCategories>, IAssetCategoryRepository
+{ public AssetCategoryRepository(AppDbContext ctx) : base(ctx) { } }
+public class AssetConditionRepository : GenericRepository<AssetConditions>, IAssetConditionRepository
+{ public AssetConditionRepository(AppDbContext ctx) : base(ctx) { } }
+public class CourtFeatureCategoryRepository : GenericRepository<CourtFeatureCategories>, ICourtFeatureCategoryRepository
+{ public CourtFeatureCategoryRepository(AppDbContext ctx) : base(ctx) { } }
+public class CancellationReasonRepository : GenericRepository<CancellationReasons>, ICancellationReasonRepository
+{ public CancellationReasonRepository(AppDbContext ctx) : base(ctx) { } }
+public class RefundReasonRepository : GenericRepository<RefundReasons>, IRefundReasonRepository
+{ public RefundReasonRepository(AppDbContext ctx) : base(ctx) { } }

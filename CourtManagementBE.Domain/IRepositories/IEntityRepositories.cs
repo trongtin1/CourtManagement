@@ -24,3 +24,14 @@ public interface IServicePriceRepository : IGenericRepository<ServicePrice> { }
 public interface ICourtAreaMappingRepository : IGenericRepository<CourtAreaMapping> { }
 public interface ICourtUtilityRepository : IGenericRepository<CourtUtilities> { }
 public interface ICourtPriceHistoryRepository : IGenericRepository<CourtPriceHistory> { }
+public interface IBookingStatusRepository : IGenericRepository<BookingStatuses> { }
+public interface IPaymentStatusRepository : IGenericRepository<PaymentStatuses> { }
+public interface IPaymentMethodRepository : IGenericRepository<PaymentMethods> { }
+public interface ICustomerTypeRepository : IGenericRepository<CustomerTypes> { }
+public interface IServiceTypeRepository : IGenericRepository<ServiceTypes> { }
+public interface IUnitRepository : IGenericRepository<Units> { }
+public interface IAssetCategoryRepository : IGenericRepository<AssetCategories> { }
+public interface IAssetConditionRepository : IGenericRepository<AssetConditions> { }
+public interface ICourtFeatureCategoryRepository : IGenericRepository<CourtFeatureCategories> { }
+public interface ICancellationReasonRepository : IGenericRepository<CancellationReasons> { }
+public interface IRefundReasonRepository : IGenericRepository<RefundReasons> { }

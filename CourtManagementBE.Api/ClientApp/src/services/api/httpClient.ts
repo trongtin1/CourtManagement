@@ -19,6 +19,12 @@ httpClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`
   }
 
+  const workingFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
+
+  if (workingFacilityId && workingFacilityId !== 'all') {
+    config.headers['X-Facility-Id'] = workingFacilityId
+  }
+
   return config
 })
 

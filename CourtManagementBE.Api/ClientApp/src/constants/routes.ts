@@ -1,6 +1,7 @@
 export const ROUTES = {
   root: '/',
   login: '/login',
+  selectFacility: '/select-facility',
   dashboard: '/dashboard',
   facilities: '/facilities',
   areas: '/areas',
@@ -16,4 +17,17 @@ export const ROUTES = {
   bookings: '/bookings',
   services: '/services',
   payments: '/payments',
+  // Master Data
+  masterDataHub: '/master-data-hub',
+  bookingStatuses: '/booking-statuses',
+  paymentStatuses: '/payment-statuses',
+  paymentMethods: '/payment-methods',
+  customerTypes: '/customer-types',
+  serviceTypes: '/service-types',
+  units: '/units',
+  assetCategories: '/asset-categories',
+  assetConditions: '/asset-conditions',
+  courtFeatureCategories: '/court-feature-categories',
+  cancellationReasons: '/cancellation-reasons',
+  refundReasons: '/refund-reasons',
 } as const
