@@ -1,3 +1,5 @@
+import type { CourtFeature } from '@/features/courts/model/types'
+
 export type CourtFeatureCategory = {
   courtFeatureCategoryID: number;
   code: string;
@@ -6,6 +8,7 @@ export type CourtFeatureCategory = {
   sortOrder: number;
   isActive: boolean;
   createdDate: string;
+  courtFeatures: CourtFeature[];
 };
 export type CreateCourtFeatureCategoryRequest = {
   code: string;

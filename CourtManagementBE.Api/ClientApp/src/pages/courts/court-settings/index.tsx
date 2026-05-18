@@ -41,6 +41,7 @@ import dayjs from 'dayjs'
 
 import { ROUTES } from '@/constants/routes'
 import { CourtFeaturesSection } from './components/CourtFeaturesSection'
+import { CourtHoursSection } from './components/CourtHoursSection'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -275,7 +276,7 @@ export default function CourtSettingsPage() {
                       <CourtFeaturesSection courtId={courtId} />
                     )}
                     {s.key === 'hours' && (
-                      <HoursSection schedule={schedule} setSchedule={setSchedule} />
+                      <CourtHoursSection schedule={schedule} setSchedule={setSchedule} />
                     )}
                     {s.key === 'rules' && (
                       <RulesSection rules={rules} setRules={setRules} />
@@ -388,74 +389,7 @@ function BasicSection(props: any) {
   )
 }
 
-function HoursSection({ schedule, setSchedule }: any) {
-  const update = (i: number, patch: any) => {
-    const next = [...schedule]
-    next[i] = { ...next[i], ...patch }
-    setSchedule(next)
-  }
-  return (
-    <Card
-      title={
-        <>
-          <ClockCircleOutlined /> Giờ hoạt động
-        </>
-      }
-      style={{ borderRadius: 8 }}
-    >
-      <Space direction="vertical" style={{ width: '100%' }} size={16}>
-        {schedule.map((d: any, i: number) => (
-          <Card
-            key={d.day}
-            size="small"
-            type="inner"
-            style={{ background: d.open ? '#fff' : '#f5f5f5', borderRadius: 8 }}
-          >
-            <Row
-              align="middle"
-              justify="space-between"
-              style={{ marginBottom: d.open ? 16 : 0 }}
-            >
-              <Space>
-                <Switch checked={d.open} onChange={(b) => update(i, { open: b })} />
-                <Text strong>{d.day}</Text>
-              </Space>
-              {d.open && (
-                <Button type="link" size="small" icon={<CopyOutlined />}>
-                  Sao chép
-                </Button>
-              )}
-            </Row>
-            {d.open && (
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Mở cửa" style={{ marginBottom: 0 }}>
-                    <TimePicker
-                      value={dayjs(d.start, 'HH:mm')}
-                      format="HH:mm"
-                      onChange={(_, ts) => update(i, { start: ts })}
-                      style={{ width: '100%' }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Đóng cửa" style={{ marginBottom: 0 }}>
-                    <TimePicker
-                      value={dayjs(d.end, 'HH:mm')}
-                      format="HH:mm"
-                      onChange={(_, ts) => update(i, { end: ts })}
-                      style={{ width: '100%' }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            )}
-          </Card>
-        ))}
-      </Space>
-    </Card>
-  )
-}
+
 
 function RulesSection({ rules, setRules }: any) {
   const set = (k: string, v: any) => setRules({ ...rules, [k]: v })

@@ -14,7 +14,6 @@ import {
   CancellationReasonsPage,
   CourtAssetsPage,
   CourtFeatureCategoriesPage,
-  CourtFeatureMappingsPage,
   CourtFeaturesPage,
   CourtSettingsPage,
   CourtStatusesPage,
@@ -88,10 +87,6 @@ export const router = createBrowserRouter([
         element: withSuspense(<CourtFeaturesPage />),
       },
       {
-        path: ROUTES.courtFeatureMappings.replace('/', ''),
-        element: withSuspense(<CourtFeatureMappingsPage />),
-      },
-      {
         path: ROUTES.courtAssets.replace('/', ''),
         element: withSuspense(<CourtAssetsPage />),
       },
@@ -111,18 +106,51 @@ export const router = createBrowserRouter([
       { path: ROUTES.services.replace('/', ''), element: withSuspense(<ServicesPage />) },
       { path: ROUTES.payments.replace('/', ''), element: withSuspense(<PaymentsPage />) },
       // ── Master Data ──────────────────────────────────────────────
-      { path: ROUTES.masterDataHub.replace('/', ''), element: withSuspense(<MasterDataHubPage />) },
-      { path: ROUTES.bookingStatuses.replace('/', ''), element: withSuspense(<BookingStatusesPage />) },
-      { path: ROUTES.paymentStatuses.replace('/', ''), element: withSuspense(<PaymentStatusesPage />) },
-      { path: ROUTES.paymentMethods.replace('/', ''), element: withSuspense(<PaymentMethodsPage />) },
-      { path: ROUTES.customerTypes.replace('/', ''), element: withSuspense(<CustomerTypesPage />) },
-      { path: ROUTES.serviceTypes.replace('/', ''), element: withSuspense(<ServiceTypesPage />) },
+      {
+        path: ROUTES.masterDataHub.replace('/', ''),
+        element: withSuspense(<MasterDataHubPage />),
+      },
+      {
+        path: ROUTES.bookingStatuses.replace('/', ''),
+        element: withSuspense(<BookingStatusesPage />),
+      },
+      {
+        path: ROUTES.paymentStatuses.replace('/', ''),
+        element: withSuspense(<PaymentStatusesPage />),
+      },
+      {
+        path: ROUTES.paymentMethods.replace('/', ''),
+        element: withSuspense(<PaymentMethodsPage />),
+      },
+      {
+        path: ROUTES.customerTypes.replace('/', ''),
+        element: withSuspense(<CustomerTypesPage />),
+      },
+      {
+        path: ROUTES.serviceTypes.replace('/', ''),
+        element: withSuspense(<ServiceTypesPage />),
+      },
       { path: ROUTES.units.replace('/', ''), element: withSuspense(<UnitsPage />) },
-      { path: ROUTES.assetCategories.replace('/', ''), element: withSuspense(<AssetCategoriesPage />) },
-      { path: ROUTES.assetConditions.replace('/', ''), element: withSuspense(<AssetConditionsPage />) },
-      { path: ROUTES.courtFeatureCategories.replace('/', ''), element: withSuspense(<CourtFeatureCategoriesPage />) },
-      { path: ROUTES.cancellationReasons.replace('/', ''), element: withSuspense(<CancellationReasonsPage />) },
-      { path: ROUTES.refundReasons.replace('/', ''), element: withSuspense(<RefundReasonsPage />) },
+      {
+        path: ROUTES.assetCategories.replace('/', ''),
+        element: withSuspense(<AssetCategoriesPage />),
+      },
+      {
+        path: ROUTES.assetConditions.replace('/', ''),
+        element: withSuspense(<AssetConditionsPage />),
+      },
+      {
+        path: ROUTES.courtFeatureCategories.replace('/', ''),
+        element: withSuspense(<CourtFeatureCategoriesPage />),
+      },
+      {
+        path: ROUTES.cancellationReasons.replace('/', ''),
+        element: withSuspense(<CancellationReasonsPage />),
+      },
+      {
+        path: ROUTES.refundReasons.replace('/', ''),
+        element: withSuspense(<RefundReasonsPage />),
+      },
     ],
   },
   {

@@ -54,12 +54,6 @@ export const CourtFeaturesPage = lazy(() =>
   })),
 )
 
-export const CourtFeatureMappingsPage = lazy(() =>
-  import('@/pages/court-feature-mappings/CourtFeatureMappingsPage').then((m) => ({
-    default: m.CourtFeatureMappingsPage,
-  })),
-)
-
 export const CourtAssetsPage = lazy(() =>
   import('@/pages/court-assets/CourtAssetsPage').then((m) => ({
     default: m.CourtAssetsPage,
@@ -92,27 +86,39 @@ export const PaymentsPage = lazy(() =>
 
 // ── Master Data Pages ────────────────────────────────────────────────
 export const MasterDataHubPage = lazy(() =>
-  import('@/pages/master-data-hub/MasterDataHubPage').then((m) => ({ default: m.MasterDataHubPage })),
+  import('@/pages/master-data-hub/MasterDataHubPage').then((m) => ({
+    default: m.MasterDataHubPage,
+  })),
 )
 
 export const BookingStatusesPage = lazy(() =>
-  import('@/pages/booking-statuses/BookingStatusesPage').then((m) => ({ default: m.BookingStatusesPage })),
+  import('@/pages/booking-statuses/BookingStatusesPage').then((m) => ({
+    default: m.BookingStatusesPage,
+  })),
 )
 
 export const PaymentStatusesPage = lazy(() =>
-  import('@/pages/payment-statuses/PaymentStatusesPage').then((m) => ({ default: m.PaymentStatusesPage })),
+  import('@/pages/payment-statuses/PaymentStatusesPage').then((m) => ({
+    default: m.PaymentStatusesPage,
+  })),
 )
 
 export const PaymentMethodsPage = lazy(() =>
-  import('@/pages/payment-methods/PaymentMethodsPage').then((m) => ({ default: m.PaymentMethodsPage })),
+  import('@/pages/payment-methods/PaymentMethodsPage').then((m) => ({
+    default: m.PaymentMethodsPage,
+  })),
 )
 
 export const CustomerTypesPage = lazy(() =>
-  import('@/pages/customer-types/CustomerTypesPage').then((m) => ({ default: m.CustomerTypesPage })),
+  import('@/pages/customer-types/CustomerTypesPage').then((m) => ({
+    default: m.CustomerTypesPage,
+  })),
 )
 
 export const ServiceTypesPage = lazy(() =>
-  import('@/pages/service-types/ServiceTypesPage').then((m) => ({ default: m.ServiceTypesPage })),
+  import('@/pages/service-types/ServiceTypesPage').then((m) => ({
+    default: m.ServiceTypesPage,
+  })),
 )
 
 export const UnitsPage = lazy(() =>
@@ -120,21 +126,31 @@ export const UnitsPage = lazy(() =>
 )
 
 export const AssetCategoriesPage = lazy(() =>
-  import('@/pages/asset-categories/AssetCategoriesPage').then((m) => ({ default: m.AssetCategoriesPage })),
+  import('@/pages/asset-categories/AssetCategoriesPage').then((m) => ({
+    default: m.AssetCategoriesPage,
+  })),
 )
 
 export const AssetConditionsPage = lazy(() =>
-  import('@/pages/asset-conditions/AssetConditionsPage').then((m) => ({ default: m.AssetConditionsPage })),
+  import('@/pages/asset-conditions/AssetConditionsPage').then((m) => ({
+    default: m.AssetConditionsPage,
+  })),
 )
 
 export const CourtFeatureCategoriesPage = lazy(() =>
-  import('@/pages/court-feature-categories/CourtFeatureCategoriesPage').then((m) => ({ default: m.CourtFeatureCategoriesPage })),
+  import('@/pages/court-feature-categories/CourtFeatureCategoriesPage').then((m) => ({
+    default: m.CourtFeatureCategoriesPage,
+  })),
 )
 
 export const CancellationReasonsPage = lazy(() =>
-  import('@/pages/cancellation-reasons/CancellationReasonsPage').then((m) => ({ default: m.CancellationReasonsPage })),
+  import('@/pages/cancellation-reasons/CancellationReasonsPage').then((m) => ({
+    default: m.CancellationReasonsPage,
+  })),
 )
 
 export const RefundReasonsPage = lazy(() =>
-  import('@/pages/refund-reasons/RefundReasonsPage').then((m) => ({ default: m.RefundReasonsPage })),
+  import('@/pages/refund-reasons/RefundReasonsPage').then((m) => ({
+    default: m.RefundReasonsPage,
+  })),
 )

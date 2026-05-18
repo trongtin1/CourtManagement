@@ -1,8 +1,19 @@
 import { useMemo, useState } from 'react'
-import { App, Alert, Badge, Button, Card, Empty, Space, Spin, Tag, Typography } from 'antd'
+import {
+  App,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Empty,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+} from 'antd'
 import { AppstoreAddOutlined, CheckOutlined, ReloadOutlined } from '@ant-design/icons'
 
-import { useCourtFeaturesQuery } from '@/features/courts/api/useCourtFeatureQueries'
+import { useCourtFeatureCategoriesQuery } from '@/features/court-feature-categories/api/useCourtFeatureCategoryQueries'
 import {
   useCourtFeatureMappingsByCourtQuery,
   useCreateCourtFeatureMappingMutation,
@@ -22,38 +33,15 @@ type FeatureGroup = {
   features: CourtFeature[]
 }
 
-const getFeatureCategory = (feature: CourtFeature) =>
-  feature.courtFeatureCategory?.name?.trim() || 'Khác'
-
-const groupFeatures = (features: CourtFeature[]): FeatureGroup[] => {
-  const map = new Map<string, CourtFeature[]>()
-
-  features.forEach((feature) => {
-    const category = getFeatureCategory(feature)
-    const group = map.get(category) ?? []
-    group.push(feature)
-    map.set(category, group)
-  })
-
-  return Array.from(map.entries()).map(([category, group]) => ({
-    category,
-    features: group.sort((a, b) => a.featureName.localeCompare(b.featureName)),
-  }))
-}
-
 export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
   const { message } = App.useApp()
   const [updatingFeatureId, setUpdatingFeatureId] = useState<number | null>(null)
 
-  const featuresQuery = useCourtFeaturesQuery({ page: 1, pageSize: 200 })
+  const categoriesQuery = useCourtFeatureCategoriesQuery({ page: 1, pageSize: 200 })
   const mappingsQuery = useCourtFeatureMappingsByCourtQuery(courtId, courtId > 0)
   const createMapping = useCreateCourtFeatureMappingMutation()
   const deleteMapping = useDeleteCourtFeatureMappingMutation()
 
-  const activeFeatures = useMemo(
-    () => (featuresQuery.data?.items ?? []).filter((feature) => feature.isActive),
-    [featuresQuery.data?.items],
-  )
   const mappings = useMemo(() => mappingsQuery.data ?? [], [mappingsQuery.data])
   const mappingByFeatureId = useMemo(
     () =>
@@ -66,7 +54,19 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
     () => new Set(mappings.map((mapping) => mapping.courtFeatureID)),
     [mappings],
   )
-  const featureGroups = useMemo(() => groupFeatures(activeFeatures), [activeFeatures])
+  const featureGroups = useMemo<FeatureGroup[]>(
+    () =>
+      (categoriesQuery.data?.items ?? [])
+        .filter((category) => category.isActive)
+        .map((category) => ({
+          category: category.name?.trim() || 'Khác',
+          features: (category.courtFeatures ?? [])
+            .filter((feature) => feature.isActive)
+            .sort((a, b) => a.featureName.localeCompare(b.featureName)),
+        }))
+        .filter((group) => group.features.length > 0),
+    [categoriesQuery.data?.items],
+  )
 
   const handleToggle = async (feature: CourtFeature) => {
     if (!courtId) return
@@ -76,12 +76,18 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
       const mapping = mappingByFeatureId.get(feature.courtFeatureID)
 
       if (mapping) {
-        await deleteMapping.mutateAsync(mapping.courtFeatureMappingID)
+        await deleteMapping.mutateAsync({
+          courtId: courtId,
+          featureId: mapping.courtFeatureID,
+        })
         message.success('Đã gỡ đặc điểm khỏi sân')
       } else {
         await createMapping.mutateAsync({
-          courtID: courtId,
-          courtFeatureID: feature.courtFeatureID,
+          courtId: courtId,
+          req: {
+            courtID: courtId,
+            courtFeatureID: feature.courtFeatureID,
+          },
         })
         message.success('Đã gán đặc điểm cho sân')
       }
@@ -92,8 +98,8 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
     }
   }
 
-  const isLoading = featuresQuery.isPending || mappingsQuery.isPending
-  const isRefreshing = featuresQuery.isRefetching || mappingsQuery.isRefetching
+  const isLoading = categoriesQuery.isPending || mappingsQuery.isPending
+  const isRefreshing = categoriesQuery.isRefetching || mappingsQuery.isRefetching
 
   return (
     <Card
@@ -102,7 +108,7 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
           icon={<ReloadOutlined />}
           loading={isRefreshing}
           onClick={() => {
-            featuresQuery.refetch()
+            categoriesQuery.refetch()
             if (courtId > 0) mappingsQuery.refetch()
           }}
         >
@@ -131,10 +137,7 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
             <Paragraph style={{ marginBottom: 0 }} type="secondary">
               Chọn các đặc điểm đã khai báo trong Master Data để gán cho sân này.
             </Paragraph>
-            <Badge
-              color="blue"
-              text={`${selectedFeatureIds.size} đặc điểm đã chọn`}
-            />
+            <Badge color="blue" text={`${selectedFeatureIds.size} đặc điểm đã chọn`} />
           </div>
 
           <Spin spinning={isLoading}>

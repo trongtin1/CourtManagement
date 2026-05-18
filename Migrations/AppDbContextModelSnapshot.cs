@@ -603,6 +603,8 @@ namespace CourtManagementBE.Migrations
 
                     b.HasKey("CourtFeatureMappingID");
 
+                    b.HasIndex("CourtFeatureID");
+
                     b.HasIndex("CourtID", "CourtFeatureID")
                         .IsUnique();
 
@@ -1553,6 +1555,25 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Utilities");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureMappings", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.CourtFeatures", "CourtFeature")
+                        .WithMany("CourtFeatureMappings")
+                        .HasForeignKey("CourtFeatureID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Courts", "Court")
+                        .WithMany("CourtFeatureMappings")
+                        .HasForeignKey("CourtID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Court");
+
+                    b.Navigation("CourtFeature");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatures", b =>
                 {
                     b.HasOne("CourtManagementBE.Domain.Entities.CourtFeatureCategories", "CourtFeatureCategory")
@@ -1566,6 +1587,16 @@ namespace CourtManagementBE.Migrations
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
                 {
                     b.Navigation("CourtFeatures");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatures", b =>
+                {
+                    b.Navigation("CourtFeatureMappings");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Courts", b =>
+                {
+                    b.Navigation("CourtFeatureMappings");
                 });
 #pragma warning restore 612, 618
         }

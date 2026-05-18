@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CourtManagementBE.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/court")]
 [Authorize]
 public class CourtFeatureMappingController : ControllerBase
 {
@@ -16,24 +16,24 @@ public class CourtFeatureMappingController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("court/{courtId}")]
+    [HttpGet("{courtId}/features")]
     public async Task<IActionResult> GetByCourt(int courtId)
     {
         var r = await _service.GetByCourt(courtId);
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCourtFeatureMappingRequest req)
+    [HttpPost("{courtId}/features")]
+    public async Task<IActionResult> Create(int courtId, [FromBody] CreateCourtFeatureMappingRequest req)
     {
-        var r = await _service.Create(req);
+        var r = await _service.Create(courtId, req);
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{courtId}/feature/{featureId}")]
+    public async Task<IActionResult> Delete(int courtId, int featureId)
     {
-        var r = await _service.Delete(id);
+        var r = await _service.Delete(courtId, featureId);
         return StatusCode((int)r.StatusCode, r);
     }
 }

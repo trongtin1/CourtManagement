@@ -114,14 +114,6 @@ export const getMenuItems = (): MenuItem[] => {
           label: <Link to="/courts">{'S\u00e2n'}</Link>,
         },
         {
-          key: 'court-feature-mappings',
-          label: (
-            <Link to="/court-feature-mappings">
-              {'G\u00e1n \u0111\u1eb7c \u0111i\u1ec3m'}
-            </Link>
-          ),
-        },
-        {
           key: 'court-assets',
           icon: <PictureOutlined />,
           label: <Link to="/court-assets">{'T\u00e0i s\u1ea3n s\u00e2n'}</Link>,

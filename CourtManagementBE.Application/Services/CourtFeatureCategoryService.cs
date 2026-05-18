@@ -5,6 +5,7 @@ using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -16,13 +17,16 @@ public class CourtFeatureCategoryService : BaseService, ICourtFeatureCategorySer
     {
         var page = await _unitOfWork.ICourtFeatureCategoryRepository.FindAll(
             _ => true,
+            include: q => q.Include(x => x.CourtFeatures),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<CourtFeatureCategories, CourtFeatureCategoryResponse>(page));
     }
 
     public async Task<Result<CourtFeatureCategoryResponse>> GetById(int id)
     {
-        var entity = await _unitOfWork.ICourtFeatureCategoryRepository.FindFirst(x => x.CourtFeatureCategoryID == id);
+        var entity = await _unitOfWork.ICourtFeatureCategoryRepository.FindFirst(
+            x => x.CourtFeatureCategoryID == id,
+            include: q => q.Include(x => x.CourtFeatures));
         if (entity is null) return NotFound<CourtFeatureCategoryResponse>("Không tìm thấy loại tiện ích.");
         return Success(_mapper.Map<CourtFeatureCategoryResponse>(entity));
     }

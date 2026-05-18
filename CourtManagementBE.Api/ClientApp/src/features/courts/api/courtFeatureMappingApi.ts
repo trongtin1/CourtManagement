@@ -6,8 +6,8 @@ import type {
 
 export const courtFeatureMappingApi = {
   getByCourt: (courtId: number) =>
-    apiGet<CourtFeatureMapping[]>(`/courtfeaturemapping/court/${courtId}`),
-  create: (data: CreateCourtFeatureMappingRequest) =>
-    apiPost<CourtFeatureMapping>('/courtfeaturemapping', data),
-  delete: (id: number) => apiDelete(`/courtfeaturemapping/${id}`),
+    apiGet<CourtFeatureMapping[]>(`/court/${courtId}/features`),
+  create: (courtId: number, data: CreateCourtFeatureMappingRequest) =>
+    apiPost<CourtFeatureMapping>(`/court/${courtId}/features`, data),
+  delete: (courtId: number, featureId: number) => apiDelete(`/court/${courtId}/feature/${featureId}`),
 }

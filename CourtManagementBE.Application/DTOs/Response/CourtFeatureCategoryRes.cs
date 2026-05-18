@@ -9,5 +9,5 @@ public class CourtFeatureCategoryResponse
     public int SortOrder { get; set; }
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedDate { get; set; }
-
+    public List<CourtFeatureResponse> CourtFeatures { get; set; } = new();
 }

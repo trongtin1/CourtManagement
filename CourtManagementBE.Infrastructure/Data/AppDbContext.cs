@@ -155,6 +155,14 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.CourtFeatureMappingID);
             e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
             e.HasIndex(x => new { x.CourtID, x.CourtFeatureID }).IsUnique();
+            e.HasOne(x => x.Court)
+                .WithMany(x => x.CourtFeatureMappings)
+                .HasForeignKey(x => x.CourtID)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.CourtFeature)
+                .WithMany(x => x.CourtFeatureMappings)
+                .HasForeignKey(x => x.CourtFeatureID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CourtAssets>(e =>

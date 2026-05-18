@@ -15,4 +15,5 @@ public class CourtFeatures
     public bool IsActive { get; set; } = true;
 
     public CourtFeatureCategories? CourtFeatureCategory { get; set; }
+    public ICollection<CourtFeatureMappings> CourtFeatureMappings { get; set; } = [];
 }
