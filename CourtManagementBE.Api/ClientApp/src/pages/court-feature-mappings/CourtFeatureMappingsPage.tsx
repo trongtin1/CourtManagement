@@ -131,7 +131,7 @@ export function CourtFeatureMappingsPage() {
                   disabled={!courtId}
                   options={features.map((feature) => ({
                     disabled: selectedFeatureIds.has(feature.courtFeatureID),
-                    label: `${feature.featureCode} - ${feature.featureName} (${feature.category})`,
+                    label: `${feature.featureCode} - ${feature.featureName} (${feature.courtFeatureCategory?.name ?? 'Other'})`,
                     value: feature.courtFeatureID,
                   }))}
                   placeholder="Chon dac tinh de gan"
@@ -176,8 +176,8 @@ export function CourtFeatureMappingsPage() {
                 title: 'Nhom',
                 width: 150,
                 render: (_: unknown, record: CourtFeatureMapping) => {
-                  const category = featureById.get(record.courtFeatureID)?.category
-                  return <Tag color="purple">{category || 'Other'}</Tag>
+                  const feature = featureById.get(record.courtFeatureID)
+                  return <Tag color="purple">{feature?.courtFeatureCategory?.name || 'Other'}</Tag>
                 },
               },
               {

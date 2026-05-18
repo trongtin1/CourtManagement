@@ -43,9 +43,15 @@ const masterDataGroups = [
         icon: <ToolOutlined />,
       },
       {
-        name: 'Loại tiện ích sân',
-        desc: 'Danh mục tiện ích',
+        name: 'Nhóm đặc điểm sân',
+        desc: 'Phân nhóm đặc điểm',
         path: ROUTES.courtFeatureCategories,
+        icon: <TagsOutlined />,
+      },
+      {
+        name: 'Đặc điểm sân',
+        desc: 'Indoor, outdoor, VIP...',
+        path: ROUTES.courtFeatures,
         icon: <TagsOutlined />,
       },
     ],

@@ -6,7 +6,7 @@ public class CourtFeatureResponse
     public string FeatureCode { get; set; } = string.Empty;
     public string FeatureName { get; set; } = string.Empty;
     public int? CourtFeatureCategoryID { get; set; }
-    public string Category { get; set; } = string.Empty;
+    public CourtFeatureCategoryResponse CourtFeatureCategory { get; set; } = new();
     public string Description { get; set; } = string.Empty;
     public DateTimeOffset CreateDate { get; set; }
     public string CreatedBy { get; set; } = string.Empty;

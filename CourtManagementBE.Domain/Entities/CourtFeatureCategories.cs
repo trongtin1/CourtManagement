@@ -7,4 +7,5 @@ public class CourtFeatureCategories : MasterDataBase
     [Key]
     public int CourtFeatureCategoryID { get; set; }
 
+    public ICollection<CourtFeatures> CourtFeatures { get; set; } = [];
 }

@@ -617,10 +617,6 @@ namespace CourtManagementBE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtFeatureID"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
                     b.Property<int?>("CourtFeatureCategoryID")
                         .HasColumnType("int");
 
@@ -647,6 +643,8 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("bit");
 
                     b.HasKey("CourtFeatureID");
+
+                    b.HasIndex("CourtFeatureCategoryID");
 
                     b.HasIndex("FeatureCode")
                         .IsUnique();
@@ -1553,6 +1551,21 @@ namespace CourtManagementBE.Migrations
                         .IsUnique();
 
                     b.ToTable("Utilities");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatures", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.CourtFeatureCategories", "CourtFeatureCategory")
+                        .WithMany("CourtFeatures")
+                        .HasForeignKey("CourtFeatureCategoryID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CourtFeatureCategory");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
+                {
+                    b.Navigation("CourtFeatures");
                 });
 #pragma warning restore 612, 618
         }

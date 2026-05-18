@@ -6,6 +6,7 @@ export const ROUTES = {
   facilities: '/facilities',
   areas: '/areas',
   courts: '/courts',
+  courtSettings: '/courts/:id/settings',
   courtTypes: '/court-types',
   courtStatuses: '/court-statuses',
   courtFeatures: '/court-features',

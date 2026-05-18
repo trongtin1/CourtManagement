@@ -24,6 +24,9 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
+import { useNavigate } from 'react-router-dom'
+
+import { ROUTES } from '@/constants/routes'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'
 import {
@@ -42,6 +45,7 @@ import { toApiError } from '@/utils/errors'
 
 export function CourtsPage() {
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const [form] = Form.useForm()
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -63,12 +67,6 @@ export function CourtsPage() {
     setEditingId(null)
     form.resetFields()
     form.setFieldsValue({ isActive: true })
-    setOpen(true)
-  }
-
-  const openEdit = (record: Court) => {
-    setEditingId(record.courtID)
-    form.setFieldsValue(record)
     setOpen(true)
   }
 
@@ -213,7 +211,7 @@ export function CourtsPage() {
                 <Space>
                   <Button
                     icon={<EditOutlined />}
-                    onClick={() => openEdit(record)}
+                    onClick={() => navigate(ROUTES.courtSettings.replace(':id', String(record.courtID)))}
                     size="small"
                     type="link"
                   />

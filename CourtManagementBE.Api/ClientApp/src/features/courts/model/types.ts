@@ -1,3 +1,5 @@
+import type { CourtFeatureCategory } from '@/features/court-feature-categories/model/types'
+
 export type Court = {
   courtID: number
   facilityID: number
@@ -85,7 +87,8 @@ export type CourtFeature = {
   courtFeatureID: number
   featureCode: string
   featureName: string
-  category: string
+  courtFeatureCategoryID: number
+  courtFeatureCategory: CourtFeatureCategory
   description: string
   createDate: string
   createdBy: string
@@ -95,7 +98,7 @@ export type CourtFeature = {
 export type CreateCourtFeatureRequest = {
   featureCode: string
   featureName: string
-  category: string
+  courtFeatureCategoryID: number
   description?: string
   isActive?: boolean
 }

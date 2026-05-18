@@ -244,17 +244,26 @@ public static class AppDbSeeder
         AppDbContext db,
         CancellationToken cancellationToken)
     {
+        var categories = await db.CourtFeatureCategories
+            .ToDictionaryAsync(x => x.Code, x => x.CourtFeatureCategoryID, cancellationToken);
+
         var seed = new[]
         {
-            new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Indoor", Category = "Environment", Description = "Indoor court", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Outdoor", Category = "Environment", Description = "Outdoor court", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "VIP", FeatureName = "VIP", Category = "Property", Description = "VIP court", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Wooden Floor", Category = "Surface", Description = "Wooden floor surface", CreatedBy = AdminLogin },
-            new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Air Conditioned", Category = "Environment", Description = "Court has air conditioning", CreatedBy = AdminLogin },
+            new { Feature = new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Indoor", Description = "Indoor court", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Outdoor", Description = "Outdoor court", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "VIP", FeatureName = "VIP", Description = "VIP court", CreatedBy = AdminLogin }, CategoryCode = "Property" },
+            new { Feature = new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Wooden Floor", Description = "Wooden floor surface", CreatedBy = AdminLogin }, CategoryCode = "Surface" },
+            new { Feature = new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Air Conditioned", Description = "Court has air conditioning", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
         };
 
-        foreach (var item in seed)
+        foreach (var seedItem in seed)
         {
+            var item = seedItem.Feature;
+            if (categories.TryGetValue(seedItem.CategoryCode, out var categoryId))
+            {
+                item.CourtFeatureCategoryID = categoryId;
+            }
+
             if (!await db.CourtFeatures.AnyAsync(x => x.FeatureCode == item.FeatureCode, cancellationToken))
             {
                 db.CourtFeatures.Add(item);
@@ -262,16 +271,16 @@ public static class AppDbSeeder
             else
             {
                 var existing = await db.CourtFeatures.FirstAsync(x => x.FeatureCode == item.FeatureCode, cancellationToken);
-                if (string.IsNullOrWhiteSpace(existing.Category))
+                if (existing.CourtFeatureCategoryID is null)
                 {
-                    existing.Category = item.Category;
+                    existing.CourtFeatureCategoryID = item.CourtFeatureCategoryID;
                 }
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
 
-        var codes = seed.Select(x => x.FeatureCode).ToList();
+        var codes = seed.Select(x => x.Feature.FeatureCode).ToList();
         return await db.CourtFeatures.Where(x => codes.Contains(x.FeatureCode)).ToListAsync(cancellationToken);
     }
 

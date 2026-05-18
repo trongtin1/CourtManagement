@@ -141,10 +141,13 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.CourtFeatureID);
             e.Property(x => x.FeatureCode).HasColumnType("varchar(20)").IsRequired();
             e.Property(x => x.FeatureName).HasColumnType("nvarchar(100)").IsRequired();
-            e.Property(x => x.Category).HasColumnType("varchar(50)").IsRequired();
             e.Property(x => x.Description).HasColumnType("nvarchar(500)");
             e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
             e.HasIndex(x => x.FeatureCode).IsUnique();
+            e.HasOne(x => x.CourtFeatureCategory)
+                .WithMany(x => x.CourtFeatures)
+                .HasForeignKey(x => x.CourtFeatureCategoryID)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<CourtFeatureMappings>(e =>

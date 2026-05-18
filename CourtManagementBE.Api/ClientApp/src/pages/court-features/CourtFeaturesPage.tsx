@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   App,
   Button,
@@ -29,6 +29,7 @@ import {
   useToggleCourtFeatureMutation,
   useUpdateCourtFeatureMutation,
 } from '@/features/courts/api/useCourtFeatureQueries'
+import { useCourtFeatureCategoriesQuery } from '@/features/court-feature-categories/api/useCourtFeatureCategoryQueries'
 import type {
   CourtFeature,
   CreateCourtFeatureRequest,
@@ -47,10 +48,27 @@ export function CourtFeaturesPage() {
       ? { page: tablePagination.current, pageSize: tablePagination.pageSize }
       : undefined,
   )
+  const categoriesQuery = useCourtFeatureCategoriesQuery({ page: 1, pageSize: 200 })
   const createMut = useCreateCourtFeatureMutation()
   const updateMut = useUpdateCourtFeatureMutation()
   const deleteMut = useDeleteCourtFeatureMutation()
   const toggleMut = useToggleCourtFeatureMutation()
+
+  const categories = useMemo(
+    () => (categoriesQuery.data?.items ?? []).filter((item) => item.isActive),
+    [categoriesQuery.data?.items],
+  )
+  const categoryOptions = useMemo(
+    () =>
+      categories
+        .slice()
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+        .map((item) => ({
+          label: item.name,
+          value: item.courtFeatureCategoryID,
+        })),
+    [categories],
+  )
 
   const openCreate = () => {
     setEditingId(null)
@@ -61,7 +79,9 @@ export function CourtFeaturesPage() {
 
   const openEdit = (record: CourtFeature) => {
     setEditingId(record.courtFeatureID)
-    form.setFieldsValue(record)
+    form.setFieldsValue({
+      ...record,
+    })
     setOpen(true)
   }
 
@@ -72,7 +92,7 @@ export function CourtFeaturesPage() {
         const data: UpdateCourtFeatureRequest = {
           featureCode: values.featureCode,
           featureName: values.featureName,
-          category: values.category,
+          courtFeatureCategoryID: values.courtFeatureCategoryID,
           description: values.description,
           isActive: values.isActive,
         }
@@ -107,7 +127,9 @@ export function CourtFeaturesPage() {
     }
   }
 
-  if (query.isPending) return <LoadingSpin tip="Dang tai dac diem san..." />
+  if (query.isPending || categoriesQuery.isPending) {
+    return <LoadingSpin tip="Dang tai dac diem san..." />
+  }
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
@@ -144,9 +166,10 @@ export function CourtFeaturesPage() {
             },
             {
               title: 'Nhom',
-              dataIndex: 'category',
               width: 150,
-              render: (value: string) => <Tag color="purple">{value || 'Other'}</Tag>,
+              render: (_: unknown, record: CourtFeature) => {
+                return <Tag color="purple">{record.courtFeatureCategory?.name || 'Other'}</Tag>
+              },
             },
             { title: 'Ten dac diem', dataIndex: 'featureName', width: 220 },
             { title: 'Mo ta', dataIndex: 'description' },
@@ -226,16 +249,15 @@ export function CourtFeaturesPage() {
           </Form.Item>
           <Form.Item
             label="Nhom"
-            name="category"
+            name="courtFeatureCategoryID"
             rules={[{ required: true, message: 'Chon nhom dac diem' }]}
           >
             <Select
-              options={[
-                { label: 'Environment', value: 'Environment' },
-                { label: 'Surface', value: 'Surface' },
-                { label: 'Property', value: 'Property' },
-              ]}
-              placeholder="Environment"
+              loading={categoriesQuery.isFetching}
+              options={categoryOptions}
+              placeholder="Chon nhom dac diem"
+              showSearch
+              optionFilterProp="label"
             />
           </Form.Item>
           <Form.Item label="Mo ta" name="description">

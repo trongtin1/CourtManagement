@@ -16,6 +16,7 @@ import {
   CourtFeatureCategoriesPage,
   CourtFeatureMappingsPage,
   CourtFeaturesPage,
+  CourtSettingsPage,
   CourtStatusesPage,
   CourtTypesPage,
   CourtsPage,
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
   {
     path: ROUTES.selectFacility,
     element: <ProtectedRoute>{withSuspense(<SelectFacilityPage />)}</ProtectedRoute>,
+  },
+  {
+    path: ROUTES.courtSettings,
+    element: <ProtectedRoute>{withSuspense(<CourtSettingsPage />)}</ProtectedRoute>,
   },
   {
     path: ROUTES.root,
