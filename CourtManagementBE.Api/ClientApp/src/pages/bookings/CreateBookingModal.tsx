@@ -28,6 +28,7 @@ import { courtPriceApi } from '@/features/courts/api/courtPriceApi'
 import { timeSlotApi } from '@/features/courts/api/timeSlotApi'
 import { useCourtsQuery } from '@/features/courts/api/useCourtQueries'
 import type { Court, TimeSlot } from '@/features/courts/model/types'
+import { formatCompactCurrency as formatCurrency, formatTime } from '@/utils/format'
 import { useServicesQuery } from '@/features/services/api/useServiceQueries'
 import type { Service } from '@/features/services/model/types'
 import { toApiError } from '@/utils/errors'
@@ -46,10 +47,6 @@ type SelectedService = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const today = new Date().toISOString().slice(0, 10)
-
-const formatCurrency = (value: number) => `${value.toLocaleString('vi-VN')}đ`
-
-const formatTime = (value: string) => value?.slice(0, 5)
 
 const getDayOfWeek = (date?: string) => {
   if (!date) return new Date().getDay()

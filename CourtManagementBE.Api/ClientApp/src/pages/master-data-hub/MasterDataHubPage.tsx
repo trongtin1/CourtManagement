@@ -43,6 +43,12 @@ const masterDataGroups = [
         icon: <ToolOutlined />,
       },
       {
+        name: 'Loai quy tac gia',
+        desc: 'Cao diem, thap diem, ngay le...',
+        path: ROUTES.priceRuleTypes,
+        icon: <DollarOutlined />,
+      },
+      {
         name: 'Nhóm đặc điểm sân',
         desc: 'Phân nhóm đặc điểm',
         path: ROUTES.courtFeatureCategories,

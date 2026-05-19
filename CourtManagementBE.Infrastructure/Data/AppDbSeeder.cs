@@ -25,7 +25,6 @@ public static class AppDbSeeder
             courtTypes,
             courtStatuses,
             cancellationToken);
-        var timeSlots = await GetOrCreateTimeSlotsAsync(db, cancellationToken);
         var services = await GetOrCreateServicesAsync(db, cancellationToken);
         var customers = await GetOrCreateCustomersAsync(db, cancellationToken);
 
@@ -33,9 +32,9 @@ public static class AppDbSeeder
         await SeedCourtFeatureMappingsAsync(db, courts, courtFeatures, cancellationToken);
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
         await SeedCourtAssetsAsync(db, courts, cancellationToken);
-        await SeedCourtPricesAsync(db, courts, timeSlots, cancellationToken);
+        await SeedCourtPricesAsync(db, courts, cancellationToken);
         await SeedServicePricesAsync(db, services, cancellationToken);
-        await SeedBookingsAsync(db, courts, timeSlots, services, customers, cancellationToken);
+        await SeedBookingsAsync(db, courts, services, customers, cancellationToken);
     }
 
     private static async Task SeedAdminAsync(AppDbContext db, CancellationToken cancellationToken)
@@ -130,6 +129,14 @@ public static class AppDbSeeder
             new ServiceTypes { Code = "drink", Name = "Drink", SortOrder = 1 },
             new ServiceTypes { Code = "rental", Name = "Rental", SortOrder = 2 },
             new ServiceTypes { Code = "equipment", Name = "Equipment", SortOrder = 3 },
+        ], cancellationToken);
+
+        await SeedMasterAsync(db.PriceRuleTypes, [
+            new PriceRuleTypes { Code = "normal", Name = "Bình thường", ColorCode = "#0ea5e9", SortOrder = 1 },
+            new PriceRuleTypes { Code = "off_peak", Name = "Giờ thấp điểm", ColorCode = "#22c55e", SortOrder = 2 },
+            new PriceRuleTypes { Code = "peak", Name = "Giờ cao điểm", ColorCode = "#f97316", SortOrder = 3 },
+            new PriceRuleTypes { Code = "golden", Name = "Giờ vàng", ColorCode = "#eab308", SortOrder = 4 },
+            new PriceRuleTypes { Code = "weekend", Name = "Cuối tuần", ColorCode = "#8b5cf6", SortOrder = 5 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.Units, [
@@ -363,32 +370,6 @@ public static class AppDbSeeder
         return await db.Courts.Where(x => x.FacilityID == facilityId).ToListAsync(cancellationToken);
     }
 
-    private static async Task<List<TimeSlots>> GetOrCreateTimeSlotsAsync(
-        AppDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var seed = new[]
-        {
-            new TimeSlots { SlotName = "06:00 - 08:00", StartTime = new TimeSpan(6, 0, 0), EndTime = new TimeSpan(8, 0, 0), IsActive = true },
-            new TimeSlots { SlotName = "08:00 - 10:00", StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(10, 0, 0), IsActive = true },
-            new TimeSlots { SlotName = "16:00 - 18:00", StartTime = new TimeSpan(16, 0, 0), EndTime = new TimeSpan(18, 0, 0), IsActive = true },
-            new TimeSlots { SlotName = "18:00 - 20:00", StartTime = new TimeSpan(18, 0, 0), EndTime = new TimeSpan(20, 0, 0), IsActive = true },
-        };
-
-        foreach (var item in seed)
-        {
-            if (!await db.TimeSlots.AnyAsync(
-                x => x.StartTime == item.StartTime && x.EndTime == item.EndTime,
-                cancellationToken))
-            {
-                db.TimeSlots.Add(item);
-            }
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-        return await db.TimeSlots.ToListAsync(cancellationToken);
-    }
-
     private static async Task<List<Services>> GetOrCreateServicesAsync(
         AppDbContext db,
         CancellationToken cancellationToken)
@@ -584,54 +565,96 @@ public static class AppDbSeeder
     private static async Task SeedCourtPricesAsync(
         AppDbContext db,
         List<Courts> courts,
-        List<TimeSlots> timeSlots,
         CancellationToken cancellationToken)
     {
+        var normalType = await db.PriceRuleTypes.FirstOrDefaultAsync(x => x.Code == "normal", cancellationToken);
+        var peakType = await db.PriceRuleTypes.FirstOrDefaultAsync(x => x.Code == "peak", cancellationToken);
+        var weekendType = await db.PriceRuleTypes.FirstOrDefaultAsync(x => x.Code == "weekend", cancellationToken);
+
         foreach (var court in courts)
         {
-            foreach (var slot in timeSlots)
+            for (var dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++)
             {
-                for (var dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++)
+                var isWeekend = dayOfWeek is 0 or 6;
+                var seed = new[]
                 {
-                    if (await db.CourtPriceByTimeSlots.AnyAsync(
-                        x => x.CourtID == court.CourtID
-                            && x.TimeSlotID == slot.TimeSlotID
-                            && x.DayOfWeek == dayOfWeek,
+                    new CourtPriceRule
+                    {
+                        CourtID = court.CourtID,
+                        PriceRuleTypeID = isWeekend ? weekendType?.PriceRuleTypeID : normalType?.PriceRuleTypeID,
+                        DayOfWeek = dayOfWeek,
+                        StartTime = new TimeSpan(6, 0, 0),
+                        EndTime = new TimeSpan(16, 0, 0),
+                        Price = 100_000m + (isWeekend ? 30_000m : 0m),
+                        IsActive = true,
+                        CreatedBy = AdminLogin,
+                    },
+                    new CourtPriceRule
+                    {
+                        CourtID = court.CourtID,
+                        PriceRuleTypeID = peakType?.PriceRuleTypeID,
+                        DayOfWeek = dayOfWeek,
+                        StartTime = new TimeSpan(16, 0, 0),
+                        EndTime = new TimeSpan(22, 0, 0),
+                        Price = 140_000m + (isWeekend ? 30_000m : 0m),
+                        IsActive = true,
+                        CreatedBy = AdminLogin,
+                    },
+                };
+
+                foreach (var item in seed)
+                {
+                    if (!await db.CourtDefaultPriceRules.AnyAsync(
+                        x => x.DayOfWeek == item.DayOfWeek
+                            && x.StartTime == item.StartTime
+                            && x.EndTime == item.EndTime,
+                        cancellationToken))
+                    {
+                        db.CourtDefaultPriceRules.Add(new CourtDefaultPriceRule
+                        {
+                            PriceRuleTypeID = item.PriceRuleTypeID,
+                            DayOfWeek = item.DayOfWeek,
+                            StartTime = item.StartTime,
+                            EndTime = item.EndTime,
+                            Price = item.Price,
+                            IsActive = item.IsActive,
+                            CreatedBy = AdminLogin,
+                        });
+                    }
+
+                    if (await db.CourtPriceRules.AnyAsync(
+                        x => x.CourtID == item.CourtID
+                            && x.DayOfWeek == item.DayOfWeek
+                            && x.StartTime == item.StartTime
+                            && x.EndTime == item.EndTime,
                         cancellationToken))
                     {
                         continue;
                     }
 
-                    var isPrimeTime = slot.StartTime >= new TimeSpan(16, 0, 0);
-                    var isWeekend = dayOfWeek is 0 or 6;
-                    var price = 100_000m + (isPrimeTime ? 40_000m : 0m) + (isWeekend ? 30_000m : 0m);
-
-                    db.CourtPriceByTimeSlots.Add(new CourtPriceByTimeSlot
-                    {
-                        CourtID = court.CourtID,
-                        TimeSlotID = slot.TimeSlotID,
-                        DayOfWeek = dayOfWeek,
-                        Price = price,
-                        IsActive = true,
-                        CreatedBy = AdminLogin,
-                    });
+                    db.CourtPriceRules.Add(item);
                 }
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
 
-        var priceSlot = await db.CourtPriceByTimeSlots.FirstOrDefaultAsync(cancellationToken);
-        if (priceSlot is not null && !await db.CourtPriceHistories.AnyAsync(cancellationToken))
+        var priceRule = await db.CourtPriceRules.FirstOrDefaultAsync(cancellationToken);
+        if (priceRule is not null && !await db.CourtPriceRuleHistories.AnyAsync(cancellationToken))
         {
-            db.CourtPriceHistories.Add(new CourtPriceHistory
+            db.CourtPriceRuleHistories.Add(new CourtPriceRuleHistory
             {
-                CourtPriceByTimeSlotID = priceSlot.ID,
-                CourtID = priceSlot.CourtID,
-                TimeSlotID = priceSlot.TimeSlotID,
-                DayOfWeek = priceSlot.DayOfWeek,
-                OldPrice = priceSlot.Price - 10_000m,
-                NewPrice = priceSlot.Price,
+                CourtPriceRuleID = priceRule.CourtPriceRuleID,
+                CourtID = priceRule.CourtID,
+                OldPriceRuleTypeID = priceRule.PriceRuleTypeID,
+                NewPriceRuleTypeID = priceRule.PriceRuleTypeID,
+                DayOfWeek = priceRule.DayOfWeek,
+                OldStartTime = priceRule.StartTime,
+                OldEndTime = priceRule.EndTime,
+                OldPrice = priceRule.Price - 10_000m,
+                NewStartTime = priceRule.StartTime,
+                NewEndTime = priceRule.EndTime,
+                NewPrice = priceRule.Price,
                 ChangedBy = AdminLogin,
                 Reason = "Initial seed price adjustment",
             });
@@ -677,14 +700,12 @@ public static class AppDbSeeder
     private static async Task SeedBookingsAsync(
         AppDbContext db,
         List<Courts> courts,
-        List<TimeSlots> timeSlots,
         List<Services> services,
         List<Customers> customers,
         CancellationToken cancellationToken)
     {
         if (await db.Bookings.AnyAsync(cancellationToken)
             || courts.Count == 0
-            || timeSlots.Count == 0
             || services.Count == 0
             || customers.Count == 0)
         {
@@ -693,17 +714,19 @@ public static class AppDbSeeder
 
         var bookingDate = DateTime.Today.AddDays(1);
         var court = courts.OrderBy(x => x.SortOrder).First();
-        var slot = timeSlots.OrderBy(x => x.StartTime).First();
+        var startTime = new TimeSpan(6, 0, 0);
+        var endTime = new TimeSpan(8, 0, 0);
         var customer = customers.First();
         var service = services.First(x => x.ServiceCode == "WATER");
         var servicePrice = await db.ServicePrices
             .Where(x => x.ServiceID == service.ServiceID && x.ExpiryDate == null)
             .Select(x => x.Price)
             .FirstOrDefaultAsync(cancellationToken);
-        var courtPrice = await db.CourtPriceByTimeSlots
+        var courtPrice = await db.CourtPriceRules
             .Where(x => x.CourtID == court.CourtID
-                && x.TimeSlotID == slot.TimeSlotID
-                && x.DayOfWeek == (int)bookingDate.DayOfWeek)
+                && x.DayOfWeek == (int)bookingDate.DayOfWeek
+                && x.StartTime <= startTime
+                && x.EndTime >= endTime)
             .Select(x => x.Price)
             .FirstOrDefaultAsync(cancellationToken);
         var serviceQuantity = 2;
@@ -730,7 +753,8 @@ public static class AppDbSeeder
             BookingID = bookingId,
             CourtID = court.CourtID,
             BookingDate = bookingDate,
-            TimeSlotID = slot.TimeSlotID,
+            StartTime = startTime,
+            EndTime = endTime,
         });
 
         db.BookingServices.Add(new BookingServices

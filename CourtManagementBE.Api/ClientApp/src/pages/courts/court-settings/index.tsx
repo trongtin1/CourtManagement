@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import dayjs from 'dayjs'
 import {
   Affix,
-  Alert,
-  App,
   Badge,
   Button,
   Card,
@@ -13,91 +12,81 @@ import {
   Input,
   Row,
   Select,
-  Slider,
   Space,
-  Switch,
   Tabs,
-  TimePicker,
   Typography,
 } from 'antd'
 import {
   AppstoreAddOutlined,
   ArrowLeftOutlined,
-  CalendarOutlined,
   ClockCircleOutlined,
-  CopyOutlined,
-  DeleteOutlined,
-  EyeOutlined,
   InfoCircleOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-  SafetyOutlined,
-  SaveOutlined,
-  SettingOutlined,
-  ToolOutlined,
   WalletOutlined,
 } from '@ant-design/icons'
-import dayjs from 'dayjs'
+import type { FormInstance } from 'antd/es/form'
 
 import { ROUTES } from '@/constants/routes'
+import { LoadingSpin } from '@/components/common/LoadingSpin'
+import { useFacilitiesQuery } from '@/features/facilities/api/useFacilityQueries'
+import { useCourtQuery } from '@/features/courts/api/useCourtQueries'
+import { useCourtStatusesQuery } from '@/features/courts/api/useCourtStatusQueries'
+import { useCourtTypesQuery } from '@/features/courts/api/useCourtTypeQueries'
+
 import { CourtFeaturesSection } from './components/CourtFeaturesSection'
 import { CourtHoursSection } from './components/CourtHoursSection'
+import { CourtPriceSection } from './components/CourtPriceSection'
+import type { PriceBlock } from './components/CourtPriceSection'
+import { formatCompactCurrency } from '@/utils/format'
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 
-// ───────────────────────── Mock Data ─────────────────────────
+// ───────────────────────── Helpers ─────────────────────────
 
-const branchOpts = [
-  { value: 'ch-saigon-arena', label: 'Saigon Sports Arena — Q. Phú Nhuận' },
-  { value: 'ch-thao-dien', label: 'Thảo Điền Sports Center' },
-  { value: 'ch-q7', label: 'Phú Mỹ Hưng Athletic Club — Q. 7' },
-]
+const getWeekDates = () => {
+  const currentDayIndex = dayjs().day()
+  const mondayOffset = currentDayIndex === 0 ? -6 : 1 - currentDayIndex
+  const currentMonday = dayjs().add(mondayOffset, 'day')
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = currentMonday.add(i, 'day')
+    const dayName = i === 6 ? 'Chủ nhật' : `Thứ ${i + 2}`
+    return `${dayName} (${date.format('DD/MM')})`
+  })
+}
 
-const sportOpts = [
-  { value: 'badminton', label: '🏸 Cầu lông' },
-  { value: 'football', label: '⚽ Bóng đá' },
-  { value: 'tennis', label: '🎾 Tennis' },
-  { value: 'basketball', label: '🏀 Bóng rổ' },
-  { value: 'pickleball', label: '🥒 Pickleball' },
-]
-
-const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
-
-const fmtVND = (n: number) => new Intl.NumberFormat('vi-VN').format(n) + '₫'
+const days = getWeekDates()
 
 const sections = [
   { key: 'basic', label: 'Thông tin cơ bản', icon: <InfoCircleOutlined /> },
   { key: 'features', label: 'Tiện ích sân', icon: <AppstoreAddOutlined /> },
   { key: 'hours', label: 'Giờ hoạt động', icon: <ClockCircleOutlined /> },
-  { key: 'rules', label: 'Quy tắc đặt sân', icon: <SafetyOutlined /> },
   { key: 'pricing', label: 'Cấu hình giá', icon: <WalletOutlined /> },
-  { key: 'availability', label: 'Lịch khả dụng', icon: <CalendarOutlined /> },
-  { key: 'maintenance', label: 'Bảo trì', icon: <ToolOutlined /> },
-  { key: 'display', label: 'Hiển thị', icon: <EyeOutlined /> },
-  { key: 'advanced', label: 'Nâng cao', icon: <SettingOutlined /> },
 ]
+
+type BasicFormValues = {
+  courtName: string
+  facilityID?: number
+  courtTypeID?: number
+  courtCode: string
+  description?: string
+  statusID?: number
+  isActive: boolean
+}
 
 // ───────────────────────── Page Component ─────────────────────────
 
 export default function CourtSettingsPage() {
-  const { message } = App.useApp()
   const navigate = useNavigate()
   const { id } = useParams()
+  const [form] = Form.useForm<BasicFormValues>()
   const courtId = Number(id) || 0
   const [active, setActive] = useState('basic')
-  const [dirty, setDirty] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const courtQuery = useCourtQuery(courtId)
 
-  // -- State (Mock Data) --
-  // basic
-  const [name, setName] = useState('Sân Cầu Lông A1')
-  const [branch, setBranch] = useState('ch-saigon-arena')
-  const [sport, setSport] = useState('badminton')
-  const [code, setCode] = useState('BD-A1')
-  const [desc, setDesc] = useState(
-    'Sân tiêu chuẩn BWF, mặt sàn PVC chống trơn, đèn LED 1200 lux.',
-  )
-  const [status, setStatus] = useState('active')
+  const facilitiesQuery = useFacilitiesQuery()
+  const courtTypesQuery = useCourtTypesQuery()
+  const courtStatusesQuery = useCourtStatusesQuery()
+
+  const [previewValues, setPreviewValues] = useState<Partial<BasicFormValues>>({})
 
   // features
   const [env] = useState<string[]>(['indoor', 'air'])
@@ -117,85 +106,39 @@ export default function CourtSettingsPage() {
     })),
   )
 
-  // rules
-  const [rules, setRules] = useState({
-    minDur: 60,
-    maxDur: 180,
-    step: 30,
-    advanceDays: 14,
-    cancelHours: 4,
-    deposit: true,
-    depositPct: 30,
-    autoCancel: true,
-    checkin: false,
-    recurring: true,
-  })
-
   // pricing
-  const [pricingRules, setPricingRules] = useState([
-    {
-      id: 1,
-      label: 'Giờ thấp điểm',
-      from: '06:00',
-      to: '16:00',
-      price: 120000,
-      peak: false,
-      days: ['T2', 'T3', 'T4', 'T5', 'T6'],
-      priority: 2,
-    },
-    {
-      id: 2,
-      label: 'Giờ vàng',
-      from: '17:00',
-      to: '22:00',
-      price: 220000,
-      peak: true,
-      days: ['T2', 'T3', 'T4', 'T5', 'T6'],
-      priority: 1,
-    },
-    {
-      id: 3,
-      label: 'Cuối tuần',
-      from: '06:00',
-      to: '22:00',
-      price: 250000,
-      peak: true,
-      days: ['T7', 'CN'],
-      priority: 1,
-    },
+  const [pricingRules, setPricingRules] = useState<PriceBlock[]>([
+    { id: 'b1', day: 0, start: 60, end: 180, price: 120000, label: 'Giờ thấp điểm' },
+    { id: 'b2', day: 0, start: 360, end: 480, price: 180000, label: 'Giờ cao điểm' },
+    { id: 'b3', day: 2, start: 120, end: 240, price: 150000, label: '' },
+    { id: 'b4', day: 4, start: 300, end: 420, price: 200000, label: 'Giờ vàng' },
+    { id: 'b5', day: 5, start: 60, end: 300, price: 160000, label: '' },
+    { id: 'b6', day: 6, start: 180, end: 360, price: 130000, label: 'Cuối tuần' },
   ])
 
-  // display
-  const [display, setDisplay] = useState({
-    public: true,
-    highlight: true,
-    showPrice: true,
-    showSlots: true,
-    showReviews: true,
-    featured: true,
-    customName: 'Sân A1 — VIP cầu lông',
-    order: 1,
-  })
+  const court = courtQuery.data
+  const facilities = facilitiesQuery.data?.items ?? []
+  const courtTypes = courtTypesQuery.data?.items ?? []
+  const courtStatuses = courtStatusesQuery.data?.items ?? []
 
-  // advanced
-  const [advanced, setAdvanced] = useState({
-    memberPricing: true,
-    dailyLimit: 3,
-    staffApproval: false,
-    autoAssign: true,
-    buffer: 10,
-  })
-
-  const markDirty = () => setDirty(true)
-
-  const handleSave = () => {
-    setSaving(true)
-    setTimeout(() => {
-      setSaving(false)
-      setDirty(false)
-      message.success('Đã lưu cấu hình thành công')
-    }, 1000)
+  const initialValues: BasicFormValues = {
+    courtName: court?.courtName ?? '',
+    facilityID: court?.facilityID,
+    courtTypeID: court?.courtTypeID,
+    courtCode: court?.courtCode ?? '',
+    description: court?.description ?? '',
+    statusID: court?.statusID,
+    isActive: court?.isActive ?? true,
   }
+  const currentValues = { ...initialValues, ...previewValues }
+  const selectedFacility = facilities.find(
+    (facility) => facility.facilityID === currentValues.facilityID,
+  )
+  const selectedStatus = courtStatuses.find(
+    (item) => item.statusID === currentValues.statusID,
+  )
+
+  if (courtQuery.isPending) return <LoadingSpin tip="Đang tải thông tin sân..." />
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: 24 }}>
@@ -218,31 +161,10 @@ export default function CourtSettingsPage() {
               </Text>
             </div>
           </Space>
-          <Space>
-            {dirty && (
-              <Badge
-                color="orange"
-                text="Có thay đổi chưa lưu"
-                style={{ marginRight: 16 }}
-              />
-            )}
-            <Button icon={<CopyOutlined />}>Sao chép</Button>
-            <Button icon={<ReloadOutlined />} onClick={() => setDirty(false)}>
-              Đặt lại
-            </Button>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              loading={saving}
-              onClick={handleSave}
-            >
-              Lưu cấu hình
-            </Button>
-          </Space>
         </div>
 
         <Row gutter={24}>
-          <Col span={18}>
+          <Col span={active === 'pricing' ? 24 : 18}>
             <Tabs
               activeKey={active}
               onChange={setActive}
@@ -255,42 +177,29 @@ export default function CourtSettingsPage() {
                   </Space>
                 ),
                 children: (
-                  <div onChange={markDirty} style={{ paddingBottom: 24 }}>
+                  <div style={{ paddingBottom: 24 }}>
                     {s.key === 'basic' && (
                       <BasicSection
-                        name={name}
-                        setName={setName}
-                        branch={branch}
-                        setBranch={setBranch}
-                        sport={sport}
-                        setSport={setSport}
-                        code={code}
-                        setCode={setCode}
-                        desc={desc}
-                        setDesc={setDesc}
-                        status={status}
-                        setStatus={setStatus}
+                        form={form}
+                        initialValues={initialValues}
+                        facilities={facilities}
+                        courtTypes={courtTypes}
+                        courtStatuses={courtStatuses}
+                        onValuesChange={(_changed, values) => {
+                          setPreviewValues(values)
+                        }}
                       />
                     )}
-                    {s.key === 'features' && (
-                      <CourtFeaturesSection courtId={courtId} />
-                    )}
+                    {s.key === 'features' && <CourtFeaturesSection courtId={courtId} />}
                     {s.key === 'hours' && (
                       <CourtHoursSection schedule={schedule} setSchedule={setSchedule} />
                     )}
-                    {s.key === 'rules' && (
-                      <RulesSection rules={rules} setRules={setRules} />
-                    )}
                     {s.key === 'pricing' && (
-                      <PricingSection rules={pricingRules} setRules={setPricingRules} />
-                    )}
-                    {s.key === 'availability' && <AvailabilitySection />}
-                    {s.key === 'maintenance' && <MaintenanceSection />}
-                    {s.key === 'display' && (
-                      <DisplaySection display={display} setDisplay={setDisplay} />
-                    )}
-                    {s.key === 'advanced' && (
-                      <AdvancedSection advanced={advanced} setAdvanced={setAdvanced} />
+                      <CourtPriceSection
+                        courtId={courtId}
+                        rules={pricingRules}
+                        setRules={setPricingRules}
+                      />
                     )}
                   </div>
                 ),
@@ -299,18 +208,22 @@ export default function CourtSettingsPage() {
           </Col>
 
           {/* Right Preview */}
-          <Col span={6}>
-            <Affix offsetTop={80}>
-              <PreviewPanel
-                name={display.customName || name}
-                sport={sport}
-                status={status}
-                features={[...env, ...surface, ...quality]}
-                schedule={schedule}
-                pricing={pricingRules}
-              />
-            </Affix>
-          </Col>
+          {active !== 'pricing' && (
+            <Col span={6}>
+              <Affix offsetTop={80}>
+                <PreviewPanel
+                  name={currentValues.courtName}
+                  sport={currentValues.courtTypeID}
+                  status={currentValues.statusID}
+                  statusText={selectedStatus?.statusName}
+                  facilityName={selectedFacility?.facilityName}
+                  features={[...env, ...surface, ...quality]}
+                  schedule={schedule}
+                  pricing={pricingRules}
+                />
+              </Affix>
+            </Col>
+          )}
         </Row>
       </Space>
     </div>
@@ -319,7 +232,19 @@ export default function CourtSettingsPage() {
 
 // ───────────────────────── Sections ─────────────────────────
 
-function BasicSection(props: any) {
+interface BasicSectionProps {
+  form: FormInstance<BasicFormValues>
+  initialValues: BasicFormValues
+  facilities: { facilityID: number; facilityName: string; address?: string }[]
+  courtTypes: { courtTypeID: number; name: string }[]
+  courtStatuses: { statusID: number; statusName: string }[]
+  onValuesChange: (
+    changedValues: Partial<BasicFormValues>,
+    values: BasicFormValues,
+  ) => void
+}
+
+function BasicSection(props: BasicSectionProps) {
   return (
     <Card
       title={
@@ -329,59 +254,79 @@ function BasicSection(props: any) {
       }
       style={{ borderRadius: 8 }}
     >
-      <Form layout="vertical">
+      <Form
+        form={props.form}
+        initialValues={props.initialValues}
+        key={props.initialValues.courtCode}
+        layout="vertical"
+        onValuesChange={props.onValuesChange}
+      >
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="Tên sân"
+              name="courtName"
               required
+              rules={[{ required: true, message: 'Vui lòng nhập tên sân' }]}
               tooltip="Tên sẽ hiển thị trên trang đặt sân."
             >
-              <Input value={props.name} onChange={(e) => props.setName(e.target.value)} />
+              <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Mã sân" required>
-              <Input
-                value={props.code}
-                onChange={(e) => props.setCode(e.target.value)}
-                placeholder="VD: BD-A1"
-              />
+            <Form.Item
+              label="Mã sân"
+              name="courtCode"
+              required
+              rules={[{ required: true, message: 'Vui lòng nhập mã sân' }]}
+            >
+              <Input placeholder="VD: BD-A1" />
             </Form.Item>
           </Col>
         </Row>
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label="Chi nhánh" required>
+            <Form.Item label="Chi nhánh" name="facilityID" required>
               <Select
-                value={props.branch}
-                onChange={props.setBranch}
-                options={branchOpts}
+                disabled
+                options={props.facilities.map((facility) => ({
+                  value: facility.facilityID,
+                  label: [facility.facilityName, facility.address]
+                    .filter(Boolean)
+                    .join(' — '),
+                }))}
               />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Môn thể thao" required>
-              <Select value={props.sport} onChange={props.setSport} options={sportOpts} />
+            <Form.Item
+              label="Môn thể thao"
+              name="courtTypeID"
+              required
+              rules={[{ required: true, message: 'Vui lòng chọn môn thể thao' }]}
+            >
+              <Select
+                options={props.courtTypes.map((type) => ({
+                  value: type.courtTypeID,
+                  label: type.name,
+                }))}
+              />
             </Form.Item>
           </Col>
         </Row>
-        <Form.Item label="Mô tả sân">
-          <Input.TextArea
-            value={props.desc}
-            onChange={(e) => props.setDesc(e.target.value)}
-            rows={3}
-          />
+        <Form.Item label="Mô tả sân" name="description">
+          <Input.TextArea rows={3} />
         </Form.Item>
-        <Form.Item label="Trạng thái sân">
+        <Form.Item
+          label="Trạng thái sân"
+          name="statusID"
+          rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
+        >
           <Select
-            value={props.status}
-            onChange={props.setStatus}
-            options={[
-              { value: 'active', label: 'Hoạt động' },
-              { value: 'paused', label: 'Tạm dừng' },
-              { value: 'closed', label: 'Đóng cửa' },
-            ]}
+            options={props.courtStatuses.map((status) => ({
+              value: status.statusID,
+              label: status.statusName,
+            }))}
           />
         </Form.Item>
       </Form>
@@ -389,357 +334,40 @@ function BasicSection(props: any) {
   )
 }
 
-
-
-function RulesSection({ rules, setRules }: any) {
-  const set = (k: string, v: any) => setRules({ ...rules, [k]: v })
-  return (
-    <Space direction="vertical" style={{ width: '100%' }} size={24}>
-      <Card
-        title={
-          <>
-            <SafetyOutlined /> Quy tắc đặt sân
-          </>
-        }
-        style={{ borderRadius: 8 }}
-      >
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item label={`Thời lượng tối thiểu (${rules.minDur} phút)`}>
-              <Slider
-                value={rules.minDur}
-                onChange={(v) => set('minDur', v)}
-                min={30}
-                max={180}
-                step={15}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label={`Thời lượng tối đa (${rules.maxDur} phút)`}>
-              <Slider
-                value={rules.maxDur}
-                onChange={(v) => set('maxDur', v)}
-                min={60}
-                max={360}
-                step={30}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Bước thời gian (phút)">
-              <Select
-                value={rules.step}
-                onChange={(v) => set('step', v)}
-                options={[
-                  { value: 15, label: '15p' },
-                  { value: 30, label: '30p' },
-                  { value: 60, label: '60p' },
-                ]}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label={`Đặt trước tối đa (${rules.advanceDays} ngày)`}>
-              <Slider
-                value={rules.advanceDays}
-                onChange={(v) => set('advanceDays', v)}
-                min={1}
-                max={60}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Card>
-      <Card style={{ borderRadius: 8 }}>
-        <Row gutter={24}>
-          <Col span={12}>
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Text>Yêu cầu đặt cọc</Text>
-                <Switch checked={rules.deposit} onChange={(v) => set('deposit', v)} />
-              </div>
-              {rules.deposit && (
-                <Form.Item
-                  label={`Tỉ lệ cọc (${rules.depositPct}%)`}
-                  style={{ marginBottom: 0 }}
-                >
-                  <Slider
-                    value={rules.depositPct}
-                    onChange={(v) => set('depositPct', v)}
-                    min={10}
-                    max={100}
-                    step={10}
-                  />
-                </Form.Item>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Text>Tự động hủy chưa thanh toán</Text>
-                <Switch
-                  checked={rules.autoCancel}
-                  onChange={(v) => set('autoCancel', v)}
-                />
-              </div>
-            </Space>
-          </Col>
-          <Col span={12}>
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Text>Yêu cầu check-in tại quầy</Text>
-                <Switch checked={rules.checkin} onChange={(v) => set('checkin', v)} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Text>Cho phép đặt lịch lặp lại</Text>
-                <Switch checked={rules.recurring} onChange={(v) => set('recurring', v)} />
-              </div>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-    </Space>
-  )
+interface ScheduleItem {
+  day: string
+  open: boolean
+  start: string
+  end: string
+  breakStart: string
+  breakEnd: string
+  hasBreak: boolean
 }
 
-function PricingSection({ rules, setRules }: any) {
-  const remove = (id: number) => setRules(rules.filter((r: any) => r.id !== id))
-  return (
-    <Card
-      title={
-        <>
-          <WalletOutlined /> Cấu hình giá
-        </>
-      }
-      style={{ borderRadius: 8 }}
-    >
-      <Space direction="vertical" style={{ width: '100%' }} size={16}>
-        {rules.map((r: any) => (
-          <Card key={r.id} type="inner" size="small" style={{ borderRadius: 8 }}>
-            <Row align="middle" gutter={16}>
-              <Col span={5}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  Tên quy tắc
-                </Text>
-                <Input value={r.label} />
-              </Col>
-              <Col span={6}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  Khung giờ
-                </Text>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <TimePicker
-                    value={dayjs(r.from, 'HH:mm')}
-                    format="HH:mm"
-                    style={{ width: '100%' }}
-                  />
-                  <TimePicker
-                    value={dayjs(r.to, 'HH:mm')}
-                    format="HH:mm"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              </Col>
-              <Col span={5}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  Giá (VNĐ)
-                </Text>
-                <Input value={r.price} type="number" />
-              </Col>
-              <Col span={6}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  Áp dụng ngày
-                </Text>
-                <Select
-                  mode="multiple"
-                  value={r.days}
-                  style={{ width: '100%' }}
-                  maxTagCount="responsive"
-                  options={['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((d) => ({
-                    value: d,
-                    label: d,
-                  }))}
-                />
-              </Col>
-              <Col span={2} style={{ textAlign: 'right' }}>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => remove(r.id)}
-                  style={{ marginTop: 20 }}
-                />
-              </Col>
-            </Row>
-          </Card>
-        ))}
-        <Button type="dashed" block icon={<PlusOutlined />}>
-          Thêm quy tắc giá
-        </Button>
-      </Space>
-    </Card>
-  )
+interface PreviewPanelProps {
+  name: string
+  sport?: number
+  status?: number
+  statusText?: string
+  facilityName?: string
+  features: string[]
+  schedule: ScheduleItem[]
+  pricing: PriceBlock[]
 }
 
-function AvailabilitySection() {
-  return (
-    <Card
-      title={
-        <>
-          <CalendarOutlined /> Lịch khả dụng
-        </>
-      }
-      style={{ borderRadius: 8 }}
-    >
-      <Paragraph type="secondary">
-        Cấu hình các ngày khóa sân hoặc khung giờ đóng cửa đột xuất.
-      </Paragraph>
-      <Alert message="Chức năng đang được tích hợp..." type="info" showIcon />
-    </Card>
-  )
-}
-
-function MaintenanceSection() {
-  return (
-    <Card
-      title={
-        <>
-          <ToolOutlined /> Bảo trì
-        </>
-      }
-      style={{ borderRadius: 8 }}
-    >
-      <Form layout="vertical">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Lý do bảo trì">
-              <Select
-                value="surface"
-                options={[{ value: 'surface', label: 'Sửa chữa mặt sân' }]}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Thông báo khách hàng">
-              <Switch defaultChecked />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
-    </Card>
-  )
-}
-
-function DisplaySection({ display, setDisplay }: any) {
-  const set = (k: string, v: any) => setDisplay({ ...display, [k]: v })
-  return (
-    <Card
-      title={
-        <>
-          <EyeOutlined /> Hiển thị
-        </>
-      }
-      style={{ borderRadius: 8 }}
-    >
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item label="Tên hiển thị">
-            <Input
-              value={display.customName}
-              onChange={(e) => set('customName', e.target.value)}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item label="Thứ tự">
-            <Input
-              type="number"
-              value={display.order}
-              onChange={(e) => set('order', Number(e.target.value))}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-      <Divider />
-      <Row gutter={[16, 16]}>
-        <Col span={12}>
-          <Switch checked={display.public} onChange={(v) => set('public', v)} /> Hiển thị
-          trang khách
-        </Col>
-        <Col span={12}>
-          <Switch checked={display.highlight} onChange={(v) => set('highlight', v)} /> Làm
-          nổi bật
-        </Col>
-        <Col span={12}>
-          <Switch checked={display.showPrice} onChange={(v) => set('showPrice', v)} />{' '}
-          Hiển thị giá
-        </Col>
-        <Col span={12}>
-          <Switch checked={display.showSlots} onChange={(v) => set('showSlots', v)} />{' '}
-          Hiển thị giờ trống
-        </Col>
-      </Row>
-    </Card>
-  )
-}
-
-function AdvancedSection({ advanced, setAdvanced }: any) {
-  const set = (k: string, v: any) => setAdvanced({ ...advanced, [k]: v })
-  return (
-    <Card
-      title={
-        <>
-          <SettingOutlined /> Nâng cao
-        </>
-      }
-      style={{ borderRadius: 8 }}
-    >
-      <Row gutter={[16, 24]}>
-        <Col span={24}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Text>Giá theo hạng thành viên</Text>
-              <Switch
-                checked={advanced.memberPricing}
-                onChange={(v) => set('memberPricing', v)}
-              />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Text>Tự động phân công nhân viên</Text>
-              <Switch
-                checked={advanced.autoAssign}
-                onChange={(v) => set('autoAssign', v)}
-              />
-            </div>
-          </Space>
-        </Col>
-        <Col span={12}>
-          <Form.Item label={`Giới hạn lượt đặt mỗi ngày (${advanced.dailyLimit})`}>
-            <Slider
-              value={advanced.dailyLimit}
-              onChange={(v) => set('dailyLimit', v)}
-              min={1}
-              max={10}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item label={`Thời gian đệm (${advanced.buffer}p)`}>
-            <Slider
-              value={advanced.buffer}
-              onChange={(v) => set('buffer', v)}
-              min={0}
-              max={60}
-              step={5}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-    </Card>
-  )
-}
-
-function PreviewPanel({ name, status, features, pricing }: any) {
-  const prices = pricing.map((p: any) => p.price)
-  const min = Math.min(...prices)
-  const max = Math.max(...prices)
+function PreviewPanel({
+  name,
+  statusText,
+  facilityName,
+  features,
+  pricing,
+}: PreviewPanelProps) {
+  const prices = pricing.map((p) => p.price)
+  const min = prices.length ? Math.min(...prices) : 0
+  const max = prices.length ? Math.max(...prices) : 0
+  const normalizedStatus = statusText?.toLowerCase() ?? ''
+  const isActiveStatus =
+    normalizedStatus.includes('hoạt động') || normalizedStatus.includes('active')
 
   return (
     <Card title="Xem trước hiển thị" style={{ borderRadius: 8, background: '#fafafa' }}>
@@ -752,14 +380,14 @@ function PreviewPanel({ name, status, features, pricing }: any) {
         }}
       >
         <Badge
-          status={status === 'active' ? 'success' : 'default'}
-          text={status === 'active' ? 'Đang hoạt động' : 'Đóng cửa'}
+          status={isActiveStatus ? 'success' : 'default'}
+          text={statusText ?? 'Chưa có trạng thái'}
         />
         <Title level={4} style={{ marginTop: 8, marginBottom: 4 }}>
           {name}
         </Title>
         <Text type="secondary" style={{ fontSize: 12 }}>
-          Saigon Sports Arena
+          {facilityName ?? 'Chưa có chi nhánh'}
         </Text>
 
         <Divider style={{ margin: '12px 0' }} />
@@ -769,7 +397,7 @@ function PreviewPanel({ name, status, features, pricing }: any) {
         >
           <Text type="secondary">Khoảng giá</Text>
           <Text strong type="success">
-            {fmtVND(min)} - {fmtVND(max)}
+            {formatCompactCurrency(min)} - {formatCompactCurrency(max)}
           </Text>
         </div>
 

@@ -179,24 +179,75 @@ export type UpdateTimeSlotRequest = {
 }
 
 export type CourtPrice = {
-  id: number
+  courtPriceRuleID: number
   courtID: number
-  timeSlotID: number
+  timeSlotID?: number
+  priceRuleTypeID?: number | null
   dayOfWeek: number
+  startTime: string
+  endTime: string
   price: number
   isActive: boolean
   createdDate: string
+  updatedDate?: string | null
 }
 
 export type CreateCourtPriceRequest = {
   courtID: number
-  timeSlotID: number
+  priceRuleTypeID?: number | null
   dayOfWeek: number
+  startTime: string
+  endTime: string
   price: number
   isActive?: boolean
 }
 
 export type UpdateCourtPriceRequest = Omit<CreateCourtPriceRequest, 'courtID'>
+
+export type PriceRuleType = {
+  priceRuleTypeID: number
+  code: string
+  name: string
+  description: string
+  sortOrder: number
+  isActive: boolean
+  createdDate: string
+  colorCode: string
+}
+
+export type CreatePriceRuleTypeRequest = {
+  code: string
+  name: string
+  description?: string
+  sortOrder?: number
+  isActive?: boolean
+  colorCode?: string
+}
+
+export type UpdatePriceRuleTypeRequest = CreatePriceRuleTypeRequest
+
+export type CourtDefaultPriceRule = {
+  courtDefaultPriceRuleID: number
+  priceRuleTypeID?: number | null
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  price: number
+  isActive: boolean
+  createdDate: string
+  updatedDate?: string | null
+}
+
+export type CreateCourtDefaultPriceRuleRequest = {
+  priceRuleTypeID?: number | null
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  price: number
+  isActive?: boolean
+}
+
+export type UpdateCourtDefaultPriceRuleRequest = CreateCourtDefaultPriceRuleRequest
 
 export type CourtAreaMapping = {
   courtAreaMappingID: number

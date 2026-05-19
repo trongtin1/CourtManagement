@@ -24,6 +24,7 @@ import {
 } from '@/features/bookings/api/useBookingQueries'
 import type { Booking } from '@/features/bookings/model/types'
 import { toApiError } from '@/utils/errors'
+import { formatCompactCurrency as formatCurrency } from '@/utils/format'
 import { CreateBookingModal } from './CreateBookingModal'
 
 const statusColors: Record<string, string> = {
@@ -32,8 +33,6 @@ const statusColors: Record<string, string> = {
   completed: 'green',
   cancelled: 'red',
 }
-
-const formatCurrency = (value: number) => `${value.toLocaleString('vi-VN')}đ`
 
 export function BookingsPage() {
   const { message } = App.useApp()

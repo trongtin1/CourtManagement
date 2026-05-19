@@ -14,17 +14,17 @@ public class CourtPriceHistoryService : BaseService, ICourtPriceHistoryService
     public async Task<Result<List<CourtPriceHistoryResponse>>> GetByCourt(int courtId)
     {
         if (!await CanAccessCourt(courtId)) return Unauthorized<List<CourtPriceHistoryResponse>>("Bạn không có quyền truy cập sân này.");
-        var list = await _unitOfWork.ICourtPriceHistoryRepository.FindList(x => x.CourtID == courtId);
+        var list = await _unitOfWork.ICourtPriceRuleHistoryRepository.FindList(x => x.CourtID == courtId);
         return Success(_mapper.Map<List<CourtPriceHistoryResponse>>(list));
     }
 
-    public async Task<Result<List<CourtPriceHistoryResponse>>> GetByPriceSlot(int courtPriceByTimeSlotId)
+    public async Task<Result<List<CourtPriceHistoryResponse>>> GetByPriceRule(int courtPriceRuleId)
     {
-        var price = await _unitOfWork.ICourtPriceRepository.FindFirst(x => x.ID == courtPriceByTimeSlotId);
+        var price = await _unitOfWork.ICourtPriceRepository.FindFirst(x => x.CourtPriceRuleID == courtPriceRuleId);
         if (price is null) return NotFound<List<CourtPriceHistoryResponse>>("Không tìm thấy giá sân.");
         if (!await CanAccessCourt(price.CourtID)) return Unauthorized<List<CourtPriceHistoryResponse>>("Bạn không có quyền truy cập lịch sử giá này.");
 
-        var list = await _unitOfWork.ICourtPriceHistoryRepository.FindList(x => x.CourtPriceByTimeSlotID == courtPriceByTimeSlotId);
+        var list = await _unitOfWork.ICourtPriceRuleHistoryRepository.FindList(x => x.CourtPriceRuleID == courtPriceRuleId);
         return Success(_mapper.Map<List<CourtPriceHistoryResponse>>(list));
     }
 }

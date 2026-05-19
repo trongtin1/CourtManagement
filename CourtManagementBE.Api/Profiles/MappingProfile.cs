@@ -48,14 +48,18 @@ public class MappingProfile : Profile
         CreateMap<UpdateUtilityRequest, Utilities>();
 
         // ── TimeSlot ─────────────────────────────────────────────────────
-        CreateMap<TimeSlots, TimeSlotResponse>();
-        CreateMap<CreateTimeSlotRequest, TimeSlots>();
-        CreateMap<UpdateTimeSlotRequest, TimeSlots>();
+        CreateMap<PriceRuleTypes, PriceRuleTypeResponse>();
+        CreateMap<CreatePriceRuleTypeRequest, PriceRuleTypes>();
+        CreateMap<UpdatePriceRuleTypeRequest, PriceRuleTypes>();
 
         // ── CourtPriceByTimeSlot ─────────────────────────────────────────
-        CreateMap<CourtPriceByTimeSlot, CourtPriceResponse>();
-        CreateMap<CreateCourtPriceRequest, CourtPriceByTimeSlot>();
-        CreateMap<UpdateCourtPriceRequest, CourtPriceByTimeSlot>();
+        CreateMap<CourtDefaultPriceRule, CourtDefaultPriceRuleResponse>();
+        CreateMap<CreateCourtDefaultPriceRuleRequest, CourtDefaultPriceRule>();
+        CreateMap<UpdateCourtDefaultPriceRuleRequest, CourtDefaultPriceRule>();
+
+        CreateMap<CourtPriceRule, CourtPriceResponse>();
+        CreateMap<CreateCourtPriceRequest, CourtPriceRule>();
+        CreateMap<UpdateCourtPriceRequest, CourtPriceRule>();
 
         // ── Customer ─────────────────────────────────────────────────────
         CreateMap<Customers, CustomerResponse>();
@@ -101,7 +105,7 @@ public class MappingProfile : Profile
         CreateMap<UpdateServicePriceRequest, ServicePrice>();
 
         // ── CourtPriceHistory (read-only) ────────────────────────────────
-        CreateMap<CourtPriceHistory, CourtPriceHistoryResponse>();
+        CreateMap<CourtPriceRuleHistory, CourtPriceHistoryResponse>();
 
         // ── Master Data ──────────────────────────────────────────────────
         CreateMap<BookingStatuses, BookingStatusResponse>();

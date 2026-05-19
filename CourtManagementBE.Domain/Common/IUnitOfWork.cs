@@ -15,7 +15,8 @@ public interface IUnitOfWork : IDisposable
     ICourtFeatureMappingRepository ICourtFeatureMappingRepository { get; }
     ICourtAssetRepository ICourtAssetRepository { get; }
     IUtilityRepository IUtilityRepository { get; }
-    ITimeSlotRepository ITimeSlotRepository { get; }
+    IPriceRuleTypeRepository IPriceRuleTypeRepository { get; }
+    ICourtDefaultPriceRuleRepository ICourtDefaultPriceRuleRepository { get; }
     ICourtPriceRepository ICourtPriceRepository { get; }
     ICustomerRepository ICustomerRepository { get; }
     IBookingRepository IBookingRepository { get; }
@@ -26,7 +27,7 @@ public interface IUnitOfWork : IDisposable
     IServicePriceRepository IServicePriceRepository { get; }
     ICourtAreaMappingRepository ICourtAreaMappingRepository { get; }
     ICourtUtilityRepository ICourtUtilityRepository { get; }
-    ICourtPriceHistoryRepository ICourtPriceHistoryRepository { get; }
+    ICourtPriceRuleHistoryRepository ICourtPriceRuleHistoryRepository { get; }
     IBookingStatusRepository IBookingStatusRepository { get; }
     IPaymentStatusRepository IPaymentStatusRepository { get; }
     IPaymentMethodRepository IPaymentMethodRepository { get; }

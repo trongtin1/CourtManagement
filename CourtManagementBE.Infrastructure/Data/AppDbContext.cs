@@ -33,9 +33,10 @@ public class AppDbContext : DbContext
     public DbSet<Utilities> Utilities => Set<Utilities>();
 
     // ── Giá sân ───────────────────────────────────────────────────────────────
-    public DbSet<TimeSlots> TimeSlots => Set<TimeSlots>();
-    public DbSet<CourtPriceByTimeSlot> CourtPriceByTimeSlots => Set<CourtPriceByTimeSlot>();
-    public DbSet<CourtPriceHistory> CourtPriceHistories => Set<CourtPriceHistory>();
+    public DbSet<PriceRuleTypes> PriceRuleTypes => Set<PriceRuleTypes>();
+    public DbSet<CourtDefaultPriceRule> CourtDefaultPriceRules => Set<CourtDefaultPriceRule>();
+    public DbSet<CourtPriceRule> CourtPriceRules => Set<CourtPriceRule>();
+    public DbSet<CourtPriceRuleHistory> CourtPriceRuleHistories => Set<CourtPriceRuleHistory>();
 
     // ── Đặt sân ───────────────────────────────────────────────────────────────
     public DbSet<Customers> Customers => Set<Customers>();
@@ -220,28 +221,48 @@ public class AppDbContext : DbContext
         });
 
         // ── TimeSlots ────────────────────────────────────────────────────────
-        modelBuilder.Entity<TimeSlots>(e =>
+        modelBuilder.Entity<PriceRuleTypes>(e =>
         {
-            e.HasKey(x => x.TimeSlotID);
-            e.Property(x => x.SlotName).HasColumnType("nvarchar(100)").IsRequired();
+            e.HasKey(x => x.PriceRuleTypeID);
+            e.Property(x => x.Code).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.Name).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.Description).HasColumnType("nvarchar(500)");
+            e.Property(x => x.ColorCode).HasColumnType("varchar(10)");
+            e.HasIndex(x => x.Code).IsUnique();
         });
 
         // ── CourtPriceByTimeSlot ─────────────────────────────────────────────
-        modelBuilder.Entity<CourtPriceByTimeSlot>(e =>
+        modelBuilder.Entity<CourtDefaultPriceRule>(e =>
         {
-            e.HasKey(x => x.ID);
+            e.HasKey(x => x.CourtDefaultPriceRuleID);
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.UpdatedBy).HasColumnType("varchar(100)");
+            e.HasIndex(x => new { x.DayOfWeek, x.StartTime, x.EndTime });
+            e.HasIndex(x => x.PriceRuleTypeID);
+        });
+
+        modelBuilder.Entity<CourtPriceRule>(e =>
+        {
+            e.HasKey(x => x.CourtPriceRuleID);
+            e.Property(x => x.Price).HasColumnType("decimal(18,2)");
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.UpdatedBy).HasColumnType("varchar(100)");
             // Unique: 1 sân + 1 slot + 1 ngày trong tuần chỉ có 1 giá
-            e.HasIndex(x => new { x.CourtID, x.TimeSlotID, x.DayOfWeek }).IsUnique();
+            e.HasIndex(x => new { x.CourtID, x.DayOfWeek, x.StartTime, x.EndTime });
+            e.HasIndex(x => x.PriceRuleTypeID);
         });
 
         // ── CourtPriceHistory ────────────────────────────────────────────────
-        modelBuilder.Entity<CourtPriceHistory>(e =>
+        modelBuilder.Entity<CourtPriceRuleHistory>(e =>
         {
-            e.HasKey(x => x.CourtPriceHistoryID);
+            e.HasKey(x => x.CourtPriceRuleHistoryID);
             e.Property(x => x.OldPrice).HasColumnType("decimal(18,2)");
             e.Property(x => x.NewPrice).HasColumnType("decimal(18,2)");
-            e.HasIndex(x => x.CourtPriceByTimeSlotID);
+            e.Property(x => x.ChangedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.Reason).HasColumnType("nvarchar(500)");
+            e.HasIndex(x => x.CourtPriceRuleID);
+            e.HasIndex(x => x.CourtID);
         });
 
         // ── Customers ────────────────────────────────────────────────────────
@@ -276,7 +297,7 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.ID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
             // Unique: 1 sân + 1 ngày + 1 slot chỉ được đặt 1 lần
-            e.HasIndex(x => new { x.CourtID, x.BookingDate, x.TimeSlotID }).IsUnique();
+            e.HasIndex(x => new { x.CourtID, x.BookingDate, x.StartTime, x.EndTime }).IsUnique();
         });
 
         // ── BookingServices ──────────────────────────────────────────────────

@@ -9,5 +9,6 @@ public class BookingSlots
     public Guid BookingID { get; set; }  // FK → Bookings.BookingID
     public int CourtID { get; set; }
     public DateTime BookingDate { get; set; }
-    public int TimeSlotID { get; set; }
+    public TimeSpan StartTime { get; set; }
+    public TimeSpan EndTime { get; set; }
 }

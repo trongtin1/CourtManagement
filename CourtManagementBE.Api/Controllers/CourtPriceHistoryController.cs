@@ -22,10 +22,10 @@ public class CourtPriceHistoryController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("price-slot/{priceSlotId}")]
-    public async Task<IActionResult> GetByPriceSlot(int priceSlotId)
+    [HttpGet("price-rule/{priceRuleId}")]
+    public async Task<IActionResult> GetByPriceRule(int priceRuleId)
     {
-        var r = await _service.GetByPriceSlot(priceSlotId);
+        var r = await _service.GetByPriceRule(priceRuleId);
         return StatusCode((int)r.StatusCode, r);
     }
 }

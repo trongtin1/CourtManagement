@@ -32,10 +32,13 @@ public class CourtAssetRepository : GenericRepository<CourtAssets>, ICourtAssetR
 public class UtilityRepository : GenericRepository<Utilities>, IUtilityRepository
 { public UtilityRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class TimeSlotRepository : GenericRepository<TimeSlots>, ITimeSlotRepository
-{ public TimeSlotRepository(AppDbContext ctx) : base(ctx) { } }
+public class PriceRuleTypeRepository : GenericRepository<PriceRuleTypes>, IPriceRuleTypeRepository
+{ public PriceRuleTypeRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class CourtPriceRepository : GenericRepository<CourtPriceByTimeSlot>, ICourtPriceRepository
+public class CourtDefaultPriceRuleRepository : GenericRepository<CourtDefaultPriceRule>, ICourtDefaultPriceRuleRepository
+{ public CourtDefaultPriceRuleRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class CourtPriceRepository : GenericRepository<CourtPriceRule>, ICourtPriceRepository
 { public CourtPriceRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class CustomerRepository : GenericRepository<Customers>, ICustomerRepository
@@ -65,8 +68,8 @@ public class CourtAreaMappingRepository : GenericRepository<CourtAreaMapping>, I
 public class CourtUtilityRepository : GenericRepository<CourtUtilities>, ICourtUtilityRepository
 { public CourtUtilityRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class CourtPriceHistoryRepository : GenericRepository<CourtPriceHistory>, ICourtPriceHistoryRepository
-{ public CourtPriceHistoryRepository(AppDbContext ctx) : base(ctx) { } }
+public class CourtPriceRuleHistoryRepository : GenericRepository<CourtPriceRuleHistory>, ICourtPriceRuleHistoryRepository
+{ public CourtPriceRuleHistoryRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class BookingStatusRepository : GenericRepository<BookingStatuses>, IBookingStatusRepository
 { public BookingStatusRepository(AppDbContext ctx) : base(ctx) { } }

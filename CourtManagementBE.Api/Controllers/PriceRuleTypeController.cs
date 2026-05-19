@@ -9,10 +9,11 @@ namespace CourtManagementBE.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class TimeSlotController : ControllerBase
+public class PriceRuleTypeController : ControllerBase
 {
-    private readonly ITimeSlotService _service;
-    public TimeSlotController(ITimeSlotService service)
+    private readonly IPriceRuleTypeService _service;
+
+    public PriceRuleTypeController(IPriceRuleTypeService service)
     {
         _service = service;
     }
@@ -32,14 +33,14 @@ public class TimeSlotController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateTimeSlotRequest req)
+    public async Task<IActionResult> Create([FromBody] CreatePriceRuleTypeRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateTimeSlotRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdatePriceRuleTypeRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

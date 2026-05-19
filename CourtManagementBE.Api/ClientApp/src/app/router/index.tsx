@@ -15,6 +15,7 @@ import {
   CourtAssetsPage,
   CourtFeatureCategoriesPage,
   CourtFeaturesPage,
+  CourtPriceSettingPage,
   CourtSettingsPage,
   CourtStatusesPage,
   CourtTypesPage,
@@ -29,6 +30,7 @@ import {
   PaymentMethodsPage,
   PaymentStatusesPage,
   PaymentsPage,
+  PriceRuleTypesPage,
   RefundReasonsPage,
   SelectFacilityPage,
   ServiceTypesPage,
@@ -74,6 +76,14 @@ export const router = createBrowserRouter([
       },
       { path: ROUTES.areas.replace('/', ''), element: withSuspense(<AreasPage />) },
       { path: ROUTES.courts.replace('/', ''), element: withSuspense(<CourtsPage />) },
+      {
+        path: ROUTES.courtPriceSetting.replace('/', ''),
+        element: withSuspense(<CourtPriceSettingPage />),
+      },
+      {
+        path: ROUTES.priceRuleTypes.replace('/', ''),
+        element: withSuspense(<PriceRuleTypesPage />),
+      },
       {
         path: ROUTES.courtTypes.replace('/', ''),
         element: withSuspense(<CourtTypesPage />),

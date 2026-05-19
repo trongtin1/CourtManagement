@@ -262,12 +262,15 @@ namespace CourtManagementBE.Migrations
                     b.Property<int>("CourtID")
                         .HasColumnType("int");
 
-                    b.Property<int>("TimeSlotID")
-                        .HasColumnType("int");
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
 
                     b.HasKey("ID");
 
-                    b.HasIndex("CourtID", "BookingDate", "TimeSlotID")
+                    b.HasIndex("CourtID", "BookingDate", "StartTime", "EndTime")
                         .IsUnique();
 
                     b.ToTable("BookingSlots");
@@ -543,6 +546,54 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("CourtAssets");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtDefaultPriceRule", b =>
+                {
+                    b.Property<int>("CourtDefaultPriceRuleID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtDefaultPriceRuleID"));
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("PriceRuleTypeID")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset?>("UpdatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("CourtDefaultPriceRuleID");
+
+                    b.HasIndex("PriceRuleTypeID");
+
+                    b.HasIndex("DayOfWeek", "StartTime", "EndTime");
+
+                    b.ToTable("CourtDefaultPriceRules");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
                 {
                     b.Property<int>("CourtFeatureCategoryID")
@@ -654,20 +705,20 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("CourtFeatures");
                 });
 
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtPriceByTimeSlot", b =>
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtPriceRule", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("CourtPriceRuleID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtPriceRuleID"));
 
                     b.Property<int>("CourtID")
                         .HasColumnType("int");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateTimeOffset>("CreatedDate")
                         .HasColumnType("datetimeoffset");
@@ -675,65 +726,95 @@ namespace CourtManagementBE.Migrations
                     b.Property<int>("DayOfWeek")
                         .HasColumnType("int");
 
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("TimeSlotID")
+                    b.Property<int?>("PriceRuleTypeID")
                         .HasColumnType("int");
 
-                    b.HasKey("ID");
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
 
-                    b.HasIndex("CourtID", "TimeSlotID", "DayOfWeek")
-                        .IsUnique();
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("varchar(100)");
 
-                    b.ToTable("CourtPriceByTimeSlots");
+                    b.Property<DateTimeOffset?>("UpdatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("CourtPriceRuleID");
+
+                    b.HasIndex("PriceRuleTypeID");
+
+                    b.HasIndex("CourtID", "DayOfWeek", "StartTime", "EndTime");
+
+                    b.ToTable("CourtPriceRules");
                 });
 
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtPriceHistory", b =>
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtPriceRuleHistory", b =>
                 {
-                    b.Property<int>("CourtPriceHistoryID")
+                    b.Property<int>("CourtPriceRuleHistoryID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtPriceHistoryID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtPriceRuleHistoryID"));
 
                     b.Property<DateTimeOffset>("ChangeDate")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ChangedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<int>("CourtID")
                         .HasColumnType("int");
 
-                    b.Property<int>("CourtPriceByTimeSlotID")
+                    b.Property<int>("CourtPriceRuleID")
                         .HasColumnType("int");
 
                     b.Property<int>("DayOfWeek")
                         .HasColumnType("int");
 
+                    b.Property<TimeSpan>("NewEndTime")
+                        .HasColumnType("time");
+
                     b.Property<decimal>("NewPrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("NewPriceRuleTypeID")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("NewStartTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("OldEndTime")
+                        .HasColumnType("time");
 
                     b.Property<decimal>("OldPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TimeSlotID")
+                    b.Property<int?>("OldPriceRuleTypeID")
                         .HasColumnType("int");
 
-                    b.HasKey("CourtPriceHistoryID");
+                    b.Property<TimeSpan>("OldStartTime")
+                        .HasColumnType("time");
 
-                    b.HasIndex("CourtPriceByTimeSlotID");
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
 
-                    b.ToTable("CourtPriceHistories");
+                    b.HasKey("CourtPriceRuleHistoryID");
+
+                    b.HasIndex("CourtID");
+
+                    b.HasIndex("CourtPriceRuleID");
+
+                    b.ToTable("CourtPriceRuleHistories");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtStatus", b =>
@@ -1191,6 +1272,47 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Payments");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.PriceRuleTypes", b =>
+                {
+                    b.Property<int>("PriceRuleTypeID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PriceRuleTypeID"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("PriceRuleTypeID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("PriceRuleTypes");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.RefundReasons", b =>
                 {
                     b.Property<int>("RefundReasonID")
@@ -1362,32 +1484,6 @@ namespace CourtManagementBE.Migrations
                         .HasFilter("[FacilityID] IS NOT NULL");
 
                     b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.TimeSlots", b =>
-                {
-                    b.Property<int>("TimeSlotID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TimeSlotID"));
-
-                    b.Property<TimeSpan>("EndTime")
-                        .HasColumnType("time");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SlotName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<TimeSpan>("StartTime")
-                        .HasColumnType("time");
-
-                    b.HasKey("TimeSlotID");
-
-                    b.ToTable("TimeSlots");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Units", b =>

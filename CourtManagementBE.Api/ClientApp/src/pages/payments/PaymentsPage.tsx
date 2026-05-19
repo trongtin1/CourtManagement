@@ -6,6 +6,7 @@ import type { TablePaginationConfig } from 'antd/es/table'
 import { LoadingSpin } from '@/components/common/LoadingSpin'
 import { usePaymentsQuery } from '@/features/payments/api/usePaymentQueries'
 import type { Payment } from '@/features/payments/model/types'
+import { formatCompactCurrency as formatCurrency } from '@/utils/format'
 
 const statusColors: Record<string, string> = {
   failed: 'volcano',
@@ -13,8 +14,6 @@ const statusColors: Record<string, string> = {
   pending: 'orange',
   refunded: 'red',
 }
-
-const formatCurrency = (value: number) => `${value.toLocaleString('vi-VN')}đ`
 
 export function PaymentsPage() {
   const [searchText, setSearchText] = useState('')

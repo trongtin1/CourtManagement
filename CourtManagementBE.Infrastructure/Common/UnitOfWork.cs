@@ -32,7 +32,8 @@ public class UnitOfWork : IUnitOfWork
     public ICourtFeatureMappingRepository ICourtFeatureMappingRepository => new CourtFeatureMappingRepository(_context);
     public ICourtAssetRepository ICourtAssetRepository => new CourtAssetRepository(_context);
     public IUtilityRepository IUtilityRepository => new UtilityRepository(_context);
-    public ITimeSlotRepository ITimeSlotRepository => new TimeSlotRepository(_context);
+    public IPriceRuleTypeRepository IPriceRuleTypeRepository => new PriceRuleTypeRepository(_context);
+    public ICourtDefaultPriceRuleRepository ICourtDefaultPriceRuleRepository => new CourtDefaultPriceRuleRepository(_context);
     public ICourtPriceRepository ICourtPriceRepository => new CourtPriceRepository(_context);
     public ICustomerRepository ICustomerRepository => new CustomerRepository(_context);
     public IBookingRepository IBookingRepository => new BookingRepository(_context);
@@ -43,7 +44,7 @@ public class UnitOfWork : IUnitOfWork
     public IServicePriceRepository IServicePriceRepository => new ServicePriceRepository(_context);
     public ICourtAreaMappingRepository ICourtAreaMappingRepository => new CourtAreaMappingRepository(_context);
     public ICourtUtilityRepository ICourtUtilityRepository => new CourtUtilityRepository(_context);
-    public ICourtPriceHistoryRepository ICourtPriceHistoryRepository => new CourtPriceHistoryRepository(_context);
+    public ICourtPriceRuleHistoryRepository ICourtPriceRuleHistoryRepository => new CourtPriceRuleHistoryRepository(_context);
     public IUnitRepository IUnitRepository => new UnitRepository(_context);
     public IAssetCategoryRepository IAssetCategoryRepository => new AssetCategoryRepository(_context);
     public IAssetConditionRepository IAssetConditionRepository => new AssetConditionRepository(_context);

@@ -61,6 +61,10 @@ export const pageMeta: Record<string, { title: string; description: string }> = 
     description:
       'Theo d\u00f5i thi\u1ebft b\u1ecb, t\u00e0i s\u1ea3n v\u00e0 b\u1ea3o tr\u00ec.',
   },
+  courtPriceSetting: {
+    title: 'Cấu hình giá sân chung',
+    description: 'Thiết lập mẫu giá mặc định theo ngày trong tuần và khung giờ.',
+  },
   bookings: {
     title: '\u0110\u1eb7t s\u00e2n',
     description: 'Theo d\u00f5i, t\u1ea1o m\u1edbi v\u00e0 x\u1eed l\u00fd booking.',
@@ -117,6 +121,11 @@ export const getMenuItems = (): MenuItem[] => {
           key: 'court-assets',
           icon: <PictureOutlined />,
           label: <Link to="/court-assets">{'T\u00e0i s\u1ea3n s\u00e2n'}</Link>,
+        },
+        {
+          key: 'court-price-setting',
+          icon: <DollarOutlined />,
+          label: <Link to="/court-price-setting">Cấu hình giá sân chung</Link>,
         },
       ],
     },

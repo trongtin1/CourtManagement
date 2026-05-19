@@ -12,8 +12,9 @@ public interface ICourtFeatureRepository : IGenericRepository<CourtFeatures> { }
 public interface ICourtFeatureMappingRepository : IGenericRepository<CourtFeatureMappings> { }
 public interface ICourtAssetRepository : IGenericRepository<CourtAssets> { }
 public interface IUtilityRepository : IGenericRepository<Utilities> { }
-public interface ITimeSlotRepository : IGenericRepository<TimeSlots> { }
-public interface ICourtPriceRepository : IGenericRepository<CourtPriceByTimeSlot> { }
+public interface IPriceRuleTypeRepository : IGenericRepository<PriceRuleTypes> { }
+public interface ICourtDefaultPriceRuleRepository : IGenericRepository<CourtDefaultPriceRule> { }
+public interface ICourtPriceRepository : IGenericRepository<CourtPriceRule> { }
 public interface ICustomerRepository : IGenericRepository<Customers> { }
 public interface IBookingRepository : IGenericRepository<Bookings> { }
 public interface IBookingSlotRepository : IGenericRepository<BookingSlots> { }
@@ -23,7 +24,7 @@ public interface IServiceRepository : IGenericRepository<Services> { }
 public interface IServicePriceRepository : IGenericRepository<ServicePrice> { }
 public interface ICourtAreaMappingRepository : IGenericRepository<CourtAreaMapping> { }
 public interface ICourtUtilityRepository : IGenericRepository<CourtUtilities> { }
-public interface ICourtPriceHistoryRepository : IGenericRepository<CourtPriceHistory> { }
+public interface ICourtPriceRuleHistoryRepository : IGenericRepository<CourtPriceRuleHistory> { }
 public interface IBookingStatusRepository : IGenericRepository<BookingStatuses> { }
 public interface IPaymentStatusRepository : IGenericRepository<PaymentStatuses> { }
 public interface IPaymentMethodRepository : IGenericRepository<PaymentMethods> { }

@@ -7,6 +7,8 @@ export const ROUTES = {
   areas: '/areas',
   courts: '/courts',
   courtSettings: '/courts/:id/settings',
+  courtPriceSetting: '/court-price-setting',
+  priceRuleTypes: '/price-rule-types',
   courtTypes: '/court-types',
   courtStatuses: '/court-statuses',
   courtFeatures: '/court-features',
