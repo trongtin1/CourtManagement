@@ -36,7 +36,6 @@ import { CourtFeaturesSection } from './components/CourtFeaturesSection'
 import { CourtHoursSection } from './components/CourtHoursSection'
 import { CourtPriceSection } from './components/CourtPriceSection'
 import type { PriceBlock } from './components/CourtPriceSection'
-import { formatCompactCurrency } from '@/utils/format'
 
 const { Title, Text } = Typography
 
@@ -106,15 +105,8 @@ export default function CourtSettingsPage() {
     })),
   )
 
-  // pricing
-  const [pricingRules, setPricingRules] = useState<PriceBlock[]>([
-    { id: 'b1', day: 0, start: 60, end: 180, price: 120000, label: 'Giờ thấp điểm' },
-    { id: 'b2', day: 0, start: 360, end: 480, price: 180000, label: 'Giờ cao điểm' },
-    { id: 'b3', day: 2, start: 120, end: 240, price: 150000, label: '' },
-    { id: 'b4', day: 4, start: 300, end: 420, price: 200000, label: 'Giờ vàng' },
-    { id: 'b5', day: 5, start: 60, end: 300, price: 160000, label: '' },
-    { id: 'b6', day: 6, start: 180, end: 360, price: 130000, label: 'Cuối tuần' },
-  ])
+  // pricing — dữ liệu thực load từ API qua CourtPriceSection
+  const [pricingRules, setPricingRules] = useState<PriceBlock[]>([])
 
   const court = courtQuery.data
   const facilities = facilitiesQuery.data?.items ?? []
@@ -229,8 +221,6 @@ export default function CourtSettingsPage() {
     </div>
   )
 }
-
-// ───────────────────────── Sections ─────────────────────────
 
 interface BasicSectionProps {
   form: FormInstance<BasicFormValues>
@@ -355,16 +345,7 @@ interface PreviewPanelProps {
   pricing: PriceBlock[]
 }
 
-function PreviewPanel({
-  name,
-  statusText,
-  facilityName,
-  features,
-  pricing,
-}: PreviewPanelProps) {
-  const prices = pricing.map((p) => p.price)
-  const min = prices.length ? Math.min(...prices) : 0
-  const max = prices.length ? Math.max(...prices) : 0
+function PreviewPanel({ name, statusText, facilityName, features }: PreviewPanelProps) {
   const normalizedStatus = statusText?.toLowerCase() ?? ''
   const isActiveStatus =
     normalizedStatus.includes('hoạt động') || normalizedStatus.includes('active')
@@ -391,15 +372,6 @@ function PreviewPanel({
         </Text>
 
         <Divider style={{ margin: '12px 0' }} />
-
-        <div
-          style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}
-        >
-          <Text type="secondary">Khoảng giá</Text>
-          <Text strong type="success">
-            {formatCompactCurrency(min)} - {formatCompactCurrency(max)}
-          </Text>
-        </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {features.slice(0, 5).map((f: string) => (
