@@ -7,8 +7,8 @@ export const courtPriceApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtPrice>>('/courtprice', params),
   getById: (id: number) => apiGet<CourtPrice>(`/courtprice/${id}`),
-  getByCourt: (courtId: number) =>
-    apiGet<CourtPrice[]>(`/courtprice/court/${courtId}`),
+  getByCourt: (courtId: number, targetDate: string) =>
+    apiGet<CourtPrice[]>(`/courtprice/court/${courtId}`, { targetDate }),
   getByCourtAndDay: (courtId: number, dayOfWeek: number) =>
     apiGet<CourtPrice[]>(`/courtprice/court/${courtId}/day/${dayOfWeek}`),
   create: (data: CreateCourtPriceRequest) =>

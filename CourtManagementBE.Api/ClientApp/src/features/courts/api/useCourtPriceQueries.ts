@@ -8,13 +8,14 @@ import type {
 export const courtPriceKeys = {
   all: ['courtPrices'] as const,
   court: (courtId: number) => [...courtPriceKeys.all, 'court', courtId] as const,
+  courtWithDate: (courtId: number, targetDate: string) => [...courtPriceKeys.court(courtId), targetDate] as const,
 }
 
-export const useCourtPricesByCourtQuery = (courtId: number) =>
+export const useCourtPricesByCourtQuery = (courtId: number, targetDate: string) =>
   useQuery({
-    enabled: courtId > 0,
-    queryKey: courtPriceKeys.court(courtId),
-    queryFn: () => courtPriceApi.getByCourt(courtId),
+    enabled: courtId > 0 && !!targetDate,
+    queryKey: courtPriceKeys.courtWithDate(courtId, targetDate),
+    queryFn: () => courtPriceApi.getByCourt(courtId, targetDate),
   })
 
 export const useCreateCourtPriceMutation = () => {

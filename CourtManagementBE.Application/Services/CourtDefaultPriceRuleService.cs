@@ -34,9 +34,9 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
         return Success(_mapper.Map<CourtDefaultPriceRuleResponse>(entity));
     }
 
-    public async Task<Result<CourtDefaultPriceRuleResponse>> Create(CreateCourtDefaultPriceRuleRequest request)
+    public async Task<Result<CourtDefaultPriceRuleResponse>> Create(CourtDefaultPriceRuleRequest request)
     {
-        var validation = await ValidateRuleWindow(request.DayOfWeek, request.StartTime, request.EndTime);
+        var validation = await ValidateRuleWindow(request);
         if (validation is not null) return validation;
 
         var entity = _mapper.Map<CourtDefaultPriceRule>(request);
@@ -47,11 +47,11 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
         return Created(_mapper.Map<CourtDefaultPriceRuleResponse>(entity));
     }
 
-    public async Task<Result<CourtDefaultPriceRuleResponse>> Update(int id, UpdateCourtDefaultPriceRuleRequest request)
+    public async Task<Result<CourtDefaultPriceRuleResponse>> Update(int id, CourtDefaultPriceRuleRequest request)
     {
         var entity = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindFirst(x => x.CourtDefaultPriceRuleID == id);
         if (entity is null) return NotFound<CourtDefaultPriceRuleResponse>("Không tìm thấy cấu hình giá mặc định.");
-        var validation = await ValidateRuleWindow(request.DayOfWeek, request.StartTime, request.EndTime, id);
+        var validation = await ValidateRuleWindow(request, id);
         if (validation is not null) return validation;
 
         _mapper.Map(request, entity);
@@ -71,23 +71,19 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
         return Success(true, "Xóa cấu hình giá mặc định thành công.");
     }
 
-    private async Task<Result<CourtDefaultPriceRuleResponse>?> ValidateRuleWindow(
-        int dayOfWeek,
-        TimeSpan startTime,
-        TimeSpan endTime,
-        int? excludeId = null)
+    private async Task<Result<CourtDefaultPriceRuleResponse>?> ValidateRuleWindow(CourtDefaultPriceRuleRequest request, int? excludeId = null)
     {
-        if (endTime <= startTime)
+        if (request.EndTime <= request.StartTime)
         {
             return BadRequest<CourtDefaultPriceRuleResponse>("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
         }
 
         var overlaps = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindList(x =>
-            x.DayOfWeek == dayOfWeek
-            && x.IsActive
+            x.DayOfWeek == request.DayOfWeek
             && (!excludeId.HasValue || x.CourtDefaultPriceRuleID != excludeId.Value)
-            && x.StartTime < endTime
-            && x.EndTime > startTime);
+            && x.PriceRuleTypeID == request.PriceRuleTypeID
+            && x.StartTime < request.EndTime
+            && x.EndTime > request.StartTime);
 
         return overlaps.Any()
             ? BadRequest<CourtDefaultPriceRuleResponse>("Khung giá mặc định bị trùng với cấu hình hiện có.")

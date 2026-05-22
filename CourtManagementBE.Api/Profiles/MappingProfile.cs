@@ -54,8 +54,7 @@ public class MappingProfile : Profile
 
         // ── CourtPriceByTimeSlot ─────────────────────────────────────────
         CreateMap<CourtDefaultPriceRule, CourtDefaultPriceRuleResponse>();
-        CreateMap<CreateCourtDefaultPriceRuleRequest, CourtDefaultPriceRule>();
-        CreateMap<UpdateCourtDefaultPriceRuleRequest, CourtDefaultPriceRule>();
+        CreateMap<CourtDefaultPriceRuleRequest, CourtDefaultPriceRule>();
 
         CreateMap<CourtPriceRule, CourtPriceResponse>();
         CreateMap<CreateCourtPriceRequest, CourtPriceRule>();

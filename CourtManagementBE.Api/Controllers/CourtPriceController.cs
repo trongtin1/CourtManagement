@@ -25,9 +25,9 @@ public class CourtPriceController : ControllerBase
     }
 
     [HttpGet("court/{courtId}")]
-    public async Task<IActionResult> GetByCourt(int courtId)
+    public async Task<IActionResult> GetByCourt(int courtId, [FromQuery] DateTime targetDate)
     {
-        var r = await _service.GetByCourt(courtId);
+        var r = await _service.GetByCourt(courtId, targetDate);
         return StatusCode((int)r.StatusCode, r);
     }
 

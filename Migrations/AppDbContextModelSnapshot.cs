@@ -561,7 +561,7 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTimeOffset>("CreatedDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("DayOfWeek")
+                    b.Property<int?>("DayOfWeek")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("EndTime")
@@ -575,6 +575,9 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<int?>("PriceRuleTypeID")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("SpecificDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
@@ -1298,6 +1301,12 @@ namespace CourtManagementBE.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsLoadDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMapping")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(200)");
@@ -1649,6 +1658,15 @@ namespace CourtManagementBE.Migrations
                         .IsUnique();
 
                     b.ToTable("Utilities");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtDefaultPriceRule", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.PriceRuleTypes", "PriceRuleType")
+                        .WithMany()
+                        .HasForeignKey("PriceRuleTypeID");
+
+                    b.Navigation("PriceRuleType");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureMappings", b =>

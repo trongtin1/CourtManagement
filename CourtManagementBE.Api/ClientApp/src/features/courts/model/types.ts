@@ -213,6 +213,8 @@ export type PriceRuleType = {
   isActive: boolean
   createdDate: string
   colorCode: string
+  isMapping: boolean
+  isLoadDefault: boolean
 }
 
 export type CreatePriceRuleTypeRequest = {
@@ -222,6 +224,8 @@ export type CreatePriceRuleTypeRequest = {
   sortOrder?: number
   isActive?: boolean
   colorCode?: string
+  isMapping?: boolean
+  isLoadDefault?: boolean
 }
 
 export type UpdatePriceRuleTypeRequest = CreatePriceRuleTypeRequest
@@ -229,7 +233,8 @@ export type UpdatePriceRuleTypeRequest = CreatePriceRuleTypeRequest
 export type CourtDefaultPriceRule = {
   courtDefaultPriceRuleID: number
   priceRuleTypeID?: number | null
-  dayOfWeek: number
+  dayOfWeek?: number | null
+  specificDate?: string | null
   startTime: string
   endTime: string
   price: number
@@ -240,7 +245,8 @@ export type CourtDefaultPriceRule = {
 
 export type CreateCourtDefaultPriceRuleRequest = {
   priceRuleTypeID?: number | null
-  dayOfWeek: number
+  dayOfWeek?: number | null
+  specificDate?: string | null
   startTime: string
   endTime: string
   price: number

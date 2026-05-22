@@ -7,7 +7,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import './court-price.css'
 import { App, Button, InputNumber, Modal, Select, Space, Typography } from 'antd'
-import { SaveOutlined, WalletOutlined } from '@ant-design/icons'
+import { SaveOutlined, WalletOutlined, WarningOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import {
@@ -271,7 +271,8 @@ const EditModal = ({
 }
 export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps) {
   const { message } = App.useApp()
-  const pricesQuery = useCourtPricesByCourtQuery(courtId)
+  const targetDateStr = useMemo(() => MONDAY.format('YYYY-MM-DD'), [])
+  const pricesQuery = useCourtPricesByCourtQuery(courtId, targetDateStr)
   const ruleTypesQuery = usePriceRuleTypesQuery({ page: 1, pageSize: 1000 })
   const createMut = useCreateCourtPriceMutation()
   const updateMut = useUpdateCourtPriceMutation()
@@ -281,6 +282,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const [deletedIds, setDeletedIds] = useState<number[]>([])
   const [editingBlock, setEditingBlock] = useState<PriceBlock | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [conflictModalOpen, setConflictModalOpen] = useState(false)
 
   const priceRuleTypes = useMemo(
     () =>
@@ -526,6 +528,13 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           </div>
         </Space>
         <div className="flex items-center gap-2">
+          <Button
+            danger
+            icon={<WarningOutlined />}
+            onClick={() => setConflictModalOpen(true)}
+          >
+            Mô phỏng Trùng Ngày
+          </Button>
           {hasDraft && (
             <span className="text-xs text-orange-500 font-medium bg-orange-50 px-2 py-1 rounded-full border border-orange-200">
               Có thay đổi chưa lưu
@@ -584,6 +593,108 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           setEditingBlock(null)
         }}
       />
+
+      {/* Conflict Resolution Simulation Modal */}
+      <Modal
+        open={conflictModalOpen}
+        onCancel={() => setConflictModalOpen(false)}
+        footer={null}
+        width={550}
+        styles={{ body: { padding: '12px 0 0 0' } }}
+        destroyOnClose
+        title={
+          <div className="flex items-center gap-2 text-amber-500 font-bold text-lg">
+            <WarningOutlined style={{ fontSize: '20px' }} /> Phát hiện trùng lấn khung giờ!
+          </div>
+        }
+      >
+        <div className="space-y-4 pt-3">
+          <Typography.Paragraph className="text-slate-600 mb-0">
+            Hệ thống phát hiện thấy cấu hình giá mặc định bạn đang muốn nạp (mapping) bị trùng lấn thời gian với các khung giờ đã được tùy biến riêng của sân này.
+          </Typography.Paragraph>
+
+          {/* Section: Incoming rules */}
+          <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
+            <Typography.Text strong className="text-blue-700 block mb-1 text-xs">
+              📥 Cấu hình mặc định muốn nạp:
+            </Typography.Text>
+            <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-blue-100/50">
+              <span className="font-semibold text-slate-700 text-sm">Khung giờ: 10:00 - 14:00 (Thứ 2)</span>
+              <span className="font-bold text-blue-600 text-sm">Giá: 100.000 đ</span>
+            </div>
+          </div>
+
+          {/* Section: Conflicting rules */}
+          <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl">
+            <Typography.Text strong className="text-rose-700 block mb-2 text-xs">
+              🚨 Cấu hình hiện tại của Sân bị trùng lấn:
+            </Typography.Text>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-rose-100/50 text-xs">
+                <div>
+                  <div className="font-semibold text-slate-700 text-sm">Khung 1: 06:00 - 11:00</div>
+                  <div className="text-rose-500 font-medium mt-0.5 text-xs">⚠️ Bị trùng lấn 60 phút (Từ 10:00 - 11:00)</div>
+                </div>
+                <span className="font-bold text-slate-600 text-sm">Giá: 30.000 đ</span>
+              </div>
+              <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-rose-100/50 text-xs">
+                <div>
+                  <div className="font-semibold text-slate-700 text-sm">Khung 2: 13:00 - 21:00</div>
+                  <div className="text-rose-500 font-medium mt-0.5 text-xs">⚠️ Bị trùng lấn 60 phút (Từ 13:00 - 14:00)</div>
+                </div>
+                <span className="font-bold text-slate-600 text-sm">Giá: 50.000 đ</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Instruction */}
+          <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <span className="font-bold block mb-1">💡 Hướng dẫn xử lý:</span>
+            Hệ thống tôn trọng các cấu hình riêng của bạn. Để tiếp tục, vui lòng chọn một trong các phương án giải quyết xung đột dưới đây:
+          </div>
+
+          {/* Conflict Resolution Buttons */}
+          <div className="flex flex-col gap-2 pt-2">
+            <Button 
+              type="primary" 
+              className="w-full text-left flex justify-between items-center p-4 h-auto hover:scale-[1.01] transition-transform"
+              onClick={() => {
+                setConflictModalOpen(false);
+                message.info("Bạn đã chọn: Tự động chia nhỏ & đè giờ (Kết quả: 6h-10h: 30k, 10h-14h: 100k, 14h-21h: 50k)");
+              }}
+            >
+              <div className="text-left">
+                <span className="font-bold block text-sm">Phương án 1: Tự động cắt giờ & Đè lên</span>
+                <span className="text-[11px] font-normal opacity-85 block text-left mt-0.5">Tự động chia nhỏ các khung giờ cũ bị trùng để nhường chỗ cho khung mới.</span>
+              </div>
+              <span className="font-semibold text-xs bg-white/20 px-2 py-0.5 rounded shrink-0 ml-4">Khuyên dùng ⭐</span>
+            </Button>
+
+            <Button 
+              danger 
+              className="w-full text-left flex flex-col justify-center p-4 h-auto hover:scale-[1.01] transition-transform border border-rose-200"
+              onClick={() => {
+                setConflictModalOpen(false);
+                message.warning("Bạn đã chọn: Xóa sạch khung giờ trùng của sân để nạp giá mặc định");
+              }}
+            >
+              <span className="font-bold block text-sm text-rose-600">Phương án 2: Xóa cấu hình cũ & Đè toàn bộ</span>
+              <span className="text-[11px] font-normal opacity-85 block text-left mt-0.5 text-rose-500">Xóa bỏ hoàn toàn khung 6h-11h và 13h-21h của sân để nạp trọn vẹn khung 10h-14h.</span>
+            </Button>
+
+            <Button 
+              type="default"
+              className="w-full py-2.5 h-auto text-slate-600 hover:text-slate-800"
+              onClick={() => {
+                setConflictModalOpen(false);
+                message.info("Đã giữ nguyên cấu hình cũ của sân.");
+              }}
+            >
+              Hủy nạp - Giữ nguyên cấu hình hiện tại của sân
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

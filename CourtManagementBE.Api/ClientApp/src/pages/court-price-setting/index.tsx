@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import {
   App,
   Button,
@@ -13,8 +13,16 @@ import {
   Tag,
   Typography,
   Checkbox,
+  DatePicker,
+  Radio,
 } from 'antd'
-import { DeleteOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
+import {
+  DeleteOutlined,
+  EditOutlined,
+  SaveOutlined,
+  PlusOutlined,
+} from '@ant-design/icons'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'
 import {
@@ -41,20 +49,29 @@ const days = [
   { value: 5, label: 'Thứ 6', shortLabel: 'T6' },
   { value: 6, label: 'Thứ 7', shortLabel: 'T7' },
   { value: 0, label: 'Chủ nhật', shortLabel: 'CN' },
+  { value: -1, label: 'Ngày cụ thể', shortLabel: 'Ngày' },
 ]
 
 type FormValues = {
   priceRuleTypeID?: number | null
-  dayOfWeek: number
+  dayOfWeek?: number | null
+  specificDate?: dayjs.Dayjs | null
   startTime: string
   endTime: string
   price: number
   isActive: boolean
 }
 
-const buildPayload = (values: FormValues): CreateCourtDefaultPriceRuleRequest => ({
+const buildPayload = (
+  values: FormValues,
+  configType: 'weekly' | 'specific',
+): CreateCourtDefaultPriceRuleRequest => ({
   priceRuleTypeID: values.priceRuleTypeID ?? null,
-  dayOfWeek: values.dayOfWeek,
+  dayOfWeek: configType === 'weekly' ? values.dayOfWeek : null,
+  specificDate:
+    configType === 'specific' && values.specificDate
+      ? values.specificDate.format('YYYY-MM-DD')
+      : null,
   startTime: toTimeSpan(values.startTime),
   endTime: toTimeSpan(values.endTime),
   price: Number(values.price),
@@ -66,6 +83,8 @@ export default function CourtPriceSettingPage() {
   const [form] = Form.useForm<FormValues>()
   const [selectedDay, setSelectedDay] = useState(1)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [isFormVisible, setIsFormVisible] = useState(false)
+  const [configType, setConfigType] = useState<'weekly' | 'specific'>('weekly')
 
   const rulesQuery = useCourtDefaultPriceRulesQuery()
   const createMut = useCreateCourtDefaultPriceRuleMutation()
@@ -102,7 +121,9 @@ export default function CourtPriceSettingPage() {
   const selectedDayRules = useMemo(
     () =>
       rules
-        .filter((rule) => rule.dayOfWeek === selectedDay)
+        .filter((rule) =>
+          selectedDay === -1 ? rule.dayOfWeek == null : rule.dayOfWeek === selectedDay,
+        )
         .sort((a, b) => formatTime(a.startTime).localeCompare(formatTime(b.startTime))),
     [rules, selectedDay],
   )
@@ -112,26 +133,23 @@ export default function CourtPriceSettingPage() {
       days.map((day) => ({
         ...day,
         rules: rules
-          .filter((rule) => rule.dayOfWeek === day.value)
+          .filter((rule) =>
+            day.value === -1 ? rule.dayOfWeek == null : rule.dayOfWeek === day.value,
+          )
           .sort((a, b) => formatTime(a.startTime).localeCompare(formatTime(b.startTime))),
       })),
     [rules],
   )
 
-  useEffect(() => {
-    if (!editingId) {
-      form.setFieldsValue({
-        dayOfWeek: selectedDay,
-      })
-    }
-  }, [selectedDay, editingId, form])
-
   const openCreate = () => {
     setEditingId(null)
+    setIsFormVisible(true)
     form.resetFields()
+    setConfigType(selectedDay === -1 ? 'specific' : 'weekly')
     form.setFieldsValue({
       priceRuleTypeID: null,
-      dayOfWeek: selectedDay,
+      dayOfWeek: selectedDay === -1 ? null : selectedDay,
+      specificDate: null,
       startTime: '06:00',
       endTime: '07:00',
       price: 100000,
@@ -141,10 +159,13 @@ export default function CourtPriceSettingPage() {
 
   const openEdit = (record: CourtDefaultPriceRule) => {
     setEditingId(record.courtDefaultPriceRuleID)
-    setSelectedDay(record.dayOfWeek)
+    setIsFormVisible(true)
+    setSelectedDay(record.dayOfWeek ?? -1)
+    setConfigType(record.dayOfWeek == null ? 'specific' : 'weekly')
     form.setFieldsValue({
       priceRuleTypeID: record.priceRuleTypeID ?? null,
-      dayOfWeek: record.dayOfWeek,
+      dayOfWeek: record.dayOfWeek ?? null,
+      specificDate: record.specificDate ? dayjs(record.specificDate) : null,
       startTime: formatTime(record.startTime),
       endTime: formatTime(record.endTime),
       price: record.price,
@@ -155,19 +176,20 @@ export default function CourtPriceSettingPage() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      const payload = buildPayload(values)
+      const payload = buildPayload(values, configType)
       if (editingId) {
         await updateMut.mutateAsync({
           id: editingId,
           data: payload as UpdateCourtDefaultPriceRuleRequest,
         })
         message.success('Cập nhật khung giá thành công')
+        setIsFormVisible(false)
         setEditingId(null)
-        form.resetFields()
       } else {
         await createMut.mutateAsync(payload)
         message.success('Tạo khung giá thành công')
-        form.resetFields()
+        setIsFormVisible(false)
+        setEditingId(null)
       }
     } catch (error) {
       if (error && typeof error === 'object' && 'errorFields' in error) return
@@ -180,8 +202,8 @@ export default function CourtPriceSettingPage() {
       await deleteMut.mutateAsync(id)
       message.success('Xóa khung giá thành công')
       if (editingId === id) {
+        setIsFormVisible(false)
         setEditingId(null)
-        form.resetFields()
       }
     } catch (error) {
       message.error(toApiError(error).message)
@@ -194,7 +216,9 @@ export default function CourtPriceSettingPage() {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <div className="xl:col-span-2 flex flex-col gap-6">
+      <div
+        className={`${isFormVisible ? 'xl:col-span-2' : 'xl:col-span-3'} flex flex-col gap-6 transition-all duration-300`}
+      >
         <Card
           styles={{ body: { padding: '20px' } }}
           className="rounded-2xl shadow-sm border-slate-200"
@@ -203,7 +227,16 @@ export default function CourtPriceSettingPage() {
             {groupedRules.map((day) => (
               <button
                 key={day.value}
-                onClick={() => setSelectedDay(day.value)}
+                onClick={() => {
+                  setSelectedDay(day.value)
+                  if (!editingId) {
+                    setConfigType(day.value === -1 ? 'specific' : 'weekly')
+                    form.setFieldsValue({
+                      dayOfWeek: day.value === -1 ? null : day.value,
+                      specificDate: null,
+                    })
+                  }
+                }}
                 className={`min-w-27.5 rounded-xl border px-4 py-4 text-left transition shrink-0 ${
                   selectedDay === day.value
                     ? 'bg-[#111827] border-[#111827]'
@@ -233,14 +266,30 @@ export default function CourtPriceSettingPage() {
           className="rounded-2xl shadow-sm border-slate-200"
           styles={{ body: { padding: 0 } }}
         >
-          <div className="p-6 border-b border-slate-100">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <Typography.Title level={4} style={{ margin: 0, fontWeight: 500 }}>
               Khung giá của {days.find((day) => day.value === selectedDay)?.label}
             </Typography.Title>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              Thêm khung giá
+            </Button>
           </div>
 
           <Table
             columns={[
+              ...(selectedDay === -1
+                ? [
+                    {
+                      title: 'Ngày áp dụng',
+                      dataIndex: 'specificDate',
+                      render: (value: string) => (
+                        <Typography.Text strong className="text-blue-600">
+                          {dayjs(value).format('DD/MM/YYYY')}
+                        </Typography.Text>
+                      ),
+                    },
+                  ]
+                : []),
               {
                 title: 'Khung giờ',
                 key: 'time',
@@ -302,124 +351,170 @@ export default function CourtPriceSettingPage() {
             loading={rulesQuery.isFetching}
             pagination={false}
             rowKey="courtDefaultPriceRuleID"
+            rowClassName={(record) =>
+              editingId === record.courtDefaultPriceRuleID ? 'bg-blue-50' : ''
+            }
           />
         </Card>
       </div>
 
-      <div className="xl:col-span-1">
-        <Card
-          className="rounded-2xl shadow-sm border-slate-200 sticky top-6"
-          styles={{ body: { padding: '24px' } }}
-        >
-          <Typography.Title
-            level={4}
-            style={{ marginTop: 0, marginBottom: 8, fontWeight: 500 }}
+      {isFormVisible && (
+        <div className="xl:col-span-1">
+          <Card
+            className="rounded-2xl shadow-sm border-slate-200 sticky top-6"
+            styles={{ body: { padding: '24px' } }}
           >
-            {editingId ? 'Sửa khung giá' : 'Thêm khung giá'}
-          </Typography.Title>
-          <Typography.Paragraph type="secondary" className="mb-6 text-[14px]">
-            Dùng cho giá mặc định hằng tuần, chưa bao gồm ngày lễ.
-          </Typography.Paragraph>
-
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={{
-              priceRuleTypeID: null,
-              dayOfWeek: selectedDay,
-              startTime: '06:00',
-              endTime: '07:00',
-              price: 100000,
-              isActive: true,
-            }}
-          >
-            <Form.Item
-              label={<span className="font-medium text-slate-800">Ngày trong tuần</span>}
-              name="dayOfWeek"
-              rules={[{ required: true, message: 'Chọn ngày trong tuần' }]}
+            <Typography.Title
+              level={4}
+              style={{ marginTop: 0, marginBottom: 8, fontWeight: 500 }}
             >
-              <Select
-                size="large"
-                options={days.map((day) => ({ value: day.value, label: day.label }))}
-                onChange={(value) => {
-                  if (!editingId) {
-                    setSelectedDay(value)
+              {editingId ? 'Sửa khung giá' : 'Thêm khung giá'}
+            </Typography.Title>
+            <Typography.Paragraph type="secondary" className="mb-6 text-[14px]">
+              Dùng cho giá mặc định hằng tuần, chưa bao gồm ngày lễ.
+            </Typography.Paragraph>
+
+            <Form
+              form={form}
+              layout="vertical"
+              initialValues={{
+                priceRuleTypeID: null,
+                dayOfWeek: selectedDay,
+                startTime: '06:00',
+                endTime: '07:00',
+                price: 100000,
+                isActive: true,
+              }}
+            >
+              <Form.Item
+                label={<span className="font-medium text-slate-800">Loại cấu hình</span>}
+              >
+                <Radio.Group
+                  optionType="button"
+                  buttonStyle="solid"
+                  value={configType}
+                  onChange={(e) => setConfigType(e.target.value)}
+                  className="w-full flex"
+                >
+                  <Radio.Button value="weekly" className="flex-1 text-center">
+                    Ngày trong tuần
+                  </Radio.Button>
+                  <Radio.Button value="specific" className="flex-1 text-center">
+                    Ngày cụ thể
+                  </Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+
+              {configType === 'weekly' && (
+                <Form.Item
+                  label={
+                    <span className="font-medium text-slate-800">Ngày trong tuần</span>
                   }
-                }}
-              />
-            </Form.Item>
+                  name="dayOfWeek"
+                  rules={[{ required: true, message: 'Chọn ngày trong tuần' }]}
+                >
+                  <Select
+                    size="large"
+                    options={days
+                      .filter((d) => d.value !== -1)
+                      .map((day) => ({ value: day.value, label: day.label }))}
+                    onChange={(value) => setSelectedDay(value)}
+                  />
+                </Form.Item>
+              )}
 
-            <Form.Item
-              label={<span className="font-medium text-slate-800">Loại giá</span>}
-              name="priceRuleTypeID"
-            >
-              <Select
-                allowClear
-                loading={priceRuleTypesQuery.isFetching}
-                options={priceRuleTypes.map((type: PriceRuleType) => ({
-                  value: type.priceRuleTypeID,
-                  label: type.name,
-                }))}
-                placeholder="Mac dinh"
-                size="large"
-              />
-            </Form.Item>
+              {configType === 'specific' && (
+                <Form.Item
+                  label={
+                    <span className="font-medium text-slate-800">Chọn ngày cụ thể</span>
+                  }
+                  name="specificDate"
+                  rules={[{ required: true, message: 'Vui lòng chọn ngày cụ thể' }]}
+                >
+                  <DatePicker
+                    size="large"
+                    className="w-full"
+                    format="DD/MM/YYYY"
+                    placeholder="Chọn ngày"
+                  />
+                </Form.Item>
+              )}
 
-            <div className="grid grid-cols-2 gap-4">
               <Form.Item
-                label={<span className="font-medium text-slate-800">Giờ bắt đầu</span>}
-                name="startTime"
-                rules={[{ required: true, message: 'Nhập giờ bắt đầu' }]}
+                label={<span className="font-medium text-slate-800">Loại giá</span>}
+                name="priceRuleTypeID"
               >
-                <Input type="time" size="large" />
+                <Select
+                  allowClear
+                  loading={priceRuleTypesQuery.isFetching}
+                  options={priceRuleTypes.map((type: PriceRuleType) => ({
+                    value: type.priceRuleTypeID,
+                    label: type.name,
+                  }))}
+                  placeholder="Mặc định"
+                  size="large"
+                />
               </Form.Item>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  label={<span className="font-medium text-slate-800">Giờ bắt đầu</span>}
+                  name="startTime"
+                  rules={[{ required: true, message: 'Nhập giờ bắt đầu' }]}
+                >
+                  <Input type="time" size="large" />
+                </Form.Item>
+                <Form.Item
+                  label={<span className="font-medium text-slate-800">Giờ kết thúc</span>}
+                  name="endTime"
+                  rules={[{ required: true, message: 'Nhập giờ kết thúc' }]}
+                >
+                  <Input type="time" size="large" />
+                </Form.Item>
+              </div>
+
               <Form.Item
-                label={<span className="font-medium text-slate-800">Giờ kết thúc</span>}
-                name="endTime"
-                rules={[{ required: true, message: 'Nhập giờ kết thúc' }]}
+                label={<span className="font-medium text-slate-800">Giá tiền</span>}
+                name="price"
+                rules={[{ required: true, message: 'Nhập giá tiền' }]}
               >
-                <Input type="time" size="large" />
+                <InputNumber className="w-full" size="large" controls={false} min={0} />
               </Form.Item>
-            </div>
 
-            <Form.Item
-              label={<span className="font-medium text-slate-800">Giá tiền</span>}
-              name="price"
-              rules={[{ required: true, message: 'Nhập giá tiền' }]}
-            >
-              <InputNumber className="w-full" size="large" controls={false} min={0} />
-            </Form.Item>
-
-            <Form.Item
-              name="isActive"
-              valuePropName="checked"
-              className="mb-8 p-3 border border-slate-100 rounded-xl bg-slate-50/50"
-            >
-              <Checkbox className="font-medium text-slate-800">Đang áp dụng</Checkbox>
-            </Form.Item>
-
-            <div className="flex items-center gap-3">
-              <Button
-                type="primary"
-                size="large"
-                icon={<SaveOutlined />}
-                loading={createMut.isPending || updateMut.isPending}
-                onClick={handleSubmit}
-                className="flex-1"
+              <Form.Item
+                name="isActive"
+                valuePropName="checked"
+                className="mb-8 p-3 border border-slate-100 rounded-xl bg-slate-50/50"
               >
-                Lưu
-              </Button>
-              <Button
-                size="large"
-                onClick={openCreate}
-                className="px-6 rounded-lg font-medium text-slate-700"
-              >
-                Hủy
-              </Button>
-            </div>
-          </Form>
-        </Card>
-      </div>
+                <Checkbox className="font-medium text-slate-800">Đang áp dụng</Checkbox>
+              </Form.Item>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<SaveOutlined />}
+                  loading={createMut.isPending || updateMut.isPending}
+                  onClick={handleSubmit}
+                  className="flex-1"
+                >
+                  Lưu
+                </Button>
+                <Button
+                  size="large"
+                  onClick={() => {
+                    setIsFormVisible(false)
+                    setEditingId(null)
+                  }}
+                  className="px-6 rounded-lg font-medium text-slate-700"
+                >
+                  Hủy
+                </Button>
+              </div>
+            </Form>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

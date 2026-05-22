@@ -8,6 +8,8 @@ public class CreatePriceRuleTypeRequest
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public string ColorCode { get; set; } = string.Empty;
+    public bool IsMapping { get; set; } = false;
+    public bool IsLoadDefault { get; set; } = true;
 }
 
 public class UpdatePriceRuleTypeRequest
@@ -18,4 +20,6 @@ public class UpdatePriceRuleTypeRequest
     public int SortOrder { get; set; }
     public bool IsActive { get; set; }
     public string ColorCode { get; set; } = string.Empty;
+    public bool IsMapping { get; set; }
+    public bool IsLoadDefault { get; set; }
 }
