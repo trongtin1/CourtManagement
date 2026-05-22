@@ -8,7 +8,7 @@ public interface ICourtTypeService
 {
     Task<Result<PageList<CourtTypeResponse>>> GetAll(QueryResource query);
     Task<Result<CourtTypeResponse>> GetById(int id);
-    Task<Result<CourtTypeResponse>> Create(CreateCourtTypeRequest request);
-    Task<Result<CourtTypeResponse>> Update(int id, UpdateCourtTypeRequest request);
+    Task<Result<CourtTypeResponse>> Create(CourtTypeRequest request);
+    Task<Result<CourtTypeResponse>> Update(int id, CourtTypeRequest request);
     Task<Result<bool>> Delete(int id);
 }

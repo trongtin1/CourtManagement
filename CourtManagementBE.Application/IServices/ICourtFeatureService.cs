@@ -8,7 +8,7 @@ public interface ICourtFeatureService
 {
     Task<Result<PageList<CourtFeatureResponse>>> GetAll(QueryResource query);
     Task<Result<CourtFeatureResponse>> GetById(int id);
-    Task<Result<CourtFeatureResponse>> Create(CreateCourtFeatureRequest request);
-    Task<Result<CourtFeatureResponse>> Update(int id, UpdateCourtFeatureRequest request);
+    Task<Result<CourtFeatureResponse>> Create(CourtFeatureRequest request);
+    Task<Result<CourtFeatureResponse>> Update(int id, CourtFeatureRequest request);
     Task<Result<bool>> Delete(int id);
 }

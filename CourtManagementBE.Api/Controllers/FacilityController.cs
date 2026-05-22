@@ -32,14 +32,14 @@ public class FacilityController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateFacilityRequest req)
+    public async Task<IActionResult> Create([FromBody] FacilityRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateFacilityRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] FacilityRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

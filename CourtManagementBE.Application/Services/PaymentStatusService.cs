@@ -27,7 +27,7 @@ public class PaymentStatusService : BaseService, IPaymentStatusService
         return Success(_mapper.Map<PaymentStatusResponse>(entity));
     }
 
-    public async Task<Result<PaymentStatusResponse>> Create(CreatePaymentStatusRequest request)
+    public async Task<Result<PaymentStatusResponse>> Create(PaymentStatusRequest request)
     {
         var entity = _mapper.Map<PaymentStatuses>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class PaymentStatusService : BaseService, IPaymentStatusService
         return Created(_mapper.Map<PaymentStatusResponse>(entity));
     }
 
-    public async Task<Result<PaymentStatusResponse>> Update(int id, UpdatePaymentStatusRequest request)
+    public async Task<Result<PaymentStatusResponse>> Update(int id, PaymentStatusRequest request)
     {
         var entity = await _unitOfWork.IPaymentStatusRepository.FindFirst(x => x.PaymentStatusID == id);
         if (entity is null) return NotFound<PaymentStatusResponse>("Không tìm thấy trạng thái thanh toán.");

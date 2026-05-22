@@ -33,7 +33,7 @@ public class CustomerService : BaseService, ICustomerService
         return Success(_mapper.Map<CustomerResponse>(entity));
     }
 
-    public async Task<Result<CustomerResponse>> Create(CreateCustomerRequest request)
+    public async Task<Result<CustomerResponse>> Create(CustomerRequest request)
     {
         var entity = _mapper.Map<Customers>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
@@ -42,7 +42,7 @@ public class CustomerService : BaseService, ICustomerService
         return Created(_mapper.Map<CustomerResponse>(entity));
     }
 
-    public async Task<Result<CustomerResponse>> Update(int id, UpdateCustomerRequest request)
+    public async Task<Result<CustomerResponse>> Update(int id, CustomerRequest request)
     {
         var entity = await _unitOfWork.ICustomerRepository.FindFirst(x => x.CustomerID == id);
         if (entity is null) return NotFound<CustomerResponse>("Không tìm thấy khách hàng.");

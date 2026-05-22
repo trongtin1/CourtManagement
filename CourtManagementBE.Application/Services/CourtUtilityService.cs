@@ -17,7 +17,7 @@ public class CourtUtilityService : BaseService, ICourtUtilityService
         return Success(_mapper.Map<List<CourtUtilityResponse>>(list));
     }
 
-    public async Task<Result<CourtUtilityResponse>> Create(CreateCourtUtilityRequest request)
+    public async Task<Result<CourtUtilityResponse>> Create(CourtUtilityRequest request)
     {
         var existing = await _unitOfWork.ICourtUtilityRepository.FindFirst(
             x => x.CourtID == request.CourtID && x.UtilityID == request.UtilityID);

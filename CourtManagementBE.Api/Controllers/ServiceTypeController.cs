@@ -33,14 +33,14 @@ public class ServiceTypeController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateServiceTypeRequest req)
+    public async Task<IActionResult> Create([FromBody] ServiceTypeRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceTypeRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] ServiceTypeRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

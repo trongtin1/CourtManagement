@@ -8,7 +8,7 @@ public interface IAssetCategoryService
 {
     Task<Result<PageList<AssetCategoryResponse>>> GetAll(QueryResource query);
     Task<Result<AssetCategoryResponse>> GetById(int id);
-    Task<Result<AssetCategoryResponse>> Create(CreateAssetCategoryRequest req);
-    Task<Result<AssetCategoryResponse>> Update(int id, UpdateAssetCategoryRequest req);
+    Task<Result<AssetCategoryResponse>> Create(AssetCategoryRequest req);
+    Task<Result<AssetCategoryResponse>> Update(int id, AssetCategoryRequest req);
     Task<Result<bool>> Delete(int id);
 }

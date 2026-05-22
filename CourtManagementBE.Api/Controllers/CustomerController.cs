@@ -39,14 +39,14 @@ public class CustomerController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCustomerRequest req)
+    public async Task<IActionResult> Create([FromBody] CustomerRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] CustomerRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

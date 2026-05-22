@@ -33,14 +33,14 @@ public class CancellationReasonController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCancellationReasonRequest req)
+    public async Task<IActionResult> Create([FromBody] CancellationReasonRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateCancellationReasonRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] CancellationReasonRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

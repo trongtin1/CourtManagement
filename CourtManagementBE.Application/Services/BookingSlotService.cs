@@ -19,7 +19,7 @@ public class BookingSlotService : BaseService, IBookingSlotService
         return Success(_mapper.Map<List<BookingSlotResponse>>(list));
     }
 
-    public async Task<Result<BookingSlotResponse>> Create(CreateBookingSlotRequest request)
+    public async Task<Result<BookingSlotResponse>> Create(BookingSlotRequest request)
     {
         if (!await CanAccessBooking(request.BookingID) || !await CanAccessCourt(request.CourtID))
         {

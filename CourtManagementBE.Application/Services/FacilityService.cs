@@ -29,7 +29,7 @@ public class FacilityService : BaseService, IFacilityService
         return Success(_mapper.Map<FacilityResponse>(entity));
     }
 
-    public async Task<Result<FacilityResponse>> Create(CreateFacilityRequest request)
+    public async Task<Result<FacilityResponse>> Create(FacilityRequest request)
     {
         if (_currentUser is { IsSuperAdmin: false })
         {
@@ -43,7 +43,7 @@ public class FacilityService : BaseService, IFacilityService
         return Created(_mapper.Map<FacilityResponse>(entity));
     }
 
-    public async Task<Result<FacilityResponse>> Update(int id, UpdateFacilityRequest request)
+    public async Task<Result<FacilityResponse>> Update(int id, FacilityRequest request)
     {
         var entity = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == id);
         if (entity is null) return NotFound<FacilityResponse>("Không tìm thấy cơ sở.");

@@ -30,7 +30,7 @@ public class ServicePriceService : BaseService, IServicePriceService
         return Success(_mapper.Map<ServicePriceResponse>(entity));
     }
 
-    public async Task<Result<ServicePriceResponse>> Create(CreateServicePriceRequest request)
+    public async Task<Result<ServicePriceResponse>> Create(ServicePriceRequest request)
     {
         if (!await CanAccessService(request.ServiceID)) return Unauthorized<ServicePriceResponse>("Bạn không có quyền tạo giá cho dịch vụ này.");
 
@@ -41,7 +41,7 @@ public class ServicePriceService : BaseService, IServicePriceService
         return Created(_mapper.Map<ServicePriceResponse>(entity));
     }
 
-    public async Task<Result<ServicePriceResponse>> Update(int id, UpdateServicePriceRequest request)
+    public async Task<Result<ServicePriceResponse>> Update(int id, ServicePriceRequest request)
     {
         var entity = await _unitOfWork.IServicePriceRepository.FindFirst(x => x.ID == id);
         if (entity is null) return NotFound<ServicePriceResponse>("Không tìm thấy giá dịch vụ.");

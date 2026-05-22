@@ -8,8 +8,8 @@ public interface IFacilityService
 {
     Task<Result<PageList<FacilityResponse>>> GetAll(QueryResource query);
     Task<Result<FacilityResponse>> GetById(int id);
-    Task<Result<FacilityResponse>> Create(CreateFacilityRequest request);
-    Task<Result<FacilityResponse>> Update(int id, UpdateFacilityRequest request);
+    Task<Result<FacilityResponse>> Create(FacilityRequest request);
+    Task<Result<FacilityResponse>> Update(int id, FacilityRequest request);
     Task<Result<bool>> Delete(int id);
     Task<Result<bool>> ToggleActive(int id);
 }

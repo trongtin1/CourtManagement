@@ -27,7 +27,7 @@ public class ServiceTypeService : BaseService, IServiceTypeService
         return Success(_mapper.Map<ServiceTypeResponse>(entity));
     }
 
-    public async Task<Result<ServiceTypeResponse>> Create(CreateServiceTypeRequest request)
+    public async Task<Result<ServiceTypeResponse>> Create(ServiceTypeRequest request)
     {
         var entity = _mapper.Map<ServiceTypes>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class ServiceTypeService : BaseService, IServiceTypeService
         return Created(_mapper.Map<ServiceTypeResponse>(entity));
     }
 
-    public async Task<Result<ServiceTypeResponse>> Update(int id, UpdateServiceTypeRequest request)
+    public async Task<Result<ServiceTypeResponse>> Update(int id, ServiceTypeRequest request)
     {
         var entity = await _unitOfWork.IServiceTypeRepository.FindFirst(x => x.ServiceTypeID == id);
         if (entity is null) return NotFound<ServiceTypeResponse>("Không tìm thấy loại dịch vụ.");

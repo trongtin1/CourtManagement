@@ -27,7 +27,7 @@ public class CourtStatusService : BaseService, ICourtStatusService
         return Success(_mapper.Map<CourtStatusResponse>(entity));
     }
 
-    public async Task<Result<CourtStatusResponse>> Create(CreateCourtStatusRequest request)
+    public async Task<Result<CourtStatusResponse>> Create(CourtStatusRequest request)
     {
         var entity = _mapper.Map<CourtStatus>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class CourtStatusService : BaseService, ICourtStatusService
         return Created(_mapper.Map<CourtStatusResponse>(entity));
     }
 
-    public async Task<Result<CourtStatusResponse>> Update(int id, UpdateCourtStatusRequest request)
+    public async Task<Result<CourtStatusResponse>> Update(int id, CourtStatusRequest request)
     {
         var entity = await _unitOfWork.ICourtStatusRepository.FindFirst(x => x.StatusID == id);
         if (entity is null) return NotFound<CourtStatusResponse>("Không tìm thấy trạng thái sân.");

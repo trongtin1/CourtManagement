@@ -8,8 +8,8 @@ public interface IServiceService
 {
     Task<Result<PageList<ServiceResponse>>> GetAll(QueryResource query);
     Task<Result<ServiceResponse>> GetById(int id);
-    Task<Result<ServiceResponse>> Create(CreateServiceRequest request);
-    Task<Result<ServiceResponse>> Update(int id, UpdateServiceRequest request);
+    Task<Result<ServiceResponse>> Create(ServiceRequest request);
+    Task<Result<ServiceResponse>> Update(int id, ServiceRequest request);
     Task<Result<bool>> Delete(int id);
     Task<Result<bool>> ToggleActive(int id);
 }

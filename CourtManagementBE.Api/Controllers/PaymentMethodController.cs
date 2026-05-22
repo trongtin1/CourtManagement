@@ -33,14 +33,14 @@ public class PaymentMethodController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreatePaymentMethodRequest req)
+    public async Task<IActionResult> Create([FromBody] PaymentMethodRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentMethodRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] PaymentMethodRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

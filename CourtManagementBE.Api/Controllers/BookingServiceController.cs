@@ -24,14 +24,14 @@ public class BookingServiceController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBookingServiceRequest req)
+    public async Task<IActionResult> Create([FromBody] BookingServiceRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateBookingServiceRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] BookingServiceRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

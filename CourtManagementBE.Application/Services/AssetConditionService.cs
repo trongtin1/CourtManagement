@@ -27,7 +27,7 @@ public class AssetConditionService : BaseService, IAssetConditionService
         return Success(_mapper.Map<AssetConditionResponse>(entity));
     }
 
-    public async Task<Result<AssetConditionResponse>> Create(CreateAssetConditionRequest request)
+    public async Task<Result<AssetConditionResponse>> Create(AssetConditionRequest request)
     {
         var entity = _mapper.Map<AssetConditions>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class AssetConditionService : BaseService, IAssetConditionService
         return Created(_mapper.Map<AssetConditionResponse>(entity));
     }
 
-    public async Task<Result<AssetConditionResponse>> Update(int id, UpdateAssetConditionRequest request)
+    public async Task<Result<AssetConditionResponse>> Update(int id, AssetConditionRequest request)
     {
         var entity = await _unitOfWork.IAssetConditionRepository.FindFirst(x => x.AssetConditionID == id);
         if (entity is null) return NotFound<AssetConditionResponse>("Không tìm thấy tình trạng tài sản.");

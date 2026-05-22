@@ -24,7 +24,7 @@ public class BookingSlotController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBookingSlotRequest req)
+    public async Task<IActionResult> Create([FromBody] BookingSlotRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);

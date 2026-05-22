@@ -1,6 +1,24 @@
 import { useState } from 'react'
-import { App, Button, Card, Form, Input, Modal, Popconfirm, Space, Switch, Table, Tag, Typography } from 'antd'
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Typography,
+} from 'antd'
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 import { LoadingSpin } from '@/components/common/LoadingSpin'
 import {
@@ -10,7 +28,11 @@ import {
   useUpdateUtilityMutation,
   useUtilitiesQuery,
 } from '@/features/services/api/useUtilityQueries'
-import type { CreateUtilityRequest, UpdateUtilityRequest, Utility } from '@/features/services/model/types'
+import type {
+  CreateUtilityRequest,
+  UpdateUtilityRequest,
+  Utility,
+} from '@/features/services/model/types'
 import { toApiError } from '@/utils/errors'
 
 export function UtilitiesPage() {
@@ -91,40 +113,118 @@ export function UtilitiesPage() {
       <div className="flex items-center justify-between">
         <div>
           <Typography.Title level={2}>Tien ich</Typography.Title>
-          <Typography.Paragraph type="secondary">Quan ly cac tien ich gan voi san nhu Lighting, Parking, Wi-Fi.</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">
+            Quan ly cac tien ich gan voi san nhu Lighting, Parking, Wi-Fi.
+          </Typography.Paragraph>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} loading={query.isRefetching} onClick={() => query.refetch()}>Lam moi</Button>
-          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">Them tien ich</Button>
+          <Button
+            icon={<ReloadOutlined />}
+            loading={query.isRefetching}
+            onClick={() => query.refetch()}
+          >
+            Lam moi
+          </Button>
+          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">
+            Them tien ich
+          </Button>
         </Space>
       </div>
       <Card>
         <Table
           columns={[
             { title: 'ID', dataIndex: 'utilityID', width: 80 },
-            { title: 'Ma', dataIndex: 'utilityCode', width: 160, render: (value: string) => <Tag color="green">{value}</Tag> },
+            {
+              title: 'Ma',
+              dataIndex: 'utilityCode',
+              width: 160,
+              render: (value: string) => <Tag color="green">{value}</Tag>,
+            },
             { title: 'Ten tien ich', dataIndex: 'utilityName', width: 220 },
             { title: 'Icon', dataIndex: 'icon', width: 120 },
             { title: 'Mo ta', dataIndex: 'description' },
-            { title: 'Active', dataIndex: 'isActive', width: 100, render: (value: boolean, record: Utility) => <Switch checked={value} loading={toggleMut.isPending} onChange={() => handleToggle(record)} size="small" /> },
-            { title: '', width: 110, render: (_: unknown, record: Utility) => <Space><Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" type="link" /><Popconfirm title="Xoa tien ich nay?" onConfirm={() => handleDelete(record.utilityID)}><Button danger icon={<DeleteOutlined />} size="small" type="link" /></Popconfirm></Space> },
+            {
+              title: 'Active',
+              dataIndex: 'isActive',
+              width: 100,
+              render: (value: boolean, record: Utility) => (
+                <Switch
+                  checked={value}
+                  loading={toggleMut.isPending}
+                  onChange={() => handleToggle(record)}
+                  size="small"
+                />
+              ),
+            },
+            {
+              title: '',
+              width: 110,
+              render: (_: unknown, record: Utility) => (
+                <Space>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => openEdit(record)}
+                    size="small"
+                    type="link"
+                  />
+                  <Popconfirm
+                    title="Xoa tien ich nay?"
+                    onConfirm={() => handleDelete(record.utilityID)}
+                  >
+                    <Button danger icon={<DeleteOutlined />} size="small" type="link" />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
           ]}
           dataSource={query.data?.items ?? []}
           loading={query.isFetching}
           onChange={(pagination) => setTablePagination(pagination)}
-          pagination={{ current: tablePagination.current ?? 1, pageSize: tablePagination.pageSize ?? 10, total: query.data?.totalCount ?? 0, showTotal: (total) => `Tong ${total}` }}
+          pagination={{
+            current: tablePagination.current ?? 1,
+            pageSize: tablePagination.pageSize ?? 10,
+            total: query.data?.totalCount ?? 0,
+            showTotal: (total) => `Tong ${total}`,
+          }}
           rowKey="utilityID"
           scroll={{ x: 860 }}
           size="middle"
         />
       </Card>
-      <Modal confirmLoading={createMut.isPending || updateMut.isPending} destroyOnClose okText={editingId ? 'Cap nhat' : 'Tao'} onCancel={() => setOpen(false)} onOk={handleSubmit} open={open} title={editingId ? 'Sua tien ich' : 'Them tien ich'} width={540}>
+      <Modal
+        confirmLoading={createMut.isPending || updateMut.isPending}
+        destroyOnClose
+        okText={editingId ? 'Cap nhat' : 'Tao'}
+        onCancel={() => setOpen(false)}
+        onOk={handleSubmit}
+        open={open}
+        title={editingId ? 'Sua tien ich' : 'Them tien ich'}
+        width={540}
+      >
         <Form form={form} layout="vertical">
-          <Form.Item label="Ma tien ich" name="utilityCode" rules={[{ required: true, message: 'Nhap ma tien ich' }]}><Input maxLength={20} placeholder="LIGHT" /></Form.Item>
-          <Form.Item label="Ten tien ich" name="utilityName" rules={[{ required: true, message: 'Nhap ten tien ich' }]}><Input maxLength={100} placeholder="Lighting" /></Form.Item>
-          <Form.Item label="Icon" name="icon"><Input maxLength={100} placeholder="bulb" /></Form.Item>
-          <Form.Item label="Mo ta" name="description"><Input.TextArea maxLength={500} rows={3} /></Form.Item>
-          <Form.Item label="Active" name="isActive" valuePropName="checked"><Switch /></Form.Item>
+          <Form.Item
+            label="Ma tien ich"
+            name="utilityCode"
+            rules={[{ required: true, message: 'Nhap ma tien ich' }]}
+          >
+            <Input maxLength={20} placeholder="LIGHT" />
+          </Form.Item>
+          <Form.Item
+            label="Ten tien ich"
+            name="utilityName"
+            rules={[{ required: true, message: 'Nhap ten tien ich' }]}
+          >
+            <Input maxLength={100} placeholder="Lighting" />
+          </Form.Item>
+          <Form.Item label="Icon" name="icon">
+            <Input maxLength={100} placeholder="bulb" />
+          </Form.Item>
+          <Form.Item label="Mo ta" name="description">
+            <Input.TextArea maxLength={500} rows={3} />
+          </Form.Item>
+          <Form.Item label="Active" name="isActive" valuePropName="checked">
+            <Switch />
+          </Form.Item>
         </Form>
       </Modal>
     </Space>

@@ -27,7 +27,7 @@ public class CourtTypeService : BaseService, ICourtTypeService
         return Success(_mapper.Map<CourtTypeResponse>(entity));
     }
 
-    public async Task<Result<CourtTypeResponse>> Create(CreateCourtTypeRequest request)
+    public async Task<Result<CourtTypeResponse>> Create(CourtTypeRequest request)
     {
         var entity = _mapper.Map<CourtTypes>(request);
         await _unitOfWork.ICourtTypeRepository.Add(entity);
@@ -35,7 +35,7 @@ public class CourtTypeService : BaseService, ICourtTypeService
         return Created(_mapper.Map<CourtTypeResponse>(entity));
     }
 
-    public async Task<Result<CourtTypeResponse>> Update(int id, UpdateCourtTypeRequest request)
+    public async Task<Result<CourtTypeResponse>> Update(int id, CourtTypeRequest request)
     {
         var entity = await _unitOfWork.ICourtTypeRepository.FindFirst(x => x.CourtTypeID == id);
         if (entity is null) return NotFound<CourtTypeResponse>("Không tìm thấy loại sân.");

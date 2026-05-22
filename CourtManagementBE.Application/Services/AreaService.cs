@@ -37,7 +37,7 @@ public class AreaService : BaseService, IAreaService
         return Success(_mapper.Map<AreaResponse>(entity));
     }
 
-    public async Task<Result<AreaResponse>> Create(CreateAreaRequest request)
+    public async Task<Result<AreaResponse>> Create(AreaRequest request)
     {
         var facilityId = WorkingFacilityId ?? request.FacilityID;
         if (!CanAccessFacility(facilityId)) return Unauthorized<AreaResponse>("Bạn không có quyền tạo khu vực cho cơ sở này.");
@@ -50,7 +50,7 @@ public class AreaService : BaseService, IAreaService
         return Created(_mapper.Map<AreaResponse>(entity));
     }
 
-    public async Task<Result<AreaResponse>> Update(int id, UpdateAreaRequest request)
+    public async Task<Result<AreaResponse>> Update(int id, AreaRequest request)
     {
         var entity = await _unitOfWork.IAreaRepository.FindFirst(x => x.AreaID == id);
         if (entity is null) return NotFound<AreaResponse>("Không tìm thấy khu vực.");

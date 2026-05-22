@@ -37,7 +37,7 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
   const { message } = App.useApp()
   const [updatingFeatureId, setUpdatingFeatureId] = useState<number | null>(null)
 
-  const categoriesQuery = useCourtFeatureCategoriesQuery({ page: 1, pageSize: 200 })
+  const categoriesQuery = useCourtFeatureCategoriesQuery()
   const mappingsQuery = useCourtFeatureMappingsByCourtQuery(courtId, courtId > 0)
   const createMapping = useCreateCourtFeatureMappingMutation()
   const deleteMapping = useDeleteCourtFeatureMappingMutation()

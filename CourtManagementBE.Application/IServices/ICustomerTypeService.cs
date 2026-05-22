@@ -8,7 +8,7 @@ public interface ICustomerTypeService
 {
     Task<Result<PageList<CustomerTypeResponse>>> GetAll(QueryResource query);
     Task<Result<CustomerTypeResponse>> GetById(int id);
-    Task<Result<CustomerTypeResponse>> Create(CreateCustomerTypeRequest req);
-    Task<Result<CustomerTypeResponse>> Update(int id, UpdateCustomerTypeRequest req);
+    Task<Result<CustomerTypeResponse>> Create(CustomerTypeRequest req);
+    Task<Result<CustomerTypeResponse>> Update(int id, CustomerTypeRequest req);
     Task<Result<bool>> Delete(int id);
 }

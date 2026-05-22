@@ -10,7 +10,7 @@ export type PaymentStatus = {
   isFinal: boolean
 }
 
-export type CreatePaymentStatusRequest = {
+export type PaymentStatusRequest = {
   code: string
   name: string
   description?: string
@@ -19,5 +19,3 @@ export type CreatePaymentStatusRequest = {
   colorCode?: string
   isFinal?: boolean
 }
-
-export type UpdatePaymentStatusRequest = CreatePaymentStatusRequest

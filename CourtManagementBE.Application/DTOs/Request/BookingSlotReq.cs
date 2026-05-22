@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CourtManagementBE.Application.DTOs;
 
-public class CreateBookingSlotRequest
+public class BookingSlotRequest
 {
     [Required] public Guid BookingID { get; set; }
     [Required] public int CourtID { get; set; }

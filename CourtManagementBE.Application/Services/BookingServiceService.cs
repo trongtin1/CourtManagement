@@ -19,7 +19,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
         return Success(_mapper.Map<List<BookingServiceResponse>>(list));
     }
 
-    public async Task<Result<BookingServiceResponse>> Create(CreateBookingServiceRequest request)
+    public async Task<Result<BookingServiceResponse>> Create(BookingServiceRequest request)
     {
         if (!await CanAccessBooking(request.BookingID) || !await CanAccessService(request.ServiceID))
         {
@@ -34,7 +34,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
         return Created(_mapper.Map<BookingServiceResponse>(entity));
     }
 
-    public async Task<Result<BookingServiceResponse>> Update(int id, UpdateBookingServiceRequest request)
+    public async Task<Result<BookingServiceResponse>> Update(int id, BookingServiceRequest request)
     {
         var entity = await _unitOfWork.IBookingServiceRepository.FindFirst(x => x.BookingServiceID == id);
         if (entity is null) return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ booking.");

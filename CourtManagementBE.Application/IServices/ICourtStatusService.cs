@@ -8,7 +8,7 @@ public interface ICourtStatusService
 {
     Task<Result<PageList<CourtStatusResponse>>> GetAll(QueryResource query);
     Task<Result<CourtStatusResponse>> GetById(int id);
-    Task<Result<CourtStatusResponse>> Create(CreateCourtStatusRequest request);
-    Task<Result<CourtStatusResponse>> Update(int id, UpdateCourtStatusRequest request);
+    Task<Result<CourtStatusResponse>> Create(CourtStatusRequest request);
+    Task<Result<CourtStatusResponse>> Update(int id, CourtStatusRequest request);
     Task<Result<bool>> Delete(int id);
 }

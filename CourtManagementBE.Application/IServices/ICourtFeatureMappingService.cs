@@ -6,6 +6,6 @@ namespace CourtManagementBE.Application.IServices;
 public interface ICourtFeatureMappingService
 {
     Task<Result<List<CourtFeatureMappingResponse>>> GetByCourt(int courtId);
-    Task<Result<CourtFeatureMappingResponse>> Create(int courtId, CreateCourtFeatureMappingRequest request);
+    Task<Result<CourtFeatureMappingResponse>> Create(int courtId, CourtFeatureMappingRequest request);
     Task<Result<bool>> Delete(int courtId, int featureId);
 }

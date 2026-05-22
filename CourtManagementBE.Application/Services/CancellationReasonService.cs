@@ -27,7 +27,7 @@ public class CancellationReasonService : BaseService, ICancellationReasonService
         return Success(_mapper.Map<CancellationReasonResponse>(entity));
     }
 
-    public async Task<Result<CancellationReasonResponse>> Create(CreateCancellationReasonRequest request)
+    public async Task<Result<CancellationReasonResponse>> Create(CancellationReasonRequest request)
     {
         var entity = _mapper.Map<CancellationReasons>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class CancellationReasonService : BaseService, ICancellationReasonService
         return Created(_mapper.Map<CancellationReasonResponse>(entity));
     }
 
-    public async Task<Result<CancellationReasonResponse>> Update(int id, UpdateCancellationReasonRequest request)
+    public async Task<Result<CancellationReasonResponse>> Update(int id, CancellationReasonRequest request)
     {
         var entity = await _unitOfWork.ICancellationReasonRepository.FindFirst(x => x.CancellationReasonID == id);
         if (entity is null) return NotFound<CancellationReasonResponse>("Không tìm thấy lý do hủy.");

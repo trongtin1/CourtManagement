@@ -24,7 +24,7 @@ public class CourtFeatureMappingController : ControllerBase
     }
 
     [HttpPost("{courtId}/features")]
-    public async Task<IActionResult> Create(int courtId, [FromBody] CreateCourtFeatureMappingRequest req)
+    public async Task<IActionResult> Create(int courtId, [FromBody] CourtFeatureMappingRequest req)
     {
         var r = await _service.Create(courtId, req);
         return StatusCode((int)r.StatusCode, r);

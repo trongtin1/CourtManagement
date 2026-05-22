@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CourtManagementBE.Application.DTOs;
 
-public class CreateBookingRequest
+public class BookingRequest
 {
     [Required] public int CourtID { get; set; }
     [Required] public int CustomerID { get; set; }
@@ -11,20 +11,6 @@ public class CreateBookingRequest
     public int? BookingStatusID { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
-}
-
-public class UpdateBookingRequest
-{
-    public int? BookingStatusID { get; set; }
-    [Required, MaxLength(20)] public string Status { get; set; } = string.Empty;
-    [MaxLength(500)] public string Note { get; set; } = string.Empty;
     public int? CancellationReasonID { get; set; }
     [MaxLength(500)] public string CancellationReason { get; set; } = string.Empty;
-    public decimal TotalAmount { get; set; }
-}
-
-public class CancelBookingRequest
-{
-    [Required, MaxLength(500)] public string CancellationReason { get; set; } = string.Empty;
-    public int? CancellationReasonID { get; set; }
 }

@@ -17,7 +17,7 @@ public class CourtFeatureMappingService : BaseService, ICourtFeatureMappingServi
         return Success(_mapper.Map<List<CourtFeatureMappingResponse>>(list));
     }
 
-    public async Task<Result<CourtFeatureMappingResponse>> Create(int courtId, CreateCourtFeatureMappingRequest request)
+    public async Task<Result<CourtFeatureMappingResponse>> Create(int courtId, CourtFeatureMappingRequest request)
     {
         var court = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == courtId);
         if (court is null) return NotFound<CourtFeatureMappingResponse>("Khong tim thay san.");

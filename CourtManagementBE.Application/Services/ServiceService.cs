@@ -29,7 +29,7 @@ public class ServiceService : BaseService, IServiceService
         return Success(_mapper.Map<ServiceResponse>(entity));
     }
 
-    public async Task<Result<ServiceResponse>> Create(CreateServiceRequest request)
+    public async Task<Result<ServiceResponse>> Create(ServiceRequest request)
     {
         request.FacilityID = WorkingFacilityId ?? request.FacilityID;
         if (request.FacilityID is not null && !CanAccessFacility(request.FacilityID.Value))
@@ -45,7 +45,7 @@ public class ServiceService : BaseService, IServiceService
         return Created(_mapper.Map<ServiceResponse>(entity));
     }
 
-    public async Task<Result<ServiceResponse>> Update(int id, UpdateServiceRequest request)
+    public async Task<Result<ServiceResponse>> Update(int id, ServiceRequest request)
     {
         var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy dịch vụ.");

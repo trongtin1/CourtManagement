@@ -27,7 +27,7 @@ public class CustomerTypeService : BaseService, ICustomerTypeService
         return Success(_mapper.Map<CustomerTypeResponse>(entity));
     }
 
-    public async Task<Result<CustomerTypeResponse>> Create(CreateCustomerTypeRequest request)
+    public async Task<Result<CustomerTypeResponse>> Create(CustomerTypeRequest request)
     {
         var entity = _mapper.Map<CustomerTypes>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class CustomerTypeService : BaseService, ICustomerTypeService
         return Created(_mapper.Map<CustomerTypeResponse>(entity));
     }
 
-    public async Task<Result<CustomerTypeResponse>> Update(int id, UpdateCustomerTypeRequest request)
+    public async Task<Result<CustomerTypeResponse>> Update(int id, CustomerTypeRequest request)
     {
         var entity = await _unitOfWork.ICustomerTypeRepository.FindFirst(x => x.CustomerTypeID == id);
         if (entity is null) return NotFound<CustomerTypeResponse>("Không tìm thấy loại khách hàng.");

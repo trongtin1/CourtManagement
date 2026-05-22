@@ -27,7 +27,7 @@ public class BookingStatusService : BaseService, IBookingStatusService
         return Success(_mapper.Map<BookingStatusResponse>(entity));
     }
 
-    public async Task<Result<BookingStatusResponse>> Create(CreateBookingStatusRequest request)
+    public async Task<Result<BookingStatusResponse>> Create(BookingStatusRequest request)
     {
         var entity = _mapper.Map<BookingStatuses>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class BookingStatusService : BaseService, IBookingStatusService
         return Created(_mapper.Map<BookingStatusResponse>(entity));
     }
 
-    public async Task<Result<BookingStatusResponse>> Update(int id, UpdateBookingStatusRequest request)
+    public async Task<Result<BookingStatusResponse>> Update(int id, BookingStatusRequest request)
     {
         var entity = await _unitOfWork.IBookingStatusRepository.FindFirst(x => x.BookingStatusID == id);
         if (entity is null) return NotFound<BookingStatusResponse>("Không tìm thấy trạng thái đặt lịch.");

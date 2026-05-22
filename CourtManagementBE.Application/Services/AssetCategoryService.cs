@@ -27,7 +27,7 @@ public class AssetCategoryService : BaseService, IAssetCategoryService
         return Success(_mapper.Map<AssetCategoryResponse>(entity));
     }
 
-    public async Task<Result<AssetCategoryResponse>> Create(CreateAssetCategoryRequest request)
+    public async Task<Result<AssetCategoryResponse>> Create(AssetCategoryRequest request)
     {
         var entity = _mapper.Map<AssetCategories>(request);
         await _unitOfWork.IAssetCategoryRepository.Add(entity);
@@ -35,7 +35,7 @@ public class AssetCategoryService : BaseService, IAssetCategoryService
         return Created(_mapper.Map<AssetCategoryResponse>(entity));
     }
 
-    public async Task<Result<AssetCategoryResponse>> Update(int id, UpdateAssetCategoryRequest request)
+    public async Task<Result<AssetCategoryResponse>> Update(int id, AssetCategoryRequest request)
     {
         var entity = await _unitOfWork.IAssetCategoryRepository.FindFirst(x => x.AssetCategoryID == id);
         if (entity is null) return NotFound<AssetCategoryResponse>("Không tìm thấy danh mục tài sản.");

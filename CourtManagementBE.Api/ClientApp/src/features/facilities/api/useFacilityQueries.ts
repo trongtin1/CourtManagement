@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { facilityApi } from '@/features/facilities/api/facilityApi'
 import type { PaginationQuery } from '@/types/api'
-import type { CreateFacilityRequest, UpdateFacilityRequest } from '../model/types'
+import type { FacilityRequest } from '../model/types'
 
 export const facilityKeys = {
   all: ['facilities'] as const,
@@ -17,12 +17,16 @@ export const useFacilitiesQuery = (params?: PaginationQuery, enabled = true) =>
   })
 
 export const useFacilityQuery = (id: number) =>
-  useQuery({ queryKey: facilityKeys.detail(id), queryFn: () => facilityApi.getById(id), enabled: id > 0 })
+  useQuery({
+    queryKey: facilityKeys.detail(id),
+    queryFn: () => facilityApi.getById(id),
+    enabled: id > 0,
+  })
 
 export const useCreateFacilityMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: CreateFacilityRequest) => facilityApi.create(data),
+    mutationFn: (data: FacilityRequest) => facilityApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: facilityKeys.all }),
   })
 }
@@ -30,7 +34,8 @@ export const useCreateFacilityMutation = () => {
 export const useUpdateFacilityMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateFacilityRequest }) => facilityApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: FacilityRequest }) =>
+      facilityApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: facilityKeys.all }),
   })
 }

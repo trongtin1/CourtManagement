@@ -37,7 +37,7 @@ public class PaymentService : BaseService, IPaymentService
         return Success(_mapper.Map<PaymentResponse>(entity));
     }
 
-    public async Task<Result<PaymentResponse>> Create(CreatePaymentRequest request)
+    public async Task<Result<PaymentResponse>> Create(PaymentRequest request)
     {
         if (!await CanAccessBooking(request.BookingID)) return Unauthorized<PaymentResponse>("Bạn không có quyền tạo thanh toán cho booking này.");
         var entity = _mapper.Map<Payments>(request);
@@ -47,7 +47,7 @@ public class PaymentService : BaseService, IPaymentService
         return Created(_mapper.Map<PaymentResponse>(entity));
     }
 
-    public async Task<Result<PaymentResponse>> Update(int id, UpdatePaymentRequest request)
+    public async Task<Result<PaymentResponse>> Update(int id, PaymentRequest request)
     {
         var entity = await _unitOfWork.IPaymentRepository.FindFirst(x => x.PaymentID == id);
         if (entity is null) return NotFound<PaymentResponse>("Không tìm thấy thanh toán.");

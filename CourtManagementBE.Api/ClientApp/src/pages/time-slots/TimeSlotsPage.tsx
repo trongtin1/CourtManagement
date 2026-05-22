@@ -1,6 +1,23 @@
 import { useState } from 'react'
-import { App, Button, Card, Form, Input, Modal, Popconfirm, Space, Switch, Table, Typography } from 'antd'
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Switch,
+  Table,
+  Typography,
+} from 'antd'
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 import { LoadingSpin } from '@/components/common/LoadingSpin'
 import {
@@ -10,7 +27,11 @@ import {
   useToggleTimeSlotMutation,
   useUpdateTimeSlotMutation,
 } from '@/features/courts/api/useTimeSlotQueries'
-import type { CreateTimeSlotRequest, TimeSlot, UpdateTimeSlotRequest } from '@/features/courts/model/types'
+import type {
+  CreateTimeSlotRequest,
+  TimeSlot,
+  UpdateTimeSlotRequest,
+} from '@/features/courts/model/types'
 import { toApiError } from '@/utils/errors'
 
 export function TimeSlotsPage() {
@@ -32,7 +53,11 @@ export function TimeSlotsPage() {
   const openCreate = () => {
     setEditingId(null)
     form.resetFields()
-    form.setFieldsValue({ isActive: true, startTime: '06:00:00', endTime: '08:00:00' })
+    form.setFieldsValue({
+      isActive: true,
+      startTime: '06:00:00',
+      endTime: '08:00:00',
+    })
     setOpen(true)
   }
 
@@ -90,11 +115,21 @@ export function TimeSlotsPage() {
       <div className="flex items-center justify-between">
         <div>
           <Typography.Title level={2}>Khung gio</Typography.Title>
-          <Typography.Paragraph type="secondary">Quan ly cac slot gio dat san.</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">
+            Quan ly cac slot gio dat san.
+          </Typography.Paragraph>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} loading={query.isRefetching} onClick={() => query.refetch()}>Lam moi</Button>
-          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">Them khung gio</Button>
+          <Button
+            icon={<ReloadOutlined />}
+            loading={query.isRefetching}
+            onClick={() => query.refetch()}
+          >
+            Lam moi
+          </Button>
+          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">
+            Them khung gio
+          </Button>
         </Space>
       </div>
       <Card>
@@ -104,24 +139,89 @@ export function TimeSlotsPage() {
             { title: 'Ten slot', dataIndex: 'slotName', width: 220 },
             { title: 'Bat dau', dataIndex: 'startTime', width: 120 },
             { title: 'Ket thuc', dataIndex: 'endTime', width: 120 },
-            { title: 'Active', dataIndex: 'isActive', width: 100, render: (value: boolean, record: TimeSlot) => <Switch checked={value} loading={toggleMut.isPending} onChange={() => handleToggle(record)} size="small" /> },
-            { title: '', width: 110, render: (_: unknown, record: TimeSlot) => <Space><Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" type="link" /><Popconfirm title="Xoa khung gio nay?" onConfirm={() => handleDelete(record.timeSlotID)}><Button danger icon={<DeleteOutlined />} size="small" type="link" /></Popconfirm></Space> },
+            {
+              title: 'Active',
+              dataIndex: 'isActive',
+              width: 100,
+              render: (value: boolean, record: TimeSlot) => (
+                <Switch
+                  checked={value}
+                  loading={toggleMut.isPending}
+                  onChange={() => handleToggle(record)}
+                  size="small"
+                />
+              ),
+            },
+            {
+              title: '',
+              width: 110,
+              render: (_: unknown, record: TimeSlot) => (
+                <Space>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => openEdit(record)}
+                    size="small"
+                    type="link"
+                  />
+                  <Popconfirm
+                    title="Xoa khung gio nay?"
+                    onConfirm={() => handleDelete(record.timeSlotID)}
+                  >
+                    <Button danger icon={<DeleteOutlined />} size="small" type="link" />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
           ]}
           dataSource={query.data?.items ?? []}
           loading={query.isFetching}
           onChange={(pagination) => setTablePagination(pagination)}
-          pagination={{ current: tablePagination.current ?? 1, pageSize: tablePagination.pageSize ?? 10, total: query.data?.totalCount ?? 0, showTotal: (total) => `Tong ${total}` }}
+          pagination={{
+            current: tablePagination.current ?? 1,
+            pageSize: tablePagination.pageSize ?? 10,
+            total: query.data?.totalCount ?? 0,
+            showTotal: (total) => `Tong ${total}`,
+          }}
           rowKey="timeSlotID"
           scroll={{ x: 760 }}
           size="middle"
         />
       </Card>
-      <Modal confirmLoading={createMut.isPending || updateMut.isPending} destroyOnClose okText={editingId ? 'Cap nhat' : 'Tao'} onCancel={() => setOpen(false)} onOk={handleSubmit} open={open} title={editingId ? 'Sua khung gio' : 'Them khung gio'} width={540}>
+      <Modal
+        confirmLoading={createMut.isPending || updateMut.isPending}
+        destroyOnClose
+        okText={editingId ? 'Cap nhat' : 'Tao'}
+        onCancel={() => setOpen(false)}
+        onOk={handleSubmit}
+        open={open}
+        title={editingId ? 'Sua khung gio' : 'Them khung gio'}
+        width={540}
+      >
         <Form form={form} layout="vertical">
-          <Form.Item label="Ten slot" name="slotName" rules={[{ required: true, message: 'Nhap ten slot' }]}><Input maxLength={100} placeholder="06:00 - 08:00" /></Form.Item>
-          <Form.Item label="Bat dau" name="startTime" rules={[{ required: true, message: 'Nhap gio bat dau' }]}><Input placeholder="06:00:00" /></Form.Item>
-          <Form.Item label="Ket thuc" name="endTime" rules={[{ required: true, message: 'Nhap gio ket thuc' }]}><Input placeholder="08:00:00" /></Form.Item>
-          <Form.Item label="Active" name="isActive" valuePropName="checked"><Switch /></Form.Item>
+          <Form.Item
+            label="Ten slot"
+            name="slotName"
+            rules={[{ required: true, message: 'Nhap ten slot' }]}
+          >
+            <Input maxLength={100} placeholder="06:00 - 08:00" />
+          </Form.Item>
+          <Form.Item
+            label="Bat dau"
+            name="startTime"
+            rules={[{ required: true, message: 'Nhap gio bat dau' }]}
+          >
+            <Input placeholder="06:00:00" />
+          </Form.Item>
+          <Form.Item
+            label="Ket thuc"
+            name="endTime"
+            rules={[{ required: true, message: 'Nhap gio ket thuc' }]}
+          >
+            <Input placeholder="08:00:00" />
+          </Form.Item>
+          <Form.Item label="Active" name="isActive" valuePropName="checked">
+            <Switch />
+          </Form.Item>
         </Form>
       </Modal>
     </Space>

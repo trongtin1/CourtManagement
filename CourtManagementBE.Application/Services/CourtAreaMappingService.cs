@@ -23,7 +23,7 @@ public class CourtAreaMappingService : BaseService, ICourtAreaMappingService
         return Success(_mapper.Map<List<CourtAreaMappingResponse>>(list));
     }
 
-    public async Task<Result<CourtAreaMappingResponse>> Create(CreateCourtAreaMappingRequest request)
+    public async Task<Result<CourtAreaMappingResponse>> Create(CourtAreaMappingRequest request)
     {
         var entity = _mapper.Map<CourtAreaMapping>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
@@ -32,7 +32,7 @@ public class CourtAreaMappingService : BaseService, ICourtAreaMappingService
         return Created(_mapper.Map<CourtAreaMappingResponse>(entity));
     }
 
-    public async Task<Result<CourtAreaMappingResponse>> Update(int id, UpdateCourtAreaMappingRequest request)
+    public async Task<Result<CourtAreaMappingResponse>> Update(int id, CourtAreaMappingRequest request)
     {
         var entity = await _unitOfWork.ICourtAreaMappingRepository.FindFirst(x => x.CourtAreaMappingID == id);
         if (entity is null) return NotFound<CourtAreaMappingResponse>("Không tìm thấy ánh xạ sân-khu vực.");

@@ -24,7 +24,7 @@ public class CourtUtilityController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCourtUtilityRequest req)
+    public async Task<IActionResult> Create([FromBody] CourtUtilityRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);

@@ -10,7 +10,7 @@ public interface ICourtPriceService
     Task<Result<List<CourtPriceResponse>>> GetByCourt(int courtId, DateTime targetDate);
     Task<Result<List<CourtPriceResponse>>> GetByCourtAndDay(int courtId, int dayOfWeek);
     Task<Result<CourtPriceResponse>> GetById(int id);
-    Task<Result<CourtPriceResponse>> Create(CreateCourtPriceRequest request);
-    Task<Result<CourtPriceResponse>> Update(int id, UpdateCourtPriceRequest request);
+    Task<Result<CourtPriceResponse>> Create(CourtPriceRequest request);
+    Task<Result<CourtPriceResponse>> Update(int id, CourtPriceRequest request);
     Task<Result<bool>> Delete(int id);
 }

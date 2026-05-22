@@ -31,14 +31,14 @@ public class UtilityController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateUtilityRequest req)
+    public async Task<IActionResult> Create([FromBody] UtilityRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateUtilityRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] UtilityRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

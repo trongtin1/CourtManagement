@@ -60,21 +60,21 @@ public class BookingController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBookingRequest req)
+    public async Task<IActionResult> Create([FromBody] BookingRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBookingRequest req)
+    public async Task<IActionResult> Update(Guid id, [FromBody] BookingRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPatch("{id}/cancel")]
-    public async Task<IActionResult> Cancel(Guid id, [FromBody] CancelBookingRequest req)
+    public async Task<IActionResult> Cancel(Guid id, [FromBody] BookingRequest req)
     {
         var r = await _service.Cancel(id, req);
         return StatusCode((int)r.StatusCode, r);

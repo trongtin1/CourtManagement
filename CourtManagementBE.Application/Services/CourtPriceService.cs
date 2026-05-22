@@ -210,7 +210,7 @@ public class CourtPriceService : BaseService, ICourtPriceService
         return Success(_mapper.Map<CourtPriceResponse>(entity));
     }
 
-    public async Task<Result<CourtPriceResponse>> Create(CreateCourtPriceRequest request)
+    public async Task<Result<CourtPriceResponse>> Create(CourtPriceRequest request)
     {
         if (!await CanAccessCourt(request.CourtID)) return Unauthorized<CourtPriceResponse>("Bạn không có quyền tạo giá cho sân này.");
         var validation = await ValidateRuleWindow(request.CourtID, request.DayOfWeek, request.StartTime, request.EndTime);
@@ -224,7 +224,7 @@ public class CourtPriceService : BaseService, ICourtPriceService
         return Created(_mapper.Map<CourtPriceResponse>(entity));
     }
 
-    public async Task<Result<CourtPriceResponse>> Update(int id, UpdateCourtPriceRequest request)
+    public async Task<Result<CourtPriceResponse>> Update(int id, CourtPriceRequest request)
     {
         var entity = await _unitOfWork.ICourtPriceRepository.FindFirst(x => x.CourtPriceRuleID == id);
         if (entity is null) return NotFound<CourtPriceResponse>("Không tìm thấy giá sân.");

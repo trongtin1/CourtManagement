@@ -27,7 +27,7 @@ public class PriceRuleTypeService : BaseService, IPriceRuleTypeService
         return Success(_mapper.Map<PriceRuleTypeResponse>(entity));
     }
 
-    public async Task<Result<PriceRuleTypeResponse>> Create(CreatePriceRuleTypeRequest request)
+    public async Task<Result<PriceRuleTypeResponse>> Create(PriceRuleTypeRequest request)
     {
         var entity = _mapper.Map<PriceRuleTypes>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class PriceRuleTypeService : BaseService, IPriceRuleTypeService
         return Created(_mapper.Map<PriceRuleTypeResponse>(entity));
     }
 
-    public async Task<Result<PriceRuleTypeResponse>> Update(int id, UpdatePriceRuleTypeRequest request)
+    public async Task<Result<PriceRuleTypeResponse>> Update(int id, PriceRuleTypeRequest request)
     {
         var entity = await _unitOfWork.IPriceRuleTypeRepository.FindFirst(x => x.PriceRuleTypeID == id);
         if (entity is null) return NotFound<PriceRuleTypeResponse>("Không tìm thấy loại khung giá.");

@@ -1,6 +1,24 @@
 import { useState } from 'react'
-import { App, Button, Card, Form, Input, Modal, Popconfirm, Space, Switch, Table, Tag, Typography } from 'antd'
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Typography,
+} from 'antd'
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 import { LoadingSpin } from '@/components/common/LoadingSpin'
 import {
@@ -10,7 +28,11 @@ import {
   useToggleCourtTypeMutation,
   useUpdateCourtTypeMutation,
 } from '@/features/courts/api/useCourtTypeQueries'
-import type { CourtType, CreateCourtTypeRequest, UpdateCourtTypeRequest } from '@/features/courts/model/types'
+import type {
+  CourtType,
+  CreateCourtTypeRequest,
+  UpdateCourtTypeRequest,
+} from '@/features/courts/model/types'
 import { toApiError } from '@/utils/errors'
 
 export function CourtTypesPage() {
@@ -90,38 +112,114 @@ export function CourtTypesPage() {
       <div className="flex items-center justify-between">
         <div>
           <Typography.Title level={2}>Loai san</Typography.Title>
-          <Typography.Paragraph type="secondary">Quan ly badminton, tennis, pickleball va cac loai san khac.</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">
+            Quan ly badminton, tennis, pickleball va cac loai san khac.
+          </Typography.Paragraph>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} loading={query.isRefetching} onClick={() => query.refetch()}>Lam moi</Button>
-          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">Them loai san</Button>
+          <Button
+            icon={<ReloadOutlined />}
+            loading={query.isRefetching}
+            onClick={() => query.refetch()}
+          >
+            Lam moi
+          </Button>
+          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">
+            Them loai san
+          </Button>
         </Space>
       </div>
       <Card>
         <Table
           columns={[
             { title: 'ID', dataIndex: 'courtTypeID', width: 80 },
-            { title: 'Ma', dataIndex: 'code', width: 160, render: (value: string) => <Tag color="blue">{value}</Tag> },
+            {
+              title: 'Ma',
+              dataIndex: 'code',
+              width: 160,
+              render: (value: string) => <Tag color="blue">{value}</Tag>,
+            },
             { title: 'Ten loai san', dataIndex: 'name', width: 220 },
             { title: 'Mo ta', dataIndex: 'description' },
-            { title: 'Active', dataIndex: 'isActive', width: 100, render: (value: boolean, record: CourtType) => <Switch checked={value} loading={toggleMut.isPending} onChange={() => handleToggle(record)} size="small" /> },
-            { title: '', width: 110, render: (_: unknown, record: CourtType) => <Space><Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" type="link" /><Popconfirm title="Xoa loai san nay?" onConfirm={() => handleDelete(record.courtTypeID)}><Button danger icon={<DeleteOutlined />} size="small" type="link" /></Popconfirm></Space> },
+            {
+              title: 'Active',
+              dataIndex: 'isActive',
+              width: 100,
+              render: (value: boolean, record: CourtType) => (
+                <Switch
+                  checked={value}
+                  loading={toggleMut.isPending}
+                  onChange={() => handleToggle(record)}
+                  size="small"
+                />
+              ),
+            },
+            {
+              title: '',
+              width: 110,
+              render: (_: unknown, record: CourtType) => (
+                <Space>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => openEdit(record)}
+                    size="small"
+                    type="link"
+                  />
+                  <Popconfirm
+                    title="Xoa loai san nay?"
+                    onConfirm={() => handleDelete(record.courtTypeID)}
+                  >
+                    <Button danger icon={<DeleteOutlined />} size="small" type="link" />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
           ]}
           dataSource={query.data?.items ?? []}
           loading={query.isFetching}
           onChange={(pagination) => setTablePagination(pagination)}
-          pagination={{ current: tablePagination.current ?? 1, pageSize: tablePagination.pageSize ?? 10, total: query.data?.totalCount ?? 0, showTotal: (total) => `Tong ${total}` }}
+          pagination={{
+            current: tablePagination.current ?? 1,
+            pageSize: tablePagination.pageSize ?? 10,
+            total: query.data?.totalCount ?? 0,
+            showTotal: (total) => `Tong ${total}`,
+          }}
           rowKey="courtTypeID"
           scroll={{ x: 760 }}
           size="middle"
         />
       </Card>
-      <Modal confirmLoading={createMut.isPending || updateMut.isPending} destroyOnClose okText={editingId ? 'Cap nhat' : 'Tao'} onCancel={() => setOpen(false)} onOk={handleSubmit} open={open} title={editingId ? 'Sua loai san' : 'Them loai san'} width={540}>
+      <Modal
+        confirmLoading={createMut.isPending || updateMut.isPending}
+        destroyOnClose
+        okText={editingId ? 'Cap nhat' : 'Tao'}
+        onCancel={() => setOpen(false)}
+        onOk={handleSubmit}
+        open={open}
+        title={editingId ? 'Sua loai san' : 'Them loai san'}
+        width={540}
+      >
         <Form form={form} layout="vertical">
-          <Form.Item label="Ma loai san" name="code" rules={[{ required: true, message: 'Nhap ma loai san' }]}><Input maxLength={20} placeholder="BADMINTON" /></Form.Item>
-          <Form.Item label="Ten loai san" name="name" rules={[{ required: true, message: 'Nhap ten loai san' }]}><Input maxLength={100} placeholder="Badminton" /></Form.Item>
-          <Form.Item label="Mo ta" name="description"><Input.TextArea maxLength={500} rows={3} /></Form.Item>
-          <Form.Item label="Active" name="isActive" valuePropName="checked"><Switch /></Form.Item>
+          <Form.Item
+            label="Ma loai san"
+            name="code"
+            rules={[{ required: true, message: 'Nhap ma loai san' }]}
+          >
+            <Input maxLength={20} placeholder="BADMINTON" />
+          </Form.Item>
+          <Form.Item
+            label="Ten loai san"
+            name="name"
+            rules={[{ required: true, message: 'Nhap ten loai san' }]}
+          >
+            <Input maxLength={100} placeholder="Badminton" />
+          </Form.Item>
+          <Form.Item label="Mo ta" name="description">
+            <Input.TextArea maxLength={500} rows={3} />
+          </Form.Item>
+          <Form.Item label="Active" name="isActive" valuePropName="checked">
+            <Switch />
+          </Form.Item>
         </Form>
       </Modal>
     </Space>

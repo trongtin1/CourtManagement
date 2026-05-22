@@ -27,7 +27,7 @@ public class UnitService : BaseService, IUnitService
         return Success(_mapper.Map<UnitResponse>(entity));
     }
 
-    public async Task<Result<UnitResponse>> Create(CreateUnitRequest request)
+    public async Task<Result<UnitResponse>> Create(UnitRequest request)
     {
         var entity = _mapper.Map<Units>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class UnitService : BaseService, IUnitService
         return Created(_mapper.Map<UnitResponse>(entity));
     }
 
-    public async Task<Result<UnitResponse>> Update(int id, UpdateUnitRequest request)
+    public async Task<Result<UnitResponse>> Update(int id, UnitRequest request)
     {
         var entity = await _unitOfWork.IUnitRepository.FindFirst(x => x.UnitID == id);
         if (entity is null) return NotFound<UnitResponse>("Không tìm thấy đơn vị tính.");

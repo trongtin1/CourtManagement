@@ -37,7 +37,7 @@ public class CourtAssetService : BaseService, ICourtAssetService
         return Success(_mapper.Map<CourtAssetResponse>(entity));
     }
 
-    public async Task<Result<CourtAssetResponse>> Create(CreateCourtAssetRequest request)
+    public async Task<Result<CourtAssetResponse>> Create(CourtAssetRequest request)
     {
         if (!await CanAccessCourt(request.CourtID)) return Unauthorized<CourtAssetResponse>("Bạn không có quyền tạo tài sản cho sân này.");
 
@@ -56,7 +56,7 @@ public class CourtAssetService : BaseService, ICourtAssetService
         return Created(_mapper.Map<CourtAssetResponse>(entity));
     }
 
-    public async Task<Result<CourtAssetResponse>> Update(int id, UpdateCourtAssetRequest request)
+    public async Task<Result<CourtAssetResponse>> Update(int id, CourtAssetRequest request)
     {
         var entity = await _unitOfWork.ICourtAssetRepository.FindFirst(x => x.CourtAssetID == id, disableTracking: false);
         if (entity is null) return NotFound<CourtAssetResponse>("Không tìm thấy tài sản sân.");

@@ -8,7 +8,7 @@ public interface IAssetConditionService
 {
     Task<Result<PageList<AssetConditionResponse>>> GetAll(QueryResource query);
     Task<Result<AssetConditionResponse>> GetById(int id);
-    Task<Result<AssetConditionResponse>> Create(CreateAssetConditionRequest req);
-    Task<Result<AssetConditionResponse>> Update(int id, UpdateAssetConditionRequest req);
+    Task<Result<AssetConditionResponse>> Create(AssetConditionRequest req);
+    Task<Result<AssetConditionResponse>> Update(int id, AssetConditionRequest req);
     Task<Result<bool>> Delete(int id);
 }

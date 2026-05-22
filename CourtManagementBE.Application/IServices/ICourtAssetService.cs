@@ -9,7 +9,7 @@ public interface ICourtAssetService
     Task<Result<PageList<CourtAssetResponse>>> GetAll(QueryResource query);
     Task<Result<List<CourtAssetResponse>>> GetByCourt(int courtId);
     Task<Result<CourtAssetResponse>> GetById(int id);
-    Task<Result<CourtAssetResponse>> Create(CreateCourtAssetRequest request);
-    Task<Result<CourtAssetResponse>> Update(int id, UpdateCourtAssetRequest request);
+    Task<Result<CourtAssetResponse>> Create(CourtAssetRequest request);
+    Task<Result<CourtAssetResponse>> Update(int id, CourtAssetRequest request);
     Task<Result<bool>> Delete(int id);
 }

@@ -31,14 +31,14 @@ public class CourtAreaMappingController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCourtAreaMappingRequest req)
+    public async Task<IActionResult> Create([FromBody] CourtAreaMappingRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateCourtAreaMappingRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] CourtAreaMappingRequest req)
     {
         var r = await _service.Update(id, req);
         return StatusCode((int)r.StatusCode, r);

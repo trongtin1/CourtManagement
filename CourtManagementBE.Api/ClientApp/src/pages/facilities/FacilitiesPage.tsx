@@ -28,7 +28,7 @@ import {
   useDeleteFacilityMutation,
   useToggleFacilityMutation,
 } from '@/features/facilities/api/useFacilityQueries'
-import type { Facility, CreateFacilityRequest, UpdateFacilityRequest } from '@/features/facilities/model/types'
+import type { Facility, FacilityRequest } from '@/features/facilities/model/types'
 import { toApiError } from '@/utils/errors'
 
 export function FacilitiesPage() {
@@ -75,7 +75,7 @@ export function FacilitiesPage() {
     try {
       const values = await form.validateFields()
       if (editingId) {
-        const data: UpdateFacilityRequest = {
+        const data: FacilityRequest = {
           facilityName: values.facilityName,
           address: values.address,
           phone: values.phone,
@@ -87,7 +87,7 @@ export function FacilitiesPage() {
         await updateMutation.mutateAsync({ id: editingId, data })
         message.success('Cập nhật cơ sở thành công')
       } else {
-        const data: CreateFacilityRequest = {
+        const data: FacilityRequest = {
           facilityName: values.facilityName,
           address: values.address,
           phone: values.phone,
@@ -136,7 +136,11 @@ export function FacilitiesPage() {
           </Typography.Paragraph>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} loading={facilitiesQuery.isRefetching} onClick={() => facilitiesQuery.refetch()}>
+          <Button
+            icon={<ReloadOutlined />}
+            loading={facilitiesQuery.isRefetching}
+            onClick={() => facilitiesQuery.refetch()}
+          >
             Làm mới
           </Button>
           <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">
@@ -148,8 +152,18 @@ export function FacilitiesPage() {
       <Card>
         <Table
           columns={[
-            { title: 'ID', dataIndex: 'facilityID', width: 70, sorter: (a: Facility, b: Facility) => a.facilityID - b.facilityID },
-            { title: 'Tên cơ sở', dataIndex: 'facilityName', sorter: (a: Facility, b: Facility) => a.facilityName.localeCompare(b.facilityName) },
+            {
+              title: 'ID',
+              dataIndex: 'facilityID',
+              width: 70,
+              sorter: (a: Facility, b: Facility) => a.facilityID - b.facilityID,
+            },
+            {
+              title: 'Tên cơ sở',
+              dataIndex: 'facilityName',
+              sorter: (a: Facility, b: Facility) =>
+                a.facilityName.localeCompare(b.facilityName),
+            },
             { title: 'Địa chỉ', dataIndex: 'address', ellipsis: true },
             { title: 'SĐT', dataIndex: 'phone', width: 130 },
             { title: 'Email', dataIndex: 'email', ellipsis: true },
@@ -171,8 +185,16 @@ export function FacilitiesPage() {
               width: 120,
               render: (_: unknown, record: Facility) => (
                 <Space>
-                  <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" type="link" />
-                  <Popconfirm title="Xoá cơ sở này?" onConfirm={() => handleDelete(record.facilityID)}>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => openEdit(record)}
+                    size="small"
+                    type="link"
+                  />
+                  <Popconfirm
+                    title="Xoá cơ sở này?"
+                    onConfirm={() => handleDelete(record.facilityID)}
+                  >
                     <Button danger icon={<DeleteOutlined />} size="small" type="link" />
                   </Popconfirm>
                 </Space>
@@ -206,7 +228,11 @@ export function FacilitiesPage() {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item label="Tên cơ sở" name="facilityName" rules={[{ required: true, message: 'Vui lòng nhập tên' }]}>
+          <Form.Item
+            label="Tên cơ sở"
+            name="facilityName"
+            rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
+          >
             <Input placeholder="Nhập tên cơ sở" />
           </Form.Item>
           <Form.Item label="Địa chỉ" name="address">

@@ -8,7 +8,7 @@ public interface IPaymentMethodService
 {
     Task<Result<PageList<PaymentMethodResponse>>> GetAll(QueryResource query);
     Task<Result<PaymentMethodResponse>> GetById(int id);
-    Task<Result<PaymentMethodResponse>> Create(CreatePaymentMethodRequest req);
-    Task<Result<PaymentMethodResponse>> Update(int id, UpdatePaymentMethodRequest req);
+    Task<Result<PaymentMethodResponse>> Create(PaymentMethodRequest req);
+    Task<Result<PaymentMethodResponse>> Update(int id, PaymentMethodRequest req);
     Task<Result<bool>> Delete(int id);
 }

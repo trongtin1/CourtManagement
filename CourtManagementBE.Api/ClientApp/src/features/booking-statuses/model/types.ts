@@ -11,7 +11,7 @@ export type BookingStatus = {
   isFinal: boolean
 }
 
-export type CreateBookingStatusRequest = {
+export type BookingStatusRequest = {
   code: string
   name: string
   description?: string
@@ -21,5 +21,3 @@ export type CreateBookingStatusRequest = {
   canCancel?: boolean
   isFinal?: boolean
 }
-
-export type UpdateBookingStatusRequest = CreateBookingStatusRequest

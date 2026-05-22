@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CourtManagementBE.Application.DTOs;
 
-public class CreatePaymentRequest
+public class PaymentRequest
 {
     [Required] public Guid BookingID { get; set; }
     [Required] public decimal Amount { get; set; }
@@ -13,15 +13,7 @@ public class CreatePaymentRequest
     public int? PaymentStatusID { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     public int? RefundReasonID { get; set; }
+    public decimal RefundedAmount { get; set; }
     [MaxLength(300)] public string Note { get; set; } = string.Empty;
     [Required] public DateTime PaymentDate { get; set; }
-}
-
-public class UpdatePaymentRequest
-{
-    public int? PaymentStatusID { get; set; }
-    [Required, MaxLength(20)] public string Status { get; set; } = string.Empty;
-    public decimal RefundedAmount { get; set; }
-    public int? RefundReasonID { get; set; }
-    [MaxLength(300)] public string Note { get; set; } = string.Empty;
 }

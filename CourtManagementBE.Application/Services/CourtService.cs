@@ -45,7 +45,7 @@ public class CourtService : BaseService, ICourtService
         return Success(_mapper.Map<CourtResponse>(entity));
     }
 
-    public async Task<Result<CourtResponse>> Create(CreateCourtRequest request)
+    public async Task<Result<CourtResponse>> Create(CourtRequest request)
     {
         var facilityId = WorkingFacilityId ?? request.FacilityID;
         if (!CanAccessFacility(facilityId)) return Unauthorized<CourtResponse>("Bạn không có quyền tạo sân cho cơ sở này.");
@@ -58,7 +58,7 @@ public class CourtService : BaseService, ICourtService
         return Created(_mapper.Map<CourtResponse>(entity));
     }
 
-    public async Task<Result<CourtResponse>> Update(int id, UpdateCourtRequest request)
+    public async Task<Result<CourtResponse>> Update(int id, CourtRequest request)
     {
         var entity = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == id);
         if (entity is null) return NotFound<CourtResponse>("Không tìm thấy sân.");

@@ -27,7 +27,7 @@ public class RefundReasonService : BaseService, IRefundReasonService
         return Success(_mapper.Map<RefundReasonResponse>(entity));
     }
 
-    public async Task<Result<RefundReasonResponse>> Create(CreateRefundReasonRequest request)
+    public async Task<Result<RefundReasonResponse>> Create(RefundReasonRequest request)
     {
         var entity = _mapper.Map<RefundReasons>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class RefundReasonService : BaseService, IRefundReasonService
         return Created(_mapper.Map<RefundReasonResponse>(entity));
     }
 
-    public async Task<Result<RefundReasonResponse>> Update(int id, UpdateRefundReasonRequest request)
+    public async Task<Result<RefundReasonResponse>> Update(int id, RefundReasonRequest request)
     {
         var entity = await _unitOfWork.IRefundReasonRepository.FindFirst(x => x.RefundReasonID == id);
         if (entity is null) return NotFound<RefundReasonResponse>("Không tìm thấy lý do hoàn tiền.");

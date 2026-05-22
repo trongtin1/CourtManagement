@@ -8,7 +8,7 @@ public interface IPriceRuleTypeService
 {
     Task<Result<PageList<PriceRuleTypeResponse>>> GetAll(QueryResource query);
     Task<Result<PriceRuleTypeResponse>> GetById(int id);
-    Task<Result<PriceRuleTypeResponse>> Create(CreatePriceRuleTypeRequest req);
-    Task<Result<PriceRuleTypeResponse>> Update(int id, UpdatePriceRuleTypeRequest req);
+    Task<Result<PriceRuleTypeResponse>> Create(PriceRuleTypeRequest req);
+    Task<Result<PriceRuleTypeResponse>> Update(int id, PriceRuleTypeRequest req);
     Task<Result<bool>> Delete(int id);
 }

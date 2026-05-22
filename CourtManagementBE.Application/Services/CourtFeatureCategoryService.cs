@@ -31,7 +31,7 @@ public class CourtFeatureCategoryService : BaseService, ICourtFeatureCategorySer
         return Success(_mapper.Map<CourtFeatureCategoryResponse>(entity));
     }
 
-    public async Task<Result<CourtFeatureCategoryResponse>> Create(CreateCourtFeatureCategoryRequest request)
+    public async Task<Result<CourtFeatureCategoryResponse>> Create(CourtFeatureCategoryRequest request)
     {
         var entity = _mapper.Map<CourtFeatureCategories>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -40,7 +40,7 @@ public class CourtFeatureCategoryService : BaseService, ICourtFeatureCategorySer
         return Created(_mapper.Map<CourtFeatureCategoryResponse>(entity));
     }
 
-    public async Task<Result<CourtFeatureCategoryResponse>> Update(int id, UpdateCourtFeatureCategoryRequest request)
+    public async Task<Result<CourtFeatureCategoryResponse>> Update(int id, CourtFeatureCategoryRequest request)
     {
         var entity = await _unitOfWork.ICourtFeatureCategoryRepository.FindFirst(x => x.CourtFeatureCategoryID == id);
         if (entity is null) return NotFound<CourtFeatureCategoryResponse>("Không tìm thấy loại tiện ích.");

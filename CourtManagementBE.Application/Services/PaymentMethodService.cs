@@ -27,7 +27,7 @@ public class PaymentMethodService : BaseService, IPaymentMethodService
         return Success(_mapper.Map<PaymentMethodResponse>(entity));
     }
 
-    public async Task<Result<PaymentMethodResponse>> Create(CreatePaymentMethodRequest request)
+    public async Task<Result<PaymentMethodResponse>> Create(PaymentMethodRequest request)
     {
         var entity = _mapper.Map<PaymentMethods>(request);
         entity.CreatedDate = DateTimeOffset.UtcNow;
@@ -36,7 +36,7 @@ public class PaymentMethodService : BaseService, IPaymentMethodService
         return Created(_mapper.Map<PaymentMethodResponse>(entity));
     }
 
-    public async Task<Result<PaymentMethodResponse>> Update(int id, UpdatePaymentMethodRequest request)
+    public async Task<Result<PaymentMethodResponse>> Update(int id, PaymentMethodRequest request)
     {
         var entity = await _unitOfWork.IPaymentMethodRepository.FindFirst(x => x.PaymentMethodID == id);
         if (entity is null) return NotFound<PaymentMethodResponse>("Không tìm thấy phương thức thanh toán.");

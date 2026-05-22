@@ -31,7 +31,7 @@ public class CourtFeatureService : BaseService, ICourtFeatureService
         return Success(_mapper.Map<CourtFeatureResponse>(entity));
     }
 
-    public async Task<Result<CourtFeatureResponse>> Create(CreateCourtFeatureRequest request)
+    public async Task<Result<CourtFeatureResponse>> Create(CourtFeatureRequest request)
     {
         var entity = _mapper.Map<CourtFeatures>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
@@ -45,7 +45,7 @@ public class CourtFeatureService : BaseService, ICourtFeatureService
         return Created(_mapper.Map<CourtFeatureResponse>(saved ?? entity));
     }
 
-    public async Task<Result<CourtFeatureResponse>> Update(int id, UpdateCourtFeatureRequest request)
+    public async Task<Result<CourtFeatureResponse>> Update(int id, CourtFeatureRequest request)
     {
         var entity = await _unitOfWork.ICourtFeatureRepository.FindFirst(x => x.CourtFeatureID == id);
         if (entity is null) return NotFound<CourtFeatureResponse>("Khong tim thay dac diem san.");

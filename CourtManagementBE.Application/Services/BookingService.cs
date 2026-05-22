@@ -58,7 +58,7 @@ public class BookingService : BaseService, IBookingService
         return Success(_mapper.Map<BookingResponse>(entity));
     }
 
-    public async Task<Result<BookingResponse>> Create(CreateBookingRequest request)
+    public async Task<Result<BookingResponse>> Create(BookingRequest request)
     {
         if (!await CanAccessCourt(request.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền tạo booking cho sân này.");
 
@@ -71,7 +71,7 @@ public class BookingService : BaseService, IBookingService
         return Created(_mapper.Map<BookingResponse>(entity));
     }
 
-    public async Task<Result<BookingResponse>> Update(Guid id, UpdateBookingRequest request)
+    public async Task<Result<BookingResponse>> Update(Guid id, BookingRequest request)
     {
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
@@ -83,7 +83,7 @@ public class BookingService : BaseService, IBookingService
         return Success(_mapper.Map<BookingResponse>(entity));
     }
 
-    public async Task<Result<BookingResponse>> Cancel(Guid id, CancelBookingRequest request)
+    public async Task<Result<BookingResponse>> Cancel(Guid id, BookingRequest request)
     {
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
