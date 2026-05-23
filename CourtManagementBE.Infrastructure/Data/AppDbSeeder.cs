@@ -32,7 +32,6 @@ public static class AppDbSeeder
         await SeedCourtFeatureMappingsAsync(db, courts, courtFeatures, cancellationToken);
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
         await SeedCourtAssetsAsync(db, courts, cancellationToken);
-        await SeedCourtPricesAsync(db, courts, cancellationToken);
         await SeedServicePricesAsync(db, services, cancellationToken);
         await SeedBookingsAsync(db, courts, services, customers, cancellationToken);
     }
@@ -562,105 +561,6 @@ public static class AppDbSeeder
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static async Task SeedCourtPricesAsync(
-        AppDbContext db,
-        List<Courts> courts,
-        CancellationToken cancellationToken)
-    {
-        var normalType = await db.PriceRuleTypes.FirstOrDefaultAsync(x => x.Code == "normal", cancellationToken);
-        var peakType = await db.PriceRuleTypes.FirstOrDefaultAsync(x => x.Code == "peak", cancellationToken);
-        var weekendType = await db.PriceRuleTypes.FirstOrDefaultAsync(x => x.Code == "weekend", cancellationToken);
-
-        foreach (var court in courts)
-        {
-            for (var dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++)
-            {
-                var isWeekend = dayOfWeek is 0 or 6;
-                var seed = new[]
-                {
-                    new CourtPriceRule
-                    {
-                        CourtID = court.CourtID,
-                        PriceRuleTypeID = isWeekend ? weekendType?.PriceRuleTypeID : normalType?.PriceRuleTypeID,
-                        DayOfWeek = dayOfWeek,
-                        StartTime = new TimeSpan(6, 0, 0),
-                        EndTime = new TimeSpan(16, 0, 0),
-                        Price = 100_000m + (isWeekend ? 30_000m : 0m),
-                        IsActive = true,
-                        CreatedBy = AdminLogin,
-                    },
-                    new CourtPriceRule
-                    {
-                        CourtID = court.CourtID,
-                        PriceRuleTypeID = peakType?.PriceRuleTypeID,
-                        DayOfWeek = dayOfWeek,
-                        StartTime = new TimeSpan(16, 0, 0),
-                        EndTime = new TimeSpan(22, 0, 0),
-                        Price = 140_000m + (isWeekend ? 30_000m : 0m),
-                        IsActive = true,
-                        CreatedBy = AdminLogin,
-                    },
-                };
-
-                foreach (var item in seed)
-                {
-                    if (!await db.CourtDefaultPriceRules.AnyAsync(
-                        x => x.DayOfWeek == item.DayOfWeek
-                            && x.StartTime == item.StartTime
-                            && x.EndTime == item.EndTime,
-                        cancellationToken))
-                    {
-                        db.CourtDefaultPriceRules.Add(new CourtDefaultPriceRule
-                        {
-                            PriceRuleTypeID = item.PriceRuleTypeID,
-                            DayOfWeek = item.DayOfWeek,
-                            StartTime = item.StartTime,
-                            EndTime = item.EndTime,
-                            Price = item.Price,
-                            IsActive = item.IsActive,
-                            CreatedBy = AdminLogin,
-                        });
-                    }
-
-                    if (await db.CourtPriceRules.AnyAsync(
-                        x => x.CourtID == item.CourtID
-                            && x.DayOfWeek == item.DayOfWeek
-                            && x.StartTime == item.StartTime
-                            && x.EndTime == item.EndTime,
-                        cancellationToken))
-                    {
-                        continue;
-                    }
-
-                    db.CourtPriceRules.Add(item);
-                }
-            }
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-
-        var priceRule = await db.CourtPriceRules.FirstOrDefaultAsync(cancellationToken);
-        if (priceRule is not null && !await db.CourtPriceRuleHistories.AnyAsync(cancellationToken))
-        {
-            db.CourtPriceRuleHistories.Add(new CourtPriceRuleHistory
-            {
-                CourtPriceRuleID = priceRule.CourtPriceRuleID,
-                CourtID = priceRule.CourtID,
-                OldPriceRuleTypeID = priceRule.PriceRuleTypeID,
-                NewPriceRuleTypeID = priceRule.PriceRuleTypeID,
-                DayOfWeek = priceRule.DayOfWeek,
-                OldStartTime = priceRule.StartTime,
-                OldEndTime = priceRule.EndTime,
-                OldPrice = priceRule.Price - 10_000m,
-                NewStartTime = priceRule.StartTime,
-                NewEndTime = priceRule.EndTime,
-                NewPrice = priceRule.Price,
-                ChangedBy = AdminLogin,
-                Reason = "Initial seed price adjustment",
-            });
-            await db.SaveChangesAsync(cancellationToken);
-        }
-    }
 
     private static async Task SeedServicePricesAsync(
         AppDbContext db,
@@ -722,13 +622,7 @@ public static class AppDbSeeder
             .Where(x => x.ServiceID == service.ServiceID && x.ExpiryDate == null)
             .Select(x => x.Price)
             .FirstOrDefaultAsync(cancellationToken);
-        var courtPrice = await db.CourtPriceRules
-            .Where(x => x.CourtID == court.CourtID
-                && x.DayOfWeek == (int)bookingDate.DayOfWeek
-                && x.StartTime <= startTime
-                && x.EndTime >= endTime)
-            .Select(x => x.Price)
-            .FirstOrDefaultAsync(cancellationToken);
+        var courtPrice = 100_000m;
         var serviceQuantity = 2;
         var serviceTotal = servicePrice * serviceQuantity;
         var bookingId = Guid.Parse("22222222-2222-2222-2222-222222222222");
