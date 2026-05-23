@@ -78,10 +78,17 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
             return BadRequest<CourtDefaultPriceRuleResponse>("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
         }
 
+        if (!request.DayOfWeek.HasValue && !request.SpecificDate.HasValue)
+        {
+            return BadRequest<CourtDefaultPriceRuleResponse>("Vui lòng chọn ngày trong tuần hoặc ngày cụ thể.");
+        }
+
         var overlaps = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindList(x =>
-            x.DayOfWeek == request.DayOfWeek
-            && (!excludeId.HasValue || x.CourtDefaultPriceRuleID != excludeId.Value)
-            && x.PriceRuleTypeID == request.PriceRuleTypeID
+            (!excludeId.HasValue || x.CourtDefaultPriceRuleID != excludeId.Value)
+            && (
+                (request.DayOfWeek.HasValue && x.DayOfWeek == request.DayOfWeek.Value && !x.SpecificDate.HasValue)
+                || (request.SpecificDate.HasValue && x.SpecificDate == request.SpecificDate.Value && !x.DayOfWeek.HasValue)
+            )
             && x.StartTime < request.EndTime
             && x.EndTime > request.StartTime);
 
