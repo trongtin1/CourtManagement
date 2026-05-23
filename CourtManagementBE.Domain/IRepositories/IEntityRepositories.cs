@@ -1,5 +1,6 @@
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
+using CourtManagementBE.Domain.Models;
 
 namespace CourtManagementBE.Domain.IRepositories;
 
@@ -14,7 +15,6 @@ public interface ICourtAssetRepository : IGenericRepository<CourtAssets> { }
 public interface IUtilityRepository : IGenericRepository<Utilities> { }
 public interface IPriceRuleTypeRepository : IGenericRepository<PriceRuleTypes> { }
 public interface ICourtDefaultPriceRuleRepository : IGenericRepository<CourtDefaultPriceRule> { }
-public interface ICourtPriceRepository : IGenericRepository<CourtPriceRule> { }
 public interface ICustomerRepository : IGenericRepository<Customers> { }
 public interface IBookingRepository : IGenericRepository<Bookings> { }
 public interface IBookingSlotRepository : IGenericRepository<BookingSlots> { }

@@ -12,6 +12,7 @@ using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Infrastructure.Common;
 using CourtManagementBE.Infrastructure.Data;
 using CourtManagementBE.Infrastructure.Extensions.HttpContextExtensions;
+using CourtManagementBE.Infrastructure.Extensions.SqlExtentions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -216,7 +217,7 @@ namespace CourtManagementBE.Api
             }
 
             // ── Chạy SQL scripts (stored procedures, ...) ────────────────
-            // await app.RunSqlScriptsAsync();
+            await app.RunSqlScriptsAsync();
 
             // ── Middleware pipeline ───────────────────────────────────────
             if (app.Environment.IsDevelopment())

@@ -2,6 +2,11 @@ using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.IRepositories;
 using CourtManagementBE.Infrastructure.Common;
 using CourtManagementBE.Infrastructure.Data;
+using CourtManagementBE.Domain.Models;
+using CourtManagementBE.Infrastructure.Extensions.SqlExtentions;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
+using Microsoft.Data.SqlClient;
 
 namespace CourtManagementBE.Infrastructure.Repositories;
 
@@ -38,8 +43,6 @@ public class PriceRuleTypeRepository : GenericRepository<PriceRuleTypes>, IPrice
 public class CourtDefaultPriceRuleRepository : GenericRepository<CourtDefaultPriceRule>, ICourtDefaultPriceRuleRepository
 { public CourtDefaultPriceRuleRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class CourtPriceRepository : GenericRepository<CourtPriceRule>, ICourtPriceRepository
-{ public CourtPriceRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class CustomerRepository : GenericRepository<Customers>, ICustomerRepository
 { public CustomerRepository(AppDbContext ctx) : base(ctx) { } }

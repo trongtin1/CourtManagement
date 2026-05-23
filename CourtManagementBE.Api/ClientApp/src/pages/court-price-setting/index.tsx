@@ -166,8 +166,8 @@ export default function CourtPriceSettingPage() {
       priceRuleTypeID: record.priceRuleTypeID ?? null,
       dayOfWeek: record.dayOfWeek ?? null,
       specificDate: record.specificDate ? dayjs(record.specificDate) : null,
-      startTime: record.startTime ? dayjs(record.startTime, 'HH:mm:ss') : null,
-      endTime: record.endTime ? dayjs(record.endTime, 'HH:mm:ss') : null,
+      startTime: dayjs(record.startTime, 'HH:mm:ss'),
+      endTime: dayjs(record.endTime, 'HH:mm:ss'),
       price: record.price,
       isActive: record.isActive,
     })

@@ -12,7 +12,11 @@ public static class SqlScriptInitializer
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
-        var sqlDir = Path.Combine(AppContext.BaseDirectory, "SqlScripts");
+        var sqlDir = Path.Combine(Directory.GetCurrentDirectory(), "CourtManagementBE.Infrastructure", "SqlScripts");
+        if (!Directory.Exists(sqlDir))
+        {
+            sqlDir = Path.Combine(AppContext.BaseDirectory, "SqlScripts");
+        }
 
         if (!Directory.Exists(sqlDir))
         {
@@ -26,11 +30,8 @@ public static class SqlScriptInitializer
 
         if (!files.Any())
         {
-            logger.LogInformation("No SQL scripts found.");
             return;
         }
-
-        logger.LogInformation("Executing {Count} SQL scripts...", files.Count);
 
         foreach (var file in files)
         {
@@ -50,16 +51,12 @@ public static class SqlScriptInitializer
                 }
 
                 await transaction.CommitAsync();
-
-                logger.LogInformation("Executed {File}", fileName);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error executing {File}", fileName);
             }
         }
-
-        logger.LogInformation("SQL script execution completed.");
     }
 
     private static IEnumerable<string> SplitByGo(string sql)
