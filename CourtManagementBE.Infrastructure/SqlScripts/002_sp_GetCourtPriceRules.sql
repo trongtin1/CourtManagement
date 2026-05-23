@@ -11,7 +11,8 @@ BEGIN
         CourtPriceRuleID INT,
         CourtID INT,
         PriceRuleTypeID INT NULL,
-        DayOfWeek INT,
+        DayOfWeek INT NULL,
+        SpecificDate DATE NULL,
         StartTime TIME(7),
         EndTime TIME(7),
         Price DECIMAL(18,2),
@@ -27,7 +28,7 @@ BEGIN
         DECLARE @specificDate DATE = DATEADD(DAY, @diff, @TargetDate);
 
         -- ══════════════════════════════════════════════
-        -- BASE: Court custom rules cho ngày này
+        -- BASE: Court custom rules hoặc Fallback Default
         -- ══════════════════════════════════════════════
         CREATE TABLE #Base (
             SourceID INT,
@@ -35,13 +36,52 @@ BEGIN
             StartTime TIME(7),
             EndTime TIME(7),
             Price DECIMAL(18,2),
-            IsDefault BIT
+            IsDefault BIT,
+            DayOfWeek INT NULL,
+            SpecificDate DATE NULL
         );
 
-        INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault)
-        SELECT CourtPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 0
-        FROM CourtPriceRules
-        WHERE CourtID = @CourtID AND IsActive = 1 AND DayOfWeek = @day;
+        -- 1. ƯU TIÊN 1: Cấu hình riêng của Sân cho Ngày Cụ Thể
+        IF EXISTS (
+            SELECT 1 FROM CourtPriceRules 
+            WHERE CourtID = @CourtID AND IsActive = 1 AND SpecificDate = @specificDate
+        )
+        BEGIN
+            INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate)
+            SELECT CourtPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 0, NULL, SpecificDate
+            FROM CourtPriceRules
+            WHERE CourtID = @CourtID AND IsActive = 1 AND SpecificDate = @specificDate;
+        END
+        -- 2. ƯU TIÊN 2: Cấu hình riêng của Sân cho Thứ trong tuần
+        ELSE IF EXISTS (
+            SELECT 1 FROM CourtPriceRules 
+            WHERE CourtID = @CourtID AND IsActive = 1 AND DayOfWeek = @day AND SpecificDate IS NULL
+        )
+        BEGIN
+            INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate)
+            SELECT CourtPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 0, DayOfWeek, NULL
+            FROM CourtPriceRules
+            WHERE CourtID = @CourtID AND IsActive = 1 AND DayOfWeek = @day AND SpecificDate IS NULL;
+        END
+        -- -- 3. FALLBACK 1: Cấu hình Mặc định của Hệ thống cho Ngày Cụ Thể
+        -- ELSE IF EXISTS (
+        --     SELECT 1 FROM CourtDefaultPriceRules 
+        --     WHERE IsActive = 1 AND SpecificDate = @specificDate
+        -- )
+        -- BEGIN
+        --     INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate)
+        --     SELECT CourtDefaultPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 1, NULL, @specificDate
+        --     FROM CourtDefaultPriceRules
+        --     WHERE IsActive = 1 AND SpecificDate = @specificDate;
+        -- END
+        -- -- 4. FALLBACK 2: Cấu hình Mặc định của Hệ thống cho Thứ trong tuần
+        -- ELSE
+        -- BEGIN
+        --     INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate)
+        --     SELECT CourtDefaultPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 1, @day, NULL
+        --     FROM CourtDefaultPriceRules
+        --     WHERE IsActive = 1 AND DayOfWeek = @day AND SpecificDate IS NULL;
+        -- END
 
         -- ══════════════════════════════════════════════
         -- OVERLAY: System defaults có IsMapping = 1
@@ -104,12 +144,14 @@ BEGIN
                 StartTime TIME(7),
                 EndTime TIME(7),
                 Price DECIMAL(18,2),
-                IsDefault BIT
+                IsDefault BIT,
+                DayOfWeek INT NULL,
+                SpecificDate DATE NULL
             );
 
             -- Case 1: Không trùng lấn → giữ nguyên
             INSERT INTO #NewBase
-            SELECT SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault
+            SELECT SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate
             FROM #Base
             WHERE EndTime <= @oStart OR StartTime >= @oEnd;
 
@@ -117,29 +159,29 @@ BEGIN
 
             -- Case 3: Trùng bên trái → cắt đuôi base
             INSERT INTO #NewBase
-            SELECT SourceID, PriceRuleTypeID, StartTime, @oStart, Price, IsDefault
+            SELECT SourceID, PriceRuleTypeID, StartTime, @oStart, Price, IsDefault, DayOfWeek, SpecificDate
             FROM #Base
             WHERE StartTime < @oStart AND EndTime > @oStart AND EndTime <= @oEnd;
 
             -- Case 4: Trùng bên phải → cắt đầu base
             INSERT INTO #NewBase
-            SELECT SourceID, PriceRuleTypeID, @oEnd, EndTime, Price, IsDefault
+            SELECT SourceID, PriceRuleTypeID, @oEnd, EndTime, Price, IsDefault, DayOfWeek, SpecificDate
             FROM #Base
             WHERE StartTime >= @oStart AND StartTime < @oEnd AND EndTime > @oEnd;
 
             -- Case 5: Overlay nằm giữa base → tách đôi base
             INSERT INTO #NewBase
-            SELECT SourceID, PriceRuleTypeID, StartTime, @oStart, Price, IsDefault
+            SELECT SourceID, PriceRuleTypeID, StartTime, @oStart, Price, IsDefault, DayOfWeek, SpecificDate
             FROM #Base
             WHERE StartTime < @oStart AND EndTime > @oEnd;
 
             INSERT INTO #NewBase
-            SELECT SourceID, PriceRuleTypeID, @oEnd, EndTime, Price, IsDefault
+            SELECT SourceID, PriceRuleTypeID, @oEnd, EndTime, Price, IsDefault, DayOfWeek, SpecificDate
             FROM #Base
             WHERE StartTime < @oStart AND EndTime > @oEnd;
 
             -- Chèn overlay vào kết quả
-            INSERT INTO #NewBase VALUES (-@oSrc, @oPrt, @oStart, @oEnd, @oPrice, 1);
+            INSERT INTO #NewBase VALUES (-@oSrc, @oPrt, @oStart, @oEnd, @oPrice, 1, @day, NULL);
 
             -- Thay thế base bằng kết quả mới
             DELETE FROM #Base;
@@ -154,7 +196,7 @@ BEGIN
 
         -- Đưa kết quả ngày này vào bảng tổng
         INSERT INTO #Result
-        SELECT SourceID, @CourtID, PriceRuleTypeID, @day, StartTime, EndTime, Price, 1
+        SELECT SourceID, @CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, 1
         FROM #Base;
 
         DROP TABLE #Base;
@@ -164,7 +206,7 @@ BEGIN
     END
 
     -- Trả kết quả cuối cùng đã sắp xếp
-    SELECT CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, StartTime, EndTime, Price, IsActive
+    SELECT CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, IsActive
     FROM #Result
     ORDER BY DayOfWeek, StartTime;
 

@@ -7,7 +7,8 @@ public class CourtPriceHistoryResponse
     public int CourtID { get; set; }
     public int? OldPriceRuleTypeID { get; set; }
     public int? NewPriceRuleTypeID { get; set; }
-    public int DayOfWeek { get; set; }
+    public int? DayOfWeek { get; set; }
+    public DateTime? SpecificDate { get; set; }
     public TimeSpan OldStartTime { get; set; }
     public TimeSpan OldEndTime { get; set; }
     public decimal OldPrice { get; set; }

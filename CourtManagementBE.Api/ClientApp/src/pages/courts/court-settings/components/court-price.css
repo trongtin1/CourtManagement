@@ -25,6 +25,11 @@
   min-height: 45px;
 }
 
+/* Hide all-day header row */
+.rbc-court-wrapper .rbc-allday-cell {
+  display: none !important;
+}
+
 .rbc-court-wrapper .rbc-time-slot {
   border-top: none;
 }

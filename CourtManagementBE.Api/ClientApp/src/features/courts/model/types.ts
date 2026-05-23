@@ -183,7 +183,8 @@ export type CourtPrice = {
   courtID: number
   timeSlotID?: number
   priceRuleTypeID?: number | null
-  dayOfWeek: number
+  dayOfWeek?: number | null
+  specificDate?: string | null
   startTime: string
   endTime: string
   price: number
@@ -195,14 +196,15 @@ export type CourtPrice = {
 export type CreateCourtPriceRequest = {
   courtID: number
   priceRuleTypeID?: number | null
-  dayOfWeek: number
+  dayOfWeek?: number | null
+  specificDate?: string | null
   startTime: string
   endTime: string
   price: number
   isActive?: boolean
 }
 
-export type UpdateCourtPriceRequest = Omit<CreateCourtPriceRequest, 'courtID'>
+export type UpdateCourtPriceRequest = CreateCourtPriceRequest
 
 export type PriceRuleType = {
   priceRuleTypeID: number

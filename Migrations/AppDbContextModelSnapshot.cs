@@ -726,7 +726,7 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTimeOffset>("CreatedDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("DayOfWeek")
+                    b.Property<int?>("DayOfWeek")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("EndTime")
@@ -740,6 +740,9 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<int?>("PriceRuleTypeID")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("SpecificDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
@@ -780,7 +783,7 @@ namespace CourtManagementBE.Migrations
                     b.Property<int>("CourtPriceRuleID")
                         .HasColumnType("int");
 
-                    b.Property<int>("DayOfWeek")
+                    b.Property<int?>("DayOfWeek")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("NewEndTime")
@@ -810,6 +813,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("SpecificDate")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("CourtPriceRuleHistoryID");
 
