@@ -59,6 +59,7 @@ type FormValues = {
   startTime: dayjs.Dayjs
   endTime: dayjs.Dayjs
   price: number
+  applyMode: 'default' | 'mapping'
   isActive: boolean
 }
 
@@ -75,6 +76,8 @@ const buildPayload = (
   startTime: values.startTime ? toTimeSpan(values.startTime.format('HH:mm')) : '',
   endTime: values.endTime ? toTimeSpan(values.endTime.format('HH:mm')) : '',
   price: Number(values.price),
+  isLoadDefault: values.applyMode === 'default',
+  isMapping: values.applyMode === 'mapping',
   isActive: values.isActive,
 })
 
@@ -153,6 +156,7 @@ export default function CourtPriceSettingPage() {
       startTime: dayjs('06:00', 'HH:mm'),
       endTime: dayjs('07:00', 'HH:mm'),
       price: 100000,
+      applyMode: 'default',
       isActive: true,
     })
   }
@@ -169,6 +173,7 @@ export default function CourtPriceSettingPage() {
       startTime: dayjs(record.startTime, 'HH:mm:ss'),
       endTime: dayjs(record.endTime, 'HH:mm:ss'),
       price: record.price,
+      applyMode: record.isMapping ? 'mapping' : 'default',
       isActive: record.isActive,
     })
   }
@@ -387,6 +392,16 @@ export default function CourtPriceSettingPage() {
                     renderPriceRuleType(value),
                 },
                 {
+                  title: 'Cách áp dụng',
+                  key: 'applyMode',
+                  render: (_: unknown, record: CourtDefaultPriceRule) =>
+                    record.isMapping ? (
+                      <Tag color="blue">Overlay</Tag>
+                    ) : (
+                      <Tag color="green">Giá nền</Tag>
+                    ),
+                },
+                {
                   title: 'Trạng thái',
                   dataIndex: 'isActive',
                   render: (value: boolean) =>
@@ -456,6 +471,7 @@ export default function CourtPriceSettingPage() {
                   startTime: dayjs('06:00', 'HH:mm'),
                   endTime: dayjs('07:00', 'HH:mm'),
                   price: 100000,
+                  applyMode: 'default',
                   isActive: true,
                 }}
               >
@@ -530,6 +546,21 @@ export default function CourtPriceSettingPage() {
                     placeholder="Mặc định"
                     size="large"
                   />
+                </Form.Item>
+
+                <Form.Item
+                  label={<span className="font-medium text-slate-800">Cách áp dụng</span>}
+                  name="applyMode"
+                  rules={[{ required: true, message: 'Chọn cách áp dụng' }]}
+                >
+                  <Radio.Group optionType="button" buttonStyle="solid" className="w-full flex">
+                    <Radio.Button value="default" className="flex-1 text-center">
+                      Giá nền
+                    </Radio.Button>
+                    <Radio.Button value="mapping" className="flex-1 text-center">
+                      Overlay
+                    </Radio.Button>
+                  </Radio.Group>
                 </Form.Item>
 
                 <div className="grid grid-cols-2 gap-4">

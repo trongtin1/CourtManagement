@@ -570,6 +570,12 @@ namespace CourtManagementBE.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsLoadDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMapping")
+                        .HasColumnType("bit");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
@@ -1305,12 +1311,6 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsLoadDefault")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsMapping")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")

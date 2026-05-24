@@ -10,6 +10,4 @@ public class PriceRuleTypeResponse
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedDate { get; set; }
     public string ColorCode { get; set; } = string.Empty;
-    public bool IsMapping { get; set; }
-    public bool IsLoadDefault { get; set; }
 }

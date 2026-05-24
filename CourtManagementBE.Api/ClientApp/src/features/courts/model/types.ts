@@ -215,8 +215,6 @@ export type PriceRuleType = {
   isActive: boolean
   createdDate: string
   colorCode: string
-  isMapping: boolean
-  isLoadDefault: boolean
 }
 
 export type CreatePriceRuleTypeRequest = {
@@ -226,8 +224,6 @@ export type CreatePriceRuleTypeRequest = {
   sortOrder?: number
   isActive?: boolean
   colorCode?: string
-  isMapping?: boolean
-  isLoadDefault?: boolean
 }
 
 export type UpdatePriceRuleTypeRequest = CreatePriceRuleTypeRequest
@@ -240,6 +236,8 @@ export type CourtDefaultPriceRule = {
   startTime: string
   endTime: string
   price: number
+  isMapping: boolean
+  isLoadDefault: boolean
   isActive: boolean
   createdDate: string
   updatedDate?: string | null
@@ -252,6 +250,8 @@ export type CreateCourtDefaultPriceRuleRequest = {
   startTime: string
   endTime: string
   price: number
+  isMapping?: boolean
+  isLoadDefault?: boolean
   isActive?: boolean
 }
 

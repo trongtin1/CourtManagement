@@ -66,13 +66,13 @@ BEGIN
         -- -- 3. FALLBACK 1: Cấu hình Mặc định của Hệ thống cho Ngày Cụ Thể
         -- ELSE IF EXISTS (
         --     SELECT 1 FROM CourtDefaultPriceRules 
-        --     WHERE IsActive = 1 AND SpecificDate = @specificDate
+        --     WHERE IsActive = 1 AND IsLoadDefault = 1 AND SpecificDate = @specificDate
         -- )
         -- BEGIN
         --     INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate)
         --     SELECT CourtDefaultPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 1, NULL, @specificDate
         --     FROM CourtDefaultPriceRules
-        --     WHERE IsActive = 1 AND SpecificDate = @specificDate;
+        --     WHERE IsActive = 1 AND IsLoadDefault = 1 AND SpecificDate = @specificDate;
         -- END
         -- -- 4. FALLBACK 2: Cấu hình Mặc định của Hệ thống cho Thứ trong tuần
         -- ELSE
@@ -80,7 +80,7 @@ BEGIN
         --     INSERT INTO #Base (SourceID, PriceRuleTypeID, StartTime, EndTime, Price, IsDefault, DayOfWeek, SpecificDate)
         --     SELECT CourtDefaultPriceRuleID, PriceRuleTypeID, StartTime, EndTime, Price, 1, @day, NULL
         --     FROM CourtDefaultPriceRules
-        --     WHERE IsActive = 1 AND DayOfWeek = @day AND SpecificDate IS NULL;
+        --     WHERE IsActive = 1 AND IsLoadDefault = 1 AND DayOfWeek = @day AND SpecificDate IS NULL;
         -- END
 
         -- ══════════════════════════════════════════════
@@ -98,30 +98,28 @@ BEGIN
         DECLARE @hasSpecific BIT = 0;
         IF EXISTS (
             SELECT 1 FROM CourtDefaultPriceRules
-            WHERE IsActive = 1 AND SpecificDate = @specificDate
+                        WHERE IsActive = 1 AND IsMapping = 1 AND SpecificDate = @specificDate
         )
             SET @hasSpecific = 1;
 
         IF @hasSpecific = 1
         BEGIN
             INSERT INTO #Overlays (SourceID, PriceRuleTypeID, StartTime, EndTime, Price)
-            SELECT d.CourtDefaultPriceRuleID, d.PriceRuleTypeID, d.StartTime, d.EndTime, d.Price
-            FROM CourtDefaultPriceRules d
-            LEFT JOIN PriceRuleTypes p ON d.PriceRuleTypeID = p.PriceRuleTypeID
+                        SELECT d.CourtDefaultPriceRuleID, d.PriceRuleTypeID, d.StartTime, d.EndTime, d.Price
+                        FROM CourtDefaultPriceRules d
             WHERE d.IsActive = 1
-              AND d.SpecificDate = @specificDate
-              AND ISNULL(p.IsMapping, 0) = 1;
+                            AND d.IsMapping = 1
+                            AND d.SpecificDate = @specificDate;
         END
         ELSE
         BEGIN
             INSERT INTO #Overlays (SourceID, PriceRuleTypeID, StartTime, EndTime, Price)
-            SELECT d.CourtDefaultPriceRuleID, d.PriceRuleTypeID, d.StartTime, d.EndTime, d.Price
-            FROM CourtDefaultPriceRules d
-            LEFT JOIN PriceRuleTypes p ON d.PriceRuleTypeID = p.PriceRuleTypeID
+                        SELECT d.CourtDefaultPriceRuleID, d.PriceRuleTypeID, d.StartTime, d.EndTime, d.Price
+                        FROM CourtDefaultPriceRules d
             WHERE d.IsActive = 1
+                            AND d.IsMapping = 1
               AND d.SpecificDate IS NULL
-              AND d.DayOfWeek = @day
-              AND ISNULL(p.IsMapping, 0) = 1;
+                            AND d.DayOfWeek = @day;
         END
 
         -- ══════════════════════════════════════════════

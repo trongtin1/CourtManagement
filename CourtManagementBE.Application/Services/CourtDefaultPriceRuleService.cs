@@ -78,6 +78,16 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
             return BadRequest<CourtDefaultPriceRuleResponse>("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
         }
 
+        if (!request.IsLoadDefault && !request.IsMapping)
+        {
+            return BadRequest<CourtDefaultPriceRuleResponse>("Cấu hình giá mặc định phải là giá nền hoặc giá overlay.");
+        }
+
+        if (request.IsLoadDefault && request.IsMapping)
+        {
+            return BadRequest<CourtDefaultPriceRuleResponse>("Không thể vừa là giá nền vừa là giá overlay.");
+        }
+
         if (!request.DayOfWeek.HasValue && !request.SpecificDate.HasValue)
         {
             return BadRequest<CourtDefaultPriceRuleResponse>("Vui lòng chọn ngày trong tuần hoặc ngày cụ thể.");

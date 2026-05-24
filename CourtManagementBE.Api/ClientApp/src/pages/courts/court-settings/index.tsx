@@ -189,7 +189,7 @@ export default function CourtSettingsPage() {
                     {s.key === 'pricing' && (
                       <CourtPriceSection
                         courtId={courtId}
-                        rules={pricingRules}
+            
                         setRules={setPricingRules}
                       />
                     )}

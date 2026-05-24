@@ -11,6 +11,8 @@ public class CourtDefaultPriceRuleRequest
     [Required] public TimeSpan StartTime { get; set; }
     [Required] public TimeSpan EndTime { get; set; }
     [Required] public decimal Price { get; set; }
+    public bool IsMapping { get; set; } = false;
+    public bool IsLoadDefault { get; set; } = true;
     public bool IsActive { get; set; } = true;
 }
 

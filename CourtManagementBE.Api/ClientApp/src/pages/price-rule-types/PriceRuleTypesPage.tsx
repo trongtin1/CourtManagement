@@ -56,8 +56,6 @@ export function PriceRuleTypesPage() {
       isActive: true,
       sortOrder: 0,
       colorCode: '#1677ff',
-      isMapping: false,
-      isLoadDefault: true,
     })
     setOpen(true)
   }
@@ -78,8 +76,6 @@ export function PriceRuleTypesPage() {
         sortOrder: values.sortOrder ?? 0,
         isActive: values.isActive ?? true,
         colorCode: values.colorCode ?? '',
-        isMapping: values.isMapping ?? false,
-        isLoadDefault: values.isLoadDefault ?? true,
       }
 
       if (editingId) {
@@ -171,22 +167,6 @@ export function PriceRuleTypesPage() {
             { title: 'Mo ta', dataIndex: 'description' },
             { title: 'Thu tu', dataIndex: 'sortOrder', width: 100 },
             {
-              title: 'Mapping',
-              dataIndex: 'isMapping',
-              width: 100,
-              render: (value: boolean) => (
-                <Tag color={value ? 'blue' : 'default'}>{value ? 'Bật' : 'Tắt'}</Tag>
-              ),
-            },
-            {
-              title: 'Load Default',
-              dataIndex: 'isLoadDefault',
-              width: 120,
-              render: (value: boolean) => (
-                <Tag color={value ? 'green' : 'default'}>{value ? 'Bật' : 'Tắt'}</Tag>
-              ),
-            },
-            {
               title: 'Active',
               dataIndex: 'isActive',
               width: 100,
@@ -270,20 +250,6 @@ export function PriceRuleTypesPage() {
             <Input.TextArea maxLength={500} rows={3} />
           </Form.Item>
           <Form.Item label="Active" name="isActive" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <Form.Item
-            label="Mapping (Tự động đồng bộ giá mặc định xuống sân)"
-            name="isMapping"
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-          <Form.Item
-            label="Load Default (Nạp làm giá mặc định cho sân chưa cấu hình)"
-            name="isLoadDefault"
-            valuePropName="checked"
-          >
             <Switch />
           </Form.Item>
         </Form>

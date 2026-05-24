@@ -12,11 +12,13 @@ public class CourtDefaultPriceRule
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
     public decimal Price { get; set; }
+    public bool IsMapping { get; set; } = false;
+    public bool IsLoadDefault { get; set; } = true;
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
     public DateTimeOffset? UpdatedDate { get; set; }
     public string? UpdatedBy { get; set; }
 
-    public virtual PriceRuleTypes PriceRuleType { get; set; } = null!;
+    public virtual PriceRuleTypes? PriceRuleType { get; set; }
 }

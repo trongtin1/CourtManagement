@@ -8,6 +8,4 @@ public class PriceRuleTypeRequest
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public string ColorCode { get; set; } = string.Empty;
-    public bool IsMapping { get; set; } = false;
-    public bool IsLoadDefault { get; set; } = true;
 }

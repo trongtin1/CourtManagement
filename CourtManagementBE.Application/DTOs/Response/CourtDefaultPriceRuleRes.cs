@@ -11,6 +11,8 @@ public class CourtDefaultPriceRuleResponse
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
     public decimal Price { get; set; }
+    public bool IsMapping { get; set; }
+    public bool IsLoadDefault { get; set; }
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedDate { get; set; }
     public DateTimeOffset? UpdatedDate { get; set; }
