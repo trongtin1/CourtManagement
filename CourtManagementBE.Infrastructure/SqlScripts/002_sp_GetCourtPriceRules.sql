@@ -6,6 +6,16 @@ BEGIN
     SET NOCOUNT ON;
     SET DATEFIRST 7; -- Sunday = 1 => DATEPART(WEEKDAY) - 1 = 0 (match C# DayOfWeek)
 
+    -- Tìm ngày thứ Hai (Monday) của tuần chứa @TargetDate
+    DECLARE @targetDow INT = DATEPART(WEEKDAY, @TargetDate);
+    DECLARE @daysToMonday INT;
+    IF @targetDow = 1 -- Sunday
+        SET @daysToMonday = -6;
+    ELSE
+        SET @daysToMonday = 2 - @targetDow;
+
+    DECLARE @MondayDate DATE = DATEADD(DAY, @daysToMonday, @TargetDate);
+
     -- Final result
     CREATE TABLE #Result (
         CourtPriceRuleID INT,
@@ -22,10 +32,15 @@ BEGIN
     DECLARE @day INT = 0;
     WHILE @day <= 6
     BEGIN
-        -- Tính ngày cụ thể cho @day dựa trên @TargetDate
-        DECLARE @targetDow INT = DATEPART(WEEKDAY, @TargetDate) - 1;
-        DECLARE @diff INT = @day - @targetDow;
-        DECLARE @specificDate DATE = DATEADD(DAY, @diff, @TargetDate);
+        -- Tính ngày cụ thể cho @day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+        -- dựa trên ngày thứ Hai đầu tuần (@MondayDate)
+        DECLARE @diff INT;
+        IF @day = 0 -- Sunday
+            SET @diff = 6;
+        ELSE -- Monday to Saturday
+            SET @diff = @day - 1;
+
+        DECLARE @specificDate DATE = DATEADD(DAY, @diff, @MondayDate);
 
         -- ══════════════════════════════════════════════
         -- BASE: Court custom rules hoặc Fallback Default

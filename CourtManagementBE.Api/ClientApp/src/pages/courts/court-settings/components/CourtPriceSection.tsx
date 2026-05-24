@@ -454,8 +454,18 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const saveChanges = async () => {
     setSaving(true)
     try {
+      const currentDbIds = blocks
+        .map((b) => b.courtPriceRuleID)
+        .filter((id): id is number => typeof id === 'number' && id > 0)
+
+      const dynamicDeletedIds = serverBlocks
+        .map((s) => s.courtPriceRuleID)
+        .filter((id): id is number => typeof id === 'number' && id > 0 && !currentDbIds.includes(id))
+
+      const allDeletedIds = Array.from(new Set([...deletedIds, ...dynamicDeletedIds]))
+
       await Promise.all([
-        ...deletedIds.map((id) => deleteMut.mutateAsync({ courtId, id })),
+        ...allDeletedIds.map((id) => deleteMut.mutateAsync({ courtId, id })),
         ...newBlocks.map((block) => createMut.mutateAsync(buildPayload(courtId, block))),
         ...modifiedBlocks.map((block) =>
           updateMut.mutateAsync({

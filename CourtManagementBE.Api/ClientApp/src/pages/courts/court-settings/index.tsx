@@ -20,6 +20,7 @@ import {
   AppstoreAddOutlined,
   ArrowLeftOutlined,
   ClockCircleOutlined,
+  ToolOutlined,
   InfoCircleOutlined,
   WalletOutlined,
 } from '@ant-design/icons'
@@ -35,6 +36,7 @@ import { useCourtTypesQuery } from '@/features/courts/api/useCourtTypeQueries'
 import { CourtFeaturesSection } from './components/CourtFeaturesSection'
 import { CourtHoursSection } from './components/CourtHoursSection'
 import { CourtPriceSection } from './components/CourtPriceSection'
+import { CourtAssetsSection } from './components/CourtAssetsSection'
 import type { PriceBlock } from './components/CourtPriceSection'
 
 const { Title, Text } = Typography
@@ -57,6 +59,7 @@ const days = getWeekDates()
 const sections = [
   { key: 'basic', label: 'Thông tin cơ bản', icon: <InfoCircleOutlined /> },
   { key: 'features', label: 'Tiện ích sân', icon: <AppstoreAddOutlined /> },
+  { key: 'assets', label: 'Tài sản sân', icon: <ToolOutlined /> },
   { key: 'hours', label: 'Giờ hoạt động', icon: <ClockCircleOutlined /> },
   { key: 'pricing', label: 'Cấu hình giá', icon: <WalletOutlined /> },
 ]
@@ -183,6 +186,7 @@ export default function CourtSettingsPage() {
                       />
                     )}
                     {s.key === 'features' && <CourtFeaturesSection courtId={courtId} />}
+                    {s.key === 'assets' && <CourtAssetsSection courtId={courtId} />}
                     {s.key === 'hours' && (
                       <CourtHoursSection schedule={schedule} setSchedule={setSchedule} />
                     )}
