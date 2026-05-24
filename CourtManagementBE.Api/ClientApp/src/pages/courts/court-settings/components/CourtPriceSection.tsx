@@ -63,6 +63,7 @@ export interface PriceBlock {
   price: number
   label?: string
   specificDate?: string | null
+  isMapping?: boolean
 }
 
 interface CourtPriceSectionProps {
@@ -142,6 +143,7 @@ const courtPriceToBlock = (
     price: price.price,
     label: price.priceRuleTypeID ? (ruleById.get(price.priceRuleTypeID)?.name ?? '') : '',
     specificDate: price.specificDate ?? null,
+    isMapping: price.isMapping ?? false,
   }
 }
 
@@ -197,6 +199,11 @@ function PriceEvent({
             📌
           </span>
         )}
+        {block.isMapping && (
+          <span title="Giá mặc định của hệ thống" style={{ fontSize: '12px' }}>
+            ⚙️
+          </span>
+        )}
         {formatCurrency(block.price)}
       </p>
       {block.label && (
@@ -204,18 +211,20 @@ function PriceEvent({
           {block.label}
         </span>
       )}
-      <button
-        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-white/60 text-inherit
-                   opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center
-                   hover:bg-red-500 hover:text-white z-20 font-bold text-[11px] leading-none border-0 cursor-pointer"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation()
-          onDelete(block.id)
-        }}
-      >
-        ×
-      </button>
+      {!block.isMapping && (
+        <button
+          className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-white/60 text-inherit
+                     opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center
+                     hover:bg-red-500 hover:text-white z-20 font-bold text-[11px] leading-none border-0 cursor-pointer"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(block.id)
+          }}
+        >
+          ×
+        </button>
+      )}
     </div>
   )
 }
@@ -471,17 +480,41 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const handleEventDrop = ({ event, start, end }: EventInteractionArgs<object>) => {
     const e = event as RbcEvent
     const { day, startMin, endMin } = eventToGridInfo(start as Date, end as Date)
-    const updated: PriceBlock = { ...e.resource, day, start: startMin, end: endMin }
-    if (hasCollision(blocks, updated, updated.id)) return
-    stage(blocks.map((b) => (b.id === updated.id ? updated : b)))
+    let updated: PriceBlock = { ...e.resource, day, start: startMin, end: endMin }
+    if (e.resource.isMapping) {
+      updated = {
+        ...updated,
+        id: generateId(),
+        courtPriceRuleID: undefined,
+        isMapping: false,
+      }
+    }
+    if (hasCollision(blocks, updated, e.resource.id)) return
+    if (e.resource.isMapping) {
+      stage(blocks.map((b) => (b.id === e.resource.id ? updated : b)))
+    } else {
+      stage(blocks.map((b) => (b.id === updated.id ? updated : b)))
+    }
   }
 
   const handleEventResize = ({ event, start, end }: EventInteractionArgs<object>) => {
     const e = event as RbcEvent
     const { startMin, endMin } = eventToGridInfo(start as Date, end as Date)
-    const updated: PriceBlock = { ...e.resource, start: startMin, end: endMin }
-    if (hasCollision(blocks, updated, updated.id)) return
-    stage(blocks.map((b) => (b.id === updated.id ? updated : b)))
+    let updated: PriceBlock = { ...e.resource, start: startMin, end: endMin }
+    if (e.resource.isMapping) {
+      updated = {
+        ...updated,
+        id: generateId(),
+        courtPriceRuleID: undefined,
+        isMapping: false,
+      }
+    }
+    if (hasCollision(blocks, updated, e.resource.id)) return
+    if (e.resource.isMapping) {
+      stage(blocks.map((b) => (b.id === e.resource.id ? updated : b)))
+    } else {
+      stage(blocks.map((b) => (b.id === updated.id ? updated : b)))
+    }
   }
 
   const handleDelete = (id: string) => {
@@ -504,13 +537,29 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   }) => {
     if (!editingBlock) return
     const label = priceRuleTypeID ? (ruleById.get(priceRuleTypeID)?.name ?? '') : ''
-    stage(
-      blocks.map((b) =>
-        b.id === editingBlock.id
-          ? { ...b, price, priceRuleTypeID, label, specificDate }
-          : b,
-      ),
-    )
+    
+    if (editingBlock.isMapping) {
+      const newBlock: PriceBlock = {
+        id: generateId(),
+        day: editingBlock.day,
+        start: editingBlock.start,
+        end: editingBlock.end,
+        price,
+        priceRuleTypeID,
+        label,
+        specificDate,
+        isMapping: false,
+      }
+      stage(blocks.map((b) => (b.id === editingBlock.id ? newBlock : b)))
+    } else {
+      stage(
+        blocks.map((b) =>
+          b.id === editingBlock.id
+            ? { ...b, price, priceRuleTypeID, label, specificDate }
+            : b,
+        ),
+      )
+    }
     setModalOpen(false)
     setEditingBlock(null)
   }

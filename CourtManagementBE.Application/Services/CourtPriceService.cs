@@ -30,6 +30,14 @@ public class CourtPriceService : BaseService, ICourtPriceService
         var resolved = await _unitOfWork.ICourtPriceRepository.GetCourtPriceRulesAsync(courtId, targetDate);
         var response = _mapper.Map<List<CourtPriceResponse>>(resolved);
 
+        foreach (var res in response)
+        {
+            if (res.CourtPriceRuleID < 0)
+            {
+                res.IsMapping = true;
+            }
+        }
+
         return Success(response);
     }
 

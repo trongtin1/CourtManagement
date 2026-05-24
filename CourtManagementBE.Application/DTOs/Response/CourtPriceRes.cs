@@ -13,4 +13,6 @@ public class CourtPriceResponse
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedDate { get; set; }
     public DateTimeOffset? UpdatedDate { get; set; }
+    public bool IsMapping { get; set; }
 }
+
