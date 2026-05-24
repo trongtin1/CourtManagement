@@ -17,7 +17,7 @@ import {
   Space,
   Typography,
 } from 'antd'
-import { CalendarOutlined, SaveOutlined, WalletOutlined } from '@ant-design/icons'
+import { CalendarOutlined, SaveOutlined, WalletOutlined, ImportOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import {
@@ -27,7 +27,8 @@ import {
   useUpdateCourtPriceMutation,
 } from '@/features/courts/api/useCourtPriceQueries'
 import { usePriceRuleTypesQuery } from '@/features/courts/api/usePriceRuleTypeQueries'
-import type { CourtPrice, PriceRuleType } from '@/features/courts/model/types'
+import { courtDefaultPriceRuleApi } from '@/features/courts/api/courtDefaultPriceRuleApi'
+import type { CourtPrice, PriceRuleType, CourtDefaultPriceRule } from '@/features/courts/model/types'
 import {
   formatCurrency,
   formatMinutesAsTime,
@@ -144,6 +145,25 @@ const courtPriceToBlock = (
     label: price.priceRuleTypeID ? (ruleById.get(price.priceRuleTypeID)?.name ?? '') : '',
     specificDate: price.specificDate ?? null,
     isMapping: price.isMapping ?? false,
+  }
+}
+
+const defaultPriceRuleToBlock = (
+  rule: CourtDefaultPriceRule,
+  ruleById: Map<number, PriceRuleType>,
+): PriceBlock => {
+  const dow =
+    rule.dayOfWeek ?? (rule.specificDate ? dayjs(rule.specificDate).day() : 1)
+  return {
+    id: generateId(),
+    priceRuleTypeID: rule.priceRuleTypeID ?? null,
+    day: apiDayToGridDay(dow),
+    start: timeToGridMinutes(rule.startTime),
+    end: timeToGridMinutes(rule.endTime),
+    price: rule.price,
+    label: rule.priceRuleTypeID ? (ruleById.get(rule.priceRuleTypeID)?.name ?? '') : '',
+    specificDate: rule.specificDate ?? null,
+    isMapping: false,
   }
 }
 
@@ -368,6 +388,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const { message } = App.useApp()
   const [currentMonday, setCurrentMonday] = useState(INITIAL_MONDAY)
   const [saving, setSaving] = useState(false)
+  const [loadingDefaults, setLoadingDefaults] = useState(false)
   const [draftBlocks, setDraftBlocks] = useState<PriceBlock[] | null>(null)
   const [deletedIds, setDeletedIds] = useState<number[]>([])
   const [editingBlock, setEditingBlock] = useState<PriceBlock | null>(null)
@@ -450,6 +471,38 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
       message.error('Lưu cấu hình giá thất bại')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const performLoadDefaults = async () => {
+    setLoadingDefaults(true)
+    try {
+      const response = await courtDefaultPriceRuleApi.getAll({ page: 1, pageSize: 1000 })
+      const activeDefaults = (response.items ?? [])
+        .filter((r) => r.isActive && r.isLoadDefault)
+      
+      const mapped = activeDefaults.map((r) => defaultPriceRuleToBlock(r, ruleById))
+      
+      stage(mapped)
+      message.success('Đã tải cấu hình giá mặc định vào lịch (vui lòng nhấn "Lưu cấu hình" để hoàn tất)')
+    } catch (err) {
+      message.error('Tải cấu hình giá mặc định thất bại')
+    } finally {
+      setLoadingDefaults(false)
+    }
+  }
+
+  const handleLoadDefaults = async () => {
+    if (hasDraft) {
+      Modal.confirm({
+        title: 'Xác nhận tải giá mặc định',
+        content: 'Bạn đang có thay đổi chưa lưu. Tải cấu hình giá mặc định sẽ ghi đè lên các thay đổi hiện tại của tuần này. Bạn có chắc chắn muốn tiếp tục?',
+        okText: 'Tiếp tục',
+        cancelText: 'Hủy',
+        onOk: () => performLoadDefaults(),
+      })
+    } else {
+      performLoadDefaults()
     }
   }
 
@@ -626,6 +679,15 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
               Có thay đổi chưa lưu
             </span>
           )}
+          <Button
+            type="default"
+            icon={<ImportOutlined />}
+            loading={loadingDefaults}
+            onClick={handleLoadDefaults}
+            className="border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-400 font-medium"
+          >
+            Tải giá mặc định
+          </Button>
           <Button
             type="primary"
             icon={<SaveOutlined />}
