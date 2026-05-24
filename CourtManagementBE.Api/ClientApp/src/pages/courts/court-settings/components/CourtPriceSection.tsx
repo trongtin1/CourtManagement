@@ -27,7 +27,7 @@ import {
   useUpdateCourtPriceMutation,
 } from '@/features/courts/api/useCourtPriceQueries'
 import { usePriceRuleTypesQuery } from '@/features/courts/api/usePriceRuleTypeQueries'
-import { courtDefaultPriceRuleApi } from '@/features/courts/api/courtDefaultPriceRuleApi'
+import { useCourtDefaultPriceRulesQuery } from '@/features/courts/api/useCourtDefaultPriceRuleQueries'
 import type { CourtPrice, PriceRuleType, CourtDefaultPriceRule } from '@/features/courts/model/types'
 import {
   formatCurrency,
@@ -388,7 +388,6 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const { message } = App.useApp()
   const [currentMonday, setCurrentMonday] = useState(INITIAL_MONDAY)
   const [saving, setSaving] = useState(false)
-  const [loadingDefaults, setLoadingDefaults] = useState(false)
   const [draftBlocks, setDraftBlocks] = useState<PriceBlock[] | null>(null)
   const [deletedIds, setDeletedIds] = useState<number[]>([])
   const [editingBlock, setEditingBlock] = useState<PriceBlock | null>(null)
@@ -396,6 +395,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
 
   const targetDateStr = currentMonday.format('YYYY-MM-DD')
   const pricesQuery = useCourtPricesByCourtQuery(courtId, targetDateStr)
+  const defaultRulesQuery = useCourtDefaultPriceRulesQuery({ page: 1, pageSize: 1000 })
   const ruleTypesQuery = usePriceRuleTypesQuery()
   const createMut = useCreateCourtPriceMutation()
   const updateMut = useUpdateCourtPriceMutation()
@@ -474,25 +474,25 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
     }
   }
 
-  const performLoadDefaults = async () => {
-    setLoadingDefaults(true)
+  const performLoadDefaults = () => {
+    if (!defaultRulesQuery.data) {
+      message.error('Dữ liệu cấu hình giá mặc định chưa sẵn sàng, vui lòng thử lại sau.')
+      return
+    }
     try {
-      const response = await courtDefaultPriceRuleApi.getAll({ page: 1, pageSize: 1000 })
-      const activeDefaults = (response.items ?? [])
+      const activeDefaults = (defaultRulesQuery.data.items ?? [])
         .filter((r) => r.isActive && r.isLoadDefault)
       
       const mapped = activeDefaults.map((r) => defaultPriceRuleToBlock(r, ruleById))
       
       stage(mapped)
       message.success('Đã tải cấu hình giá mặc định vào lịch (vui lòng nhấn "Lưu cấu hình" để hoàn tất)')
-    } catch (err) {
+    } catch {
       message.error('Tải cấu hình giá mặc định thất bại')
-    } finally {
-      setLoadingDefaults(false)
     }
   }
 
-  const handleLoadDefaults = async () => {
+  const handleLoadDefaults = () => {
     if (hasDraft) {
       Modal.confirm({
         title: 'Xác nhận tải giá mặc định',
@@ -682,7 +682,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           <Button
             type="default"
             icon={<ImportOutlined />}
-            loading={loadingDefaults}
+            loading={defaultRulesQuery.isLoading}
             onClick={handleLoadDefaults}
             className="border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-400 font-medium"
           >
