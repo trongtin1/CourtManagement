@@ -17,6 +17,7 @@ public interface IUnitOfWork : IDisposable
     IUtilityRepository IUtilityRepository { get; }
     IPriceRuleTypeRepository IPriceRuleTypeRepository { get; }
     ICourtDefaultPriceRuleRepository ICourtDefaultPriceRuleRepository { get; }
+    ICourtLockedSlotRepository ICourtLockedSlotRepository { get; }
     ICourtPriceRepository ICourtPriceRepository { get; }
     ICustomerRepository ICustomerRepository { get; }
     IBookingRepository IBookingRepository { get; }

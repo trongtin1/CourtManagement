@@ -34,6 +34,7 @@ public class UnitOfWork : IUnitOfWork
     public IUtilityRepository IUtilityRepository => new UtilityRepository(_context);
     public IPriceRuleTypeRepository IPriceRuleTypeRepository => new PriceRuleTypeRepository(_context);
     public ICourtDefaultPriceRuleRepository ICourtDefaultPriceRuleRepository => new CourtDefaultPriceRuleRepository(_context);
+    public ICourtLockedSlotRepository ICourtLockedSlotRepository => new CourtLockedSlotRepository(_context);
     public ICourtPriceRepository ICourtPriceRepository => new CourtPriceRepository(_context);
     public ICustomerRepository ICustomerRepository => new CustomerRepository(_context);
     public IBookingRepository IBookingRepository => new BookingRepository(_context);

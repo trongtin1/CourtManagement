@@ -47,6 +47,9 @@ public class MappingProfile : Profile
         CreateMap<CourtDefaultPriceRule, CourtDefaultPriceRuleResponse>();
         CreateMap<CourtDefaultPriceRuleRequest, CourtDefaultPriceRule>();
 
+        CreateMap<CourtLockedSlot, CourtLockedSlotResponse>();
+        CreateMap<CourtLockedSlotRequest, CourtLockedSlot>();
+
         CreateMap<CourtPriceRule, CourtPriceResponse>();
         CreateMap<CourtPriceRequest, CourtPriceRule>();
 

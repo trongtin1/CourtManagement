@@ -23,4 +23,5 @@ public class Courts
     public DateTimeOffset ModifiedDate { get; set; } = DateTimeOffset.UtcNow;
     public string ModifiedBy { get; set; } = string.Empty;
     public ICollection<CourtFeatureMappings> CourtFeatureMappings { get; set; } = new HashSet<CourtFeatureMappings>();
+    public ICollection<CourtLockedSlot> CourtLockedSlots { get; set; } = new HashSet<CourtLockedSlot>();
 }

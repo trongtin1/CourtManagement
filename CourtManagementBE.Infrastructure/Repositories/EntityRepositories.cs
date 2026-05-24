@@ -43,6 +43,8 @@ public class PriceRuleTypeRepository : GenericRepository<PriceRuleTypes>, IPrice
 public class CourtDefaultPriceRuleRepository : GenericRepository<CourtDefaultPriceRule>, ICourtDefaultPriceRuleRepository
 { public CourtDefaultPriceRuleRepository(AppDbContext ctx) : base(ctx) { } }
 
+public class CourtLockedSlotRepository : GenericRepository<CourtLockedSlot>, ICourtLockedSlotRepository
+{ public CourtLockedSlotRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class CustomerRepository : GenericRepository<Customers>, ICustomerRepository
 { public CustomerRepository(AppDbContext ctx) : base(ctx) { } }

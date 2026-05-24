@@ -258,6 +258,37 @@ export type CreateCourtDefaultPriceRuleRequest = {
 
 export type UpdateCourtDefaultPriceRuleRequest = CreateCourtDefaultPriceRuleRequest
 
+export type CourtLockedSlot = {
+  courtLockedSlotID: number
+  courtID: number
+  dayOfWeek?: number | null
+  specificDate?: string | null
+  startTime: string
+  endTime: string
+  isWeekly: boolean
+  isAllDay: boolean
+  lockReason: string
+  isActive: boolean
+  createdDate: string
+  createdBy?: string | null
+  updatedDate?: string | null
+  updatedBy?: string | null
+}
+
+export type CreateCourtLockedSlotRequest = {
+  courtID: number
+  dayOfWeek?: number | null
+  specificDate?: string | null
+  startTime: string
+  endTime: string
+  isWeekly: boolean
+  isAllDay: boolean
+  lockReason: string
+  isActive?: boolean
+}
+
+export type UpdateCourtLockedSlotRequest = CreateCourtLockedSlotRequest
+
 export type CourtAreaMapping = {
   courtAreaMappingID: number
   courtID: number

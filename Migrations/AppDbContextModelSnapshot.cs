@@ -714,6 +714,71 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("CourtFeatures");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtLockedSlot", b =>
+                {
+                    b.Property<int>("CourtLockedSlotID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourtLockedSlotID"));
+
+                    b.Property<int>("CourtID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DayOfWeek")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time(7)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsAllDay")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsWeekly")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LockReason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("SpecificDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time(7)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset?>("UpdatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("CourtLockedSlotID");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("CourtID", "IsWeekly", "DayOfWeek", "SpecificDate", "StartTime", "EndTime");
+
+                    b.ToTable("CourtLockedSlots", t =>
+                        {
+                            t.HasCheckConstraint("CK_CourtLockedSlots_DateMode", "([IsWeekly] = 1 AND [DayOfWeek] IS NOT NULL AND [SpecificDate] IS NULL) OR ([IsWeekly] = 0 AND [SpecificDate] IS NOT NULL AND [DayOfWeek] IS NULL)");
+
+                            t.HasCheckConstraint("CK_CourtLockedSlots_DayOfWeek", "[DayOfWeek] IS NULL OR ([DayOfWeek] >= 0 AND [DayOfWeek] <= 6)");
+
+                            t.HasCheckConstraint("CK_CourtLockedSlots_TimeRange", "[StartTime] < [EndTime]");
+                        });
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtPriceRule", b =>
                 {
                     b.Property<int>("CourtPriceRuleID")
@@ -1704,6 +1769,17 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("CourtFeatureCategory");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtLockedSlot", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Courts", "Court")
+                        .WithMany("CourtLockedSlots")
+                        .HasForeignKey("CourtID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Court");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
                 {
                     b.Navigation("CourtFeatures");
@@ -1717,6 +1793,8 @@ namespace CourtManagementBE.Migrations
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Courts", b =>
                 {
                     b.Navigation("CourtFeatureMappings");
+
+                    b.Navigation("CourtLockedSlots");
                 });
 #pragma warning restore 612, 618
         }

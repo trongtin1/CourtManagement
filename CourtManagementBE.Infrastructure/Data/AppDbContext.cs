@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<CourtDefaultPriceRule> CourtDefaultPriceRules => Set<CourtDefaultPriceRule>();
     public DbSet<CourtPriceRule> CourtPriceRules => Set<CourtPriceRule>();
     public DbSet<CourtPriceRuleHistory> CourtPriceRuleHistories => Set<CourtPriceRuleHistory>();
+    public DbSet<CourtLockedSlot> CourtLockedSlots => Set<CourtLockedSlot>();
 
     // ── Đặt sân ───────────────────────────────────────────────────────────────
     public DbSet<Customers> Customers => Set<Customers>();
@@ -251,6 +252,29 @@ public class AppDbContext : DbContext
             // Unique: 1 sân + 1 slot + 1 ngày trong tuần chỉ có 1 giá
             e.HasIndex(x => new { x.CourtID, x.DayOfWeek, x.StartTime, x.EndTime });
             e.HasIndex(x => x.PriceRuleTypeID);
+        });
+
+        modelBuilder.Entity<CourtLockedSlot>(e =>
+        {
+            e.HasKey(x => x.CourtLockedSlotID);
+            e.Property(x => x.SpecificDate).HasColumnType("date");
+            e.Property(x => x.StartTime).HasColumnType("time(7)");
+            e.Property(x => x.EndTime).HasColumnType("time(7)");
+            e.Property(x => x.LockReason).HasColumnType("nvarchar(500)").IsRequired();
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.UpdatedBy).HasColumnType("varchar(100)");
+            e.HasIndex(x => new { x.CourtID, x.IsWeekly, x.DayOfWeek, x.SpecificDate, x.StartTime, x.EndTime });
+            e.HasIndex(x => x.IsActive);
+            e.HasOne(x => x.Court)
+                .WithMany(x => x.CourtLockedSlots)
+                .HasForeignKey(x => x.CourtID)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_CourtLockedSlots_DayOfWeek", "[DayOfWeek] IS NULL OR ([DayOfWeek] >= 0 AND [DayOfWeek] <= 6)");
+                t.HasCheckConstraint("CK_CourtLockedSlots_DateMode", "([IsWeekly] = 1 AND [DayOfWeek] IS NOT NULL AND [SpecificDate] IS NULL) OR ([IsWeekly] = 0 AND [SpecificDate] IS NOT NULL AND [DayOfWeek] IS NULL)");
+                t.HasCheckConstraint("CK_CourtLockedSlots_TimeRange", "[StartTime] < [EndTime]");
+            });
         });
 
         // ── CourtPriceHistory ────────────────────────────────────────────────

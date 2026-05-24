@@ -1,0 +1,100 @@
+/* CSS override for CourtHoursSection (Lịch Khả Dụng) */
+
+.rbc-court-wrapper .rbc-header {
+  padding: 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.rbc-court-wrapper .rbc-time-view {
+  border: none !important;
+  border-bottom: none !important;
+}
+
+.rbc-court-wrapper .rbc-time-header {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.rbc-court-wrapper .rbc-time-content {
+  border-top: 1px solid #f1f5f9;
+  overflow-y: hidden !important; /* Hide internal scrollbar to display in full height */
+}
+
+.rbc-court-wrapper .rbc-timeslot-group {
+  border-bottom: 1px solid #f8fafc;
+  min-height: 52px; /* Stretch timeslots slightly to make slot text fully visible */
+}
+
+/* Hide all-day header row */
+.rbc-court-wrapper .rbc-allday-cell {
+  display: none !important;
+}
+
+.rbc-court-wrapper .rbc-time-slot {
+  border-top: none;
+}
+
+.rbc-court-wrapper .rbc-time-gutter .rbc-timeslot-group {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.rbc-court-wrapper .rbc-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  padding: 0 8px;
+}
+
+.rbc-court-wrapper .rbc-day-slot .rbc-time-slot {
+  border-top: 1px dashed #f1f5f9;
+}
+
+.rbc-court-wrapper .rbc-event {
+  padding: 0;
+  border-radius: 8px;
+}
+
+.rbc-court-wrapper .rbc-event.rbc-selected {
+  outline: 2px solid #f43f5e;
+  outline-offset: 1px;
+}
+
+.rbc-court-wrapper .rbc-event-label {
+  display: none;
+}
+
+.rbc-court-wrapper .rbc-slot-selection {
+  background: rgba(244, 63, 94, 0.12);
+  border: 2px dashed #fb7185;
+  border-radius: 8px;
+}
+
+.rbc-court-wrapper .rbc-current-time-indicator {
+  background-color: #f43f5e;
+  height: 2px;
+}
+
+.rbc-court-wrapper .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid #f1f5f9;
+}
+
+.rbc-court-wrapper .rbc-header + .rbc-header {
+  border-left: 1px solid #f1f5f9;
+}
+
+.rbc-court-wrapper .rbc-today {
+  background-color: #fff1f2;
+}
+
+.rbc-court-wrapper .rbc-calendar {
+  height: 100% !important;
+}
+
+/* Custom full-height container class */
+.court-hours-calendar-container {
+  height: 1200px;
+}
