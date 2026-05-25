@@ -64,7 +64,7 @@ bld/
 # Visual Studio
 .vs/
 *.sqlite3
-
+.vscode/
 # Node.js
 node_modules/
 npm-debug.log
