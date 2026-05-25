@@ -14,5 +14,7 @@ public class CourtPriceResponse
     public DateTimeOffset CreatedDate { get; set; }
     public DateTimeOffset? UpdatedDate { get; set; }
     public bool IsMapping { get; set; }
+    public bool IsLocked { get; set; }
+    public string? LockReason { get; set; }
 }
 

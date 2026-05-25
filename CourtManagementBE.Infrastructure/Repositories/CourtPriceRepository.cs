@@ -7,6 +7,7 @@ using CourtManagementBE.Domain.IRepositories;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Infrastructure.Extensions.SqlExtentions;
+using CourtManagementBE.Application.DTOs;
 
 
 namespace CourtManagementBE.Infrastructure.Repositories
@@ -20,9 +21,9 @@ namespace CourtManagementBE.Infrastructure.Repositories
             _ctx = ctx;
         }
 
-        public async Task<List<CourtPriceRule>> GetCourtPriceRulesAsync(int courtId, DateTime targetDate)
+        public async Task<List<CourtPriceResponse>> GetCourtPriceRulesAsync(int courtId, DateTime targetDate)
         {
-            var ls = new List<CourtPriceRule>();
+            var ls = new List<CourtPriceResponse>();
             DataTable dt = new();
             using (var command = _ctx.Database.GetDbConnection().CreateCommand())
             {
@@ -34,7 +35,7 @@ namespace CourtManagementBE.Infrastructure.Repositories
                 await _ctx.Database.OpenConnectionAsync();
                 using var result = await command.ExecuteReaderAsync();
                 dt.Load(result);
-                ls = ISqlExtensions.ConvertDataTable<CourtPriceRule>(dt);
+                ls = ISqlExtensions.ConvertDataTable<CourtPriceResponse>(dt);
             }
             return ls;
         }

@@ -27,16 +27,7 @@ public class CourtPriceService : BaseService, ICourtPriceService
         if (!await CanAccessCourt(courtId))
             return Unauthorized<List<CourtPriceResponse>>("Bạn không có quyền truy cập sân này.");
 
-        var resolved = await _unitOfWork.ICourtPriceRepository.GetCourtPriceRulesAsync(courtId, targetDate);
-        var response = _mapper.Map<List<CourtPriceResponse>>(resolved);
-
-        foreach (var res in response)
-        {
-            if (res.CourtPriceRuleID < 0)
-            {
-                res.IsMapping = true;
-            }
-        }
+        var response = await _unitOfWork.ICourtPriceRepository.GetCourtPriceRulesAsync(courtId, targetDate);
 
         return Success(response);
     }

@@ -24,16 +24,13 @@ export const formatMinutesAsTime = (totalMinutes: number) => {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }
 
-/** Trả về dayjs của thứ Hai đầu tuần hiện tại. */
 export const getMonday = (): dayjs.Dayjs => {
   const dow = dayjs().day()
   const diff = dow === 0 ? -6 : 1 - dow
   return dayjs().add(diff, 'day').startOf('day')
 }
 
-/**
- * Chuyển grid day index (0=Thứ Hai … 6=Chủ Nhật) sang tên ngày tiếng Việt
- * dựa vào dayjs vi locale (không cần hardcode mảng).
- */
 export const gridDayLabel = (day: number): string =>
-  dayjs().day(day === 6 ? 0 : day + 1).format('dddd')
+  dayjs()
+    .day(day === 6 ? 0 : day + 1)
+    .format('dddd')

@@ -192,6 +192,8 @@ export type CourtPrice = {
   createdDate: string
   updatedDate?: string | null
   isMapping?: boolean
+  isLocked?: boolean
+  lockReason?: string | null
 }
 
 export type CreateCourtPriceRequest = {

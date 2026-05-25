@@ -1,6 +1,7 @@
 using AutoMapper;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Domain.Entities;
+using CourtManagementBE.Domain.Models;
 
 namespace CourtManagementBE.Api.Profiles;
 

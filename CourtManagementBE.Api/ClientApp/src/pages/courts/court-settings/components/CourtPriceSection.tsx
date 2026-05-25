@@ -17,7 +17,13 @@ import {
   Space,
   Typography,
 } from 'antd'
-import { CalendarOutlined, SaveOutlined, WalletOutlined, ImportOutlined } from '@ant-design/icons'
+import {
+  CalendarOutlined,
+  SaveOutlined,
+  WalletOutlined,
+  ImportOutlined,
+  LockOutlined,
+} from '@ant-design/icons'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import {
@@ -28,7 +34,11 @@ import {
 } from '@/features/courts/api/useCourtPriceQueries'
 import { usePriceRuleTypesQuery } from '@/features/courts/api/usePriceRuleTypeQueries'
 import { useCourtDefaultPriceRulesQuery } from '@/features/courts/api/useCourtDefaultPriceRuleQueries'
-import type { CourtPrice, PriceRuleType, CourtDefaultPriceRule } from '@/features/courts/model/types'
+import type {
+  CourtPrice,
+  PriceRuleType,
+  CourtDefaultPriceRule,
+} from '@/features/courts/model/types'
 import {
   formatCurrency,
   formatMinutesAsTime,
@@ -65,6 +75,8 @@ export interface PriceBlock {
   label?: string
   specificDate?: string | null
   isMapping?: boolean
+  isLocked?: boolean
+  lockReason?: string | null
 }
 
 interface CourtPriceSectionProps {
@@ -80,7 +92,6 @@ interface RbcEvent {
   resource: PriceBlock
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const getMondayOfDate = (date: dayjs.Dayjs): dayjs.Dayjs => {
   const dow = date.day()
   const diff = dow === 0 ? -6 : 1 - dow
@@ -145,6 +156,8 @@ const courtPriceToBlock = (
     label: price.priceRuleTypeID ? (ruleById.get(price.priceRuleTypeID)?.name ?? '') : '',
     specificDate: price.specificDate ?? null,
     isMapping: price.isMapping ?? false,
+    isLocked: price.isLocked ?? false,
+    lockReason: price.lockReason ?? null,
   }
 }
 
@@ -152,8 +165,7 @@ const defaultPriceRuleToBlock = (
   rule: CourtDefaultPriceRule,
   ruleById: Map<number, PriceRuleType>,
 ): PriceBlock => {
-  const dow =
-    rule.dayOfWeek ?? (rule.specificDate ? dayjs(rule.specificDate).day() : 1)
+  const dow = rule.dayOfWeek ?? (rule.specificDate ? dayjs(rule.specificDate).day() : 1)
   return {
     id: generateId(),
     priceRuleTypeID: rule.priceRuleTypeID ?? null,
@@ -209,9 +221,17 @@ function PriceEvent({
   const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
 
   return (
-    <div className="group relative h-full flex flex-col justify-start overflow-hidden px-2 py-1.5 gap-0.5">
-      <p className="text-[10px] font-semibold leading-none truncate opacity-75 m-0">
-        {timeStr}
+    <div
+      className={`group relative h-full flex flex-col justify-start overflow-hidden px-2 py-1.5 gap-0.5 ${block.isLocked ? 'cursor-not-allowed opacity-90 font-medium' : ''}`}
+    >
+      <p className="text-[10px] font-semibold leading-none truncate opacity-75 m-0 flex items-center justify-between">
+        <span>{timeStr}</span>
+        {block.isLocked && (
+          <LockOutlined
+            className="text-[10px] text-red-500"
+            title={`Đã khóa: ${block.lockReason || 'Không có lý do'}`}
+          />
+        )}
       </p>
       <p className="text-xs font-bold leading-tight truncate m-0 flex items-center gap-1">
         {block.specificDate && (
@@ -231,7 +251,15 @@ function PriceEvent({
           {block.label}
         </span>
       )}
-      {!block.isMapping && (
+      {block.isLocked && block.lockReason && (
+        <span
+          className="text-[8px] font-bold truncate text-red-600 mt-0.5"
+          title={block.lockReason}
+        >
+          🔒 {block.lockReason}
+        </span>
+      )}
+      {!block.isMapping && !block.isLocked && (
         <button
           className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-white/60 text-inherit
                      opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center
@@ -460,7 +488,10 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
 
       const dynamicDeletedIds = serverBlocks
         .map((s) => s.courtPriceRuleID)
-        .filter((id): id is number => typeof id === 'number' && id > 0 && !currentDbIds.includes(id))
+        .filter(
+          (id): id is number =>
+            typeof id === 'number' && id > 0 && !currentDbIds.includes(id),
+        )
 
       const allDeletedIds = Array.from(new Set([...deletedIds, ...dynamicDeletedIds]))
 
@@ -490,13 +521,16 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
       return
     }
     try {
-      const activeDefaults = (defaultRulesQuery.data.items ?? [])
-        .filter((r) => r.isActive && r.isLoadDefault)
-      
+      const activeDefaults = (defaultRulesQuery.data.items ?? []).filter(
+        (r) => r.isActive && r.isLoadDefault,
+      )
+
       const mapped = activeDefaults.map((r) => defaultPriceRuleToBlock(r, ruleById))
-      
+
       stage(mapped)
-      message.success('Đã tải cấu hình giá mặc định vào lịch (vui lòng nhấn "Lưu cấu hình" để hoàn tất)')
+      message.success(
+        'Đã tải cấu hình giá mặc định vào lịch (vui lòng nhấn "Lưu cấu hình" để hoàn tất)',
+      )
     } catch {
       message.error('Tải cấu hình giá mặc định thất bại')
     }
@@ -506,7 +540,8 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
     if (hasDraft) {
       Modal.confirm({
         title: 'Xác nhận tải giá mặc định',
-        content: 'Bạn đang có thay đổi chưa lưu. Tải cấu hình giá mặc định sẽ ghi đè lên các thay đổi hiện tại của tuần này. Bạn có chắc chắn muốn tiếp tục?',
+        content:
+          'Bạn đang có thay đổi chưa lưu. Tải cấu hình giá mặc định sẽ ghi đè lên các thay đổi hiện tại của tuần này. Bạn có chắc chắn muốn tiếp tục?',
         okText: 'Tiếp tục',
         cancelText: 'Hủy',
         onOk: () => performLoadDefaults(),
@@ -536,12 +571,34 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
 
   const handleSelectEvent = (event: object) => {
     const e = event as RbcEvent
+    if (e.resource.isLocked) {
+      Modal.info({
+        title: 'Khung giờ bị khóa',
+        content: (
+          <div className="flex flex-col gap-2 pt-2">
+            <p>Khung giờ này đã bị khóa và không thể chỉnh sửa giá.</p>
+            {e.resource.lockReason && (
+              <p className="text-slate-500 font-medium">
+                Lý do khóa:{' '}
+                <span className="text-slate-800">{e.resource.lockReason}</span>
+              </p>
+            )}
+          </div>
+        ),
+        okText: 'Đóng',
+      })
+      return
+    }
     setEditingBlock(e.resource)
     setModalOpen(true)
   }
 
   const handleEventDrop = ({ event, start, end }: EventInteractionArgs<object>) => {
     const e = event as RbcEvent
+    if (e.resource.isLocked) {
+      message.error('Không thể di chuyển khung giờ đang bị khóa')
+      return
+    }
     const { day, startMin, endMin } = eventToGridInfo(start as Date, end as Date)
     let updated: PriceBlock = { ...e.resource, day, start: startMin, end: endMin }
     if (e.resource.isMapping) {
@@ -562,6 +619,10 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
 
   const handleEventResize = ({ event, start, end }: EventInteractionArgs<object>) => {
     const e = event as RbcEvent
+    if (e.resource.isLocked) {
+      message.error('Không thể thay đổi kích thước khung giờ đang bị khóa')
+      return
+    }
     const { startMin, endMin } = eventToGridInfo(start as Date, end as Date)
     let updated: PriceBlock = { ...e.resource, start: startMin, end: endMin }
     if (e.resource.isMapping) {
@@ -583,6 +644,10 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const handleDelete = (id: string) => {
     const block = blocks.find((b) => b.id === id)
     if (!block) return
+    if (block.isLocked) {
+      message.error('Không thể xóa khung giờ đang bị khóa')
+      return
+    }
     stage(blocks.filter((b) => b.id !== id))
     if (block.courtPriceRuleID) {
       setDeletedIds((prev) => Array.from(new Set([...prev, block.courtPriceRuleID!])))
@@ -600,7 +665,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   }) => {
     if (!editingBlock) return
     const label = priceRuleTypeID ? (ruleById.get(priceRuleTypeID)?.name ?? '') : ''
-    
+
     if (editingBlock.isMapping) {
       const newBlock: PriceBlock = {
         id: generateId(),
@@ -640,6 +705,25 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
     const type = priceRuleTypes.find((t) => t.priceRuleTypeID === block.priceRuleTypeID)
     const color = type?.colorCode || '#0ea5e9'
     const isSpecific = !!block.specificDate
+    const isLocked = !!block.isLocked
+
+    if (isLocked) {
+      return {
+        style: {
+          background:
+            'repeating-linear-gradient(45deg, #fef2f2 0px, #fef2f2 10px, #fff5f5 10px, #fff5f5 20px)',
+          borderLeft: '4px solid #ef4444',
+          borderTop: 'none',
+          borderRight: 'none',
+          borderBottom: 'none',
+          borderRadius: '8px',
+          color: '#ef4444',
+          padding: 0,
+          boxShadow: '0 1px 4px rgba(239, 68, 68, 0.15)',
+        },
+      }
+    }
+
     return {
       style: {
         backgroundColor: isSpecific ? '#fff7ed' : `${color}1a`,

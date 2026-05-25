@@ -26,7 +26,9 @@ BEGIN
         StartTime TIME(7),
         EndTime TIME(7),
         Price DECIMAL(18,2),
-        IsActive BIT
+        IsActive BIT,
+        IsLocked BIT DEFAULT 0,
+        LockReason NVARCHAR(500) NULL
     );
 
     DECLARE @day INT = 0;
@@ -208,7 +210,7 @@ BEGIN
         DEALLOCATE cur;
 
         -- Đưa kết quả ngày này vào bảng tổng
-        INSERT INTO #Result
+        INSERT INTO #Result (CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, IsActive)
         SELECT SourceID, @CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, 1
         FROM #Base;
 
@@ -218,8 +220,36 @@ BEGIN
         SET @day = @day + 1;
     END
 
+    -- Cập nhật thông tin khóa sân (Locked Slots)
+    UPDATE r
+    SET 
+        r.IsLocked = 1,
+        r.LockReason = l.LockReason
+    FROM #Result r
+    INNER JOIN CourtLockedSlots l ON l.CourtID = r.CourtID AND l.IsActive = 1
+    WHERE 
+        (
+            (l.IsWeekly = 0 AND l.SpecificDate = COALESCE(r.SpecificDate, DATEADD(DAY, CASE WHEN r.DayOfWeek = 0 THEN 6 ELSE r.DayOfWeek - 1 END, @MondayDate)))
+            OR
+            (l.IsWeekly = 1 AND l.DayOfWeek = r.DayOfWeek)
+        )
+        AND l.StartTime < r.EndTime
+        AND l.EndTime > r.StartTime;
+
     -- Trả kết quả cuối cùng đã sắp xếp
-    SELECT CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, IsActive
+    SELECT 
+        CourtPriceRuleID, 
+        CourtID, 
+        PriceRuleTypeID, 
+        DayOfWeek, 
+        SpecificDate, 
+        StartTime, 
+        EndTime, 
+        Price, 
+        IsActive,
+        IsLocked,
+        LockReason,
+        CAST(CASE WHEN CourtPriceRuleID < 0 THEN 1 ELSE 0 END AS BIT) AS IsMapping
     FROM #Result
     ORDER BY DayOfWeek, StartTime;
 
