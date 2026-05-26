@@ -383,8 +383,6 @@ namespace CourtManagementBE.Migrations
 
                     b.HasIndex("BookingDate");
 
-                    b.HasIndex("ComboID");
-
                     b.HasIndex("CourtID");
 
                     b.HasIndex("CustomerID");
@@ -465,10 +463,12 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<string>("ComboCode")
                         .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
                     b.Property<string>("ComboName")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<decimal>("ComboPrice")
@@ -479,7 +479,8 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("DurationHours")
                         .HasColumnType("int");
