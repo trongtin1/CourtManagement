@@ -8,6 +8,8 @@ import {
   PictureOutlined,
   SettingOutlined,
   UserOutlined,
+  GiftOutlined,
+  ShopOutlined,
 } from '@ant-design/icons'
 import type { ReactNode } from 'react'
 
@@ -78,6 +80,10 @@ export const pageMeta: Record<string, { title: string; description: string }> = 
     title: 'D\u1ecbch v\u1ee5',
     description: 'Master data d\u1ecbch v\u1ee5 b\u00e1n k\u00e8m booking.',
   },
+  combos: {
+    title: 'Gói Combo',
+    description: 'Thiết lập và quản lý các gói combo đặt sân kèm quà tặng/dịch vụ.',
+  },
   utilities: {
     title: 'Ti\u1ec7n \u00edch',
     description:
@@ -133,6 +139,23 @@ export const getMenuItems = (): MenuItem[] => {
       key: 'bookings',
       icon: <CalendarOutlined />,
       label: <Link to="/bookings">{'\u0110\u1eb7t s\u00e2n'}</Link>,
+    },
+    {
+      key: 'services-combos',
+      icon: <ShopOutlined />,
+      label: 'Dịch vụ & Combo',
+      children: [
+        {
+          key: 'services',
+          icon: <AppstoreOutlined />,
+          label: <Link to="/services">Dịch vụ bán kèm</Link>,
+        },
+        {
+          key: 'combos',
+          icon: <GiftOutlined />,
+          label: <Link to="/combos">Gói Combo</Link>,
+        },
+      ],
     },
     {
       key: 'payments',

@@ -18,6 +18,7 @@ export const ROUTES = {
   customers: '/customers',
   bookings: '/bookings',
   services: '/services',
+  combos: '/combos',
   payments: '/payments',
   // Master Data
   masterDataHub: '/master-data-hub',

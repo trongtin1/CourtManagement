@@ -90,6 +90,12 @@ public class MappingProfile : Profile
         CreateMap<ServicePrice, ServicePriceResponse>();
         CreateMap<ServicePriceRequest, ServicePrice>();
 
+        // ── Combos & ComboServices ───────────────────────────────────────
+        CreateMap<Combos, ComboResponse>();
+        CreateMap<ComboRequest, Combos>();
+        CreateMap<ComboServices, ComboServiceResponse>();
+        CreateMap<ComboServiceRequest, ComboServices>();
+
         // ── CourtPriceHistory (read-only) ────────────────────────────────
         CreateMap<CourtPriceRuleHistory, CourtPriceHistoryResponse>();
 

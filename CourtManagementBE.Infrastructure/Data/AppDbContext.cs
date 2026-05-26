@@ -49,6 +49,8 @@ public class AppDbContext : DbContext
     // ── Dịch vụ ───────────────────────────────────────────────────────────────
     public DbSet<Services> Services => Set<Services>();
     public DbSet<ServicePrice> ServicePrices => Set<ServicePrice>();
+    public DbSet<Combos> Combos => Set<Combos>();
+    public DbSet<ComboServices> ComboServices => Set<ComboServices>();
 
     public DbSet<BookingStatuses> BookingStatuses => Set<BookingStatuses>();
     public DbSet<PaymentStatuses> PaymentStatuses => Set<PaymentStatuses>();
@@ -367,6 +369,30 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.ID);
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
             e.HasIndex(x => new { x.ServiceID, x.EffectiveDate });
+        });
+
+        // ── Combos & ComboServices ───────────────────────────────────────────
+        modelBuilder.Entity<Combos>(e =>
+        {
+            e.HasKey(x => x.ComboID);
+            e.Property(x => x.ComboCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.ComboName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.Description).HasColumnType("nvarchar(500)");
+            e.Property(x => x.ComboPrice).HasColumnType("decimal(18,2)");
+            e.HasIndex(x => x.ComboCode).IsUnique();
+        });
+
+        modelBuilder.Entity<ComboServices>(e =>
+        {
+            e.HasKey(x => x.ID);
+            e.HasOne(x => x.Combo)
+                .WithMany()
+                .HasForeignKey(x => x.ComboID)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Service)
+                .WithMany()
+                .HasForeignKey(x => x.ServiceID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         ConfigureMasterData<BookingStatuses>(modelBuilder, "BookingStatusID");

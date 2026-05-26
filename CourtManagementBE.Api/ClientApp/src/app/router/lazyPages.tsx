@@ -90,6 +90,10 @@ export const ServicesPage = lazy(() =>
   import('@/pages/services/ServicesPage').then((m) => ({ default: m.ServicesPage })),
 )
 
+export const CombosPage = lazy(() =>
+  import('@/pages/combos/CombosPage').then((m) => ({ default: m.CombosPage })),
+)
+
 export const PaymentsPage = lazy(() =>
   import('@/pages/payments/PaymentsPage').then((m) => ({ default: m.PaymentsPage })),
 )

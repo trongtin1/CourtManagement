@@ -98,3 +98,7 @@ public class CancellationReasonRepository : GenericRepository<CancellationReason
 { public CancellationReasonRepository(AppDbContext ctx) : base(ctx) { } }
 public class RefundReasonRepository : GenericRepository<RefundReasons>, IRefundReasonRepository
 { public RefundReasonRepository(AppDbContext ctx) : base(ctx) { } }
+public class ComboRepository : GenericRepository<Combos>, IComboRepository
+{ public ComboRepository(AppDbContext ctx) : base(ctx) { } }
+public class ComboServiceRepository : GenericRepository<ComboServices>, IComboServiceRepository
+{ public ComboServiceRepository(AppDbContext ctx) : base(ctx) { } }

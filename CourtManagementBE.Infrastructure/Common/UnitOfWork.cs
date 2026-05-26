@@ -57,6 +57,9 @@ public class UnitOfWork : IUnitOfWork
     public IPaymentStatusRepository IPaymentStatusRepository => new PaymentStatusRepository(_context);
     public IPaymentMethodRepository IPaymentMethodRepository => new PaymentMethodRepository(_context);
     public ICustomerTypeRepository ICustomerTypeRepository => new CustomerTypeRepository(_context);
+    public IComboRepository IComboRepository => new ComboRepository(_context);
+    public IComboServiceRepository IComboServiceRepository => new ComboServiceRepository(_context);
+
     public IGenericRepository<T> GetRepository<T>() where T : class
     {
         return new GenericRepository<T>(_context);

@@ -345,6 +345,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int?>("ComboID")
+                        .HasColumnType("int");
+
                     b.Property<int>("CourtID")
                         .HasColumnType("int");
 
@@ -379,6 +382,8 @@ namespace CourtManagementBE.Migrations
                     b.HasKey("BookingID");
 
                     b.HasIndex("BookingDate");
+
+                    b.HasIndex("ComboID");
 
                     b.HasIndex("CourtID");
 
@@ -422,6 +427,72 @@ namespace CourtManagementBE.Migrations
                         .IsUnique();
 
                     b.ToTable("CancellationReasons");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ComboServices", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<int>("ComboID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServiceID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("ComboID");
+
+                    b.HasIndex("ServiceID");
+
+                    b.ToTable("ComboServices");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Combos", b =>
+                {
+                    b.Property<int>("ComboID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ComboID"));
+
+                    b.Property<string>("ComboCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ComboName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("ComboPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DurationHours")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("ComboID");
+
+                    b.HasIndex("ComboCode")
+                        .IsUnique();
+
+                    b.ToTable("Combos");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtAreaMapping", b =>
@@ -1729,6 +1800,25 @@ namespace CourtManagementBE.Migrations
                         .IsUnique();
 
                     b.ToTable("Utilities");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ComboServices", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
+                        .WithMany()
+                        .HasForeignKey("ComboID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Services", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Combo");
+
+                    b.Navigation("Service");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtDefaultPriceRule", b =>

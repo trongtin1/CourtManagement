@@ -40,6 +40,8 @@ public interface IUnitOfWork : IDisposable
     ICourtFeatureCategoryRepository ICourtFeatureCategoryRepository { get; }
     ICancellationReasonRepository ICancellationReasonRepository { get; }
     IRefundReasonRepository IRefundReasonRepository { get; }
+    IComboRepository IComboRepository { get; }
+    IComboServiceRepository IComboServiceRepository { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

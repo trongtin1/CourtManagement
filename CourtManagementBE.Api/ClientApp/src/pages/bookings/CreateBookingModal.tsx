@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { App, Button, Checkbox, Drawer, Form, Input, InputNumber } from 'antd'
+import { App, Button, Checkbox, Drawer, Form, Input, InputNumber, Select, Card, Tag, Badge, Divider } from 'antd'
 import {
   ArrowLeftOutlined, ArrowRightOutlined, CalendarOutlined,
-  CheckCircleFilled, LockOutlined,
+  CheckCircleFilled, LockOutlined, GiftOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
+import { useCombosQuery } from '@/features/combos/api/useComboQueries'
 import {
   MOCK_COURTS, MOCK_TIME_SLOTS, MOCK_CUSTOMERS, MOCK_SERVICES,
   MOCK_LOCKED_SLOTS, getSlotPrice,
@@ -35,6 +36,10 @@ export function CreateBookingModal({ open, onClose, initialCourtID, initialSlotT
   const [services, setServices] = useState<Record<number, SelectedSvc>>({})
   const [customerID, setCustomerID] = useState<number | null>(null)
   const [note, setNote] = useState('')
+  const [selectedComboID, setSelectedComboID] = useState<number | null>(null)
+
+  // Fetch combos
+  const combosQuery = useCombosQuery({ page: 1, pageSize: 100 })
 
   const resetAll = () => {
     setStep(0); setCourtID(initialCourtID ?? null)
@@ -43,8 +48,13 @@ export function CreateBookingModal({ open, onClose, initialCourtID, initialSlotT
       ? [MOCK_TIME_SLOTS.findIndex(s => s.startTime === initialSlotTime) + 1].filter(Boolean)
       : []
     )
-    setServices({}); setCustomerID(null); setNote('')
+    setServices({}); setCustomerID(null); setNote(''); setSelectedComboID(null)
   }
+
+  const selectedCombo = useMemo(() =>
+    combosQuery.data?.items?.find(c => c.comboID === selectedComboID),
+    [combosQuery.data, selectedComboID],
+  )
 
   const dow = dayjs(date).day()
   const locks = useMemo(
@@ -69,13 +79,33 @@ export function CreateBookingModal({ open, onClose, initialCourtID, initialSlotT
     })
   }
 
-  const slotTotal = useMemo(() =>
-    selectedSlots.reduce((s, id) => {
+  const slotTotal = useMemo(() => {
+    if (selectedCombo) {
+      const comboPrice = selectedCombo.comboPrice
+      const comboHours = selectedCombo.durationHours
+      const selectedHoursCount = selectedSlots.length
+
+      let cost = comboPrice
+      if (selectedHoursCount > comboHours) {
+        const extraCount = selectedHoursCount - comboHours
+        const sortedPrices = [...selectedSlots].map(id => {
+          const slot = MOCK_TIME_SLOTS.find(t => t.timeSlotID === id)
+          return slot && courtID ? getSlotPrice(courtID, dow, slot.startTime) : 0
+        }).sort((a, b) => b - a)
+
+        for (let i = 0; i < extraCount; i++) {
+          cost += sortedPrices[i] ?? 0
+        }
+      }
+      return cost
+    }
+
+    return selectedSlots.reduce((s, id) => {
       const slot = MOCK_TIME_SLOTS.find(t => t.timeSlotID === id)
       return s + (slot && courtID ? getSlotPrice(courtID, dow, slot.startTime) : 0)
-    }, 0),
-    [selectedSlots, courtID, dow],
-  )
+    }, 0)
+  }, [selectedSlots, courtID, dow, selectedCombo])
+
   const svcTotal = Object.values(services).reduce((s, v) => s + v.quantity * v.unitPrice, 0)
   const total = slotTotal + svcTotal
 
@@ -184,6 +214,60 @@ export function CreateBookingModal({ open, onClose, initialCourtID, initialSlotT
             <div>
               <h3 className="text-base font-bold text-slate-800 mb-1">Dịch vụ đi kèm</h3>
               <p className="text-sm text-slate-400 mb-4">Tùy chọn – có thể bỏ qua</p>
+
+              {/* Combo Package Selection */}
+              <div className="mb-6 p-4 bg-rose-50/40 border border-rose-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <GiftOutlined className="text-rose-500 text-lg" />
+                  <span className="font-bold text-slate-800 text-sm">Áp dụng Gói Combo ưu đãi</span>
+                  <Badge count="Hot" style={{ backgroundColor: '#f43f5e', fontSize: '10px' }} />
+                </div>
+                <Select
+                  className="w-full mb-3"
+                  placeholder="Chọn gói Combo khuyến mãi..."
+                  allowClear
+                  value={selectedComboID}
+                  onChange={(v) => setSelectedComboID(v || null)}
+                  options={combosQuery.data?.items?.filter(c => c.isActive).map(c => ({
+                    value: c.comboID,
+                    label: `${c.comboName} (${formatCompactCurrency(c.comboPrice)})`
+                  }))}
+                />
+
+                {selectedCombo && (
+                  <Card size="small" className="border-rose-200 bg-white shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="font-bold text-rose-600 block">{selectedCombo.comboName}</span>
+                        <span className="text-xs text-slate-500 block">{selectedCombo.description}</span>
+                      </div>
+                      <Tag color="rose" className="m-0 font-bold">{formatCompactCurrency(selectedCombo.comboPrice)}</Tag>
+                    </div>
+                    <Divider className="my-2" />
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Giờ thuê sân đi kèm:</span>
+                        <strong className="text-rose-600">{selectedCombo.durationHours} giờ chơi</strong>
+                      </div>
+                      <div className="text-slate-600">
+                        <span className="block mb-1 font-semibold text-slate-700">Dịch vụ tặng kèm miễn phí:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedCombo.services && selectedCombo.services.length > 0 ? (
+                            selectedCombo.services.map(s => (
+                              <Tag color="purple" key={s.serviceID} className="text-[10px]">
+                                {s.serviceName} x{s.quantity} {s.unit}
+                              </Tag>
+                            ))
+                          ) : (
+                            <span className="text-gray-400">Không có dịch vụ đi kèm</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
+
               <div className="service-pick-list">
                 {MOCK_SERVICES.map(svc => {
                   const sel = services[svc.serviceID]
@@ -262,6 +346,14 @@ export function CreateBookingModal({ open, onClose, initialCourtID, initialSlotT
                   : 'Chưa chọn'}
               </div>
             </div>
+            {selectedCombo && (
+              <div>
+                <div className="text-slate-400">Gói Combo</div>
+                <div className="font-bold text-rose-600 flex items-center gap-1">
+                  <GiftOutlined /> {selectedCombo.comboName}
+                </div>
+              </div>
+            )}
             {customer && (
               <div>
                 <div className="text-slate-400">Khách hàng</div>
@@ -271,7 +363,7 @@ export function CreateBookingModal({ open, onClose, initialCourtID, initialSlotT
 
             <div className="border-t border-slate-100 pt-3 space-y-1">
               <div className="flex justify-between text-slate-500">
-                <span>Tiền sân ({selectedSlots.length} slot)</span>
+                <span>{selectedCombo ? 'Tiền Combo & Sân' : `Tiền sân (${selectedSlots.length} slot)`}</span>
                 <span>{formatCompactCurrency(slotTotal)}</span>
               </div>
               {svcTotal > 0 && (

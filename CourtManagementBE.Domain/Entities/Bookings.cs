@@ -11,6 +11,7 @@ public class Bookings
     public DateTime BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
     public int? BookingStatusID { get; set; }
+    public int? ComboID { get; set; }
     public string Status { get; set; } = string.Empty; // pending | confirmed | cancelled | completed
     public int? CancellationReasonID { get; set; }
     public string Note { get; set; } = string.Empty;

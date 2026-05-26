@@ -37,3 +37,5 @@ public interface IAssetConditionRepository : IGenericRepository<AssetConditions>
 public interface ICourtFeatureCategoryRepository : IGenericRepository<CourtFeatureCategories> { }
 public interface ICancellationReasonRepository : IGenericRepository<CancellationReasons> { }
 public interface IRefundReasonRepository : IGenericRepository<RefundReasons> { }
+public interface IComboRepository : IGenericRepository<Combos> { }
+public interface IComboServiceRepository : IGenericRepository<ComboServices> { }
