@@ -2,7 +2,7 @@ namespace CourtManagementBE.Application.DTOs;
 
 public class CourtPriceResponse
 {
-    public int CourtPriceRuleID { get; set; }
+    public int? CourtPriceRuleID { get; set; }
     public int CourtID { get; set; }
     public int? PriceRuleTypeID { get; set; }
     public int? DayOfWeek { get; set; }

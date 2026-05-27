@@ -18,7 +18,7 @@ BEGIN
 
     -- Final result
     CREATE TABLE #Result (
-        CourtPriceRuleID INT,
+        CourtPriceRuleID INT NULL,
         CourtID INT,
         PriceRuleTypeID INT NULL,
         DayOfWeek INT NULL,
@@ -28,7 +28,8 @@ BEGIN
         Price DECIMAL(18,2),
         IsActive BIT,
         IsLocked BIT DEFAULT 0,
-        LockReason NVARCHAR(500) NULL
+        LockReason NVARCHAR(500) NULL,
+        IsMapping BIT DEFAULT 0
     );
 
     DECLARE @day INT = 0;
@@ -210,9 +211,42 @@ BEGIN
         DEALLOCATE cur;
 
         -- Đưa kết quả ngày này vào bảng tổng
-        INSERT INTO #Result (CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, IsActive)
-        SELECT SourceID, @CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, 1
+        INSERT INTO #Result (CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, IsActive, IsMapping)
+        SELECT 
+            CASE WHEN IsDefault = 1 THEN NULL ELSE SourceID END, 
+            @CourtID, 
+            PriceRuleTypeID, 
+            DayOfWeek, 
+            SpecificDate, 
+            StartTime, 
+            EndTime, 
+            Price, 
+            1, 
+            IsDefault
         FROM #Base;
+
+        -- Chèn các locked slots của ngày này vào #Result
+        INSERT INTO #Result (CourtPriceRuleID, CourtID, PriceRuleTypeID, DayOfWeek, SpecificDate, StartTime, EndTime, Price, IsActive, IsLocked, LockReason, IsMapping)
+        SELECT 
+            NULL,
+            @CourtID,
+            NULL,
+            @day,
+            @specificDate,
+            l.StartTime,
+            l.EndTime,
+            0,
+            1,
+            1,
+            l.LockReason,
+            0
+        FROM CourtLockedSlots l
+        WHERE l.CourtID = @CourtID AND l.IsActive = 1
+          AND (
+              (l.IsWeekly = 0 AND l.SpecificDate = @specificDate)
+              OR
+              (l.IsWeekly = 1 AND l.DayOfWeek = @day)
+          );
 
         DROP TABLE #Base;
         DROP TABLE #Overlays;
@@ -249,7 +283,7 @@ BEGIN
         IsActive,
         IsLocked,
         LockReason,
-        CAST(CASE WHEN CourtPriceRuleID < 0 THEN 1 ELSE 0 END AS BIT) AS IsMapping
+        IsMapping
     FROM #Result
     ORDER BY DayOfWeek, StartTime;
 
