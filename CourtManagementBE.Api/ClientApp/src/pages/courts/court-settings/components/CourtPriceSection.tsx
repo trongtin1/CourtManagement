@@ -148,8 +148,14 @@ const courtPriceToBlock = (
 ): PriceBlock => {
   const dow =
     price.dayOfWeek ?? (price.specificDate ? dayjs(price.specificDate).day() : 1)
+  const id = price.courtPriceRuleID
+    ? String(price.courtPriceRuleID)
+    : price.isLocked
+      ? `locked-${price.specificDate || price.dayOfWeek}-${price.startTime}-${price.endTime}`
+      : `mapping-${price.priceRuleTypeID}-${price.specificDate || price.dayOfWeek}-${price.startTime}-${price.endTime}`
+
   return {
-    id: String(price.courtPriceRuleID),
+    id,
     courtPriceRuleID: price.courtPriceRuleID,
     priceRuleTypeID: price.priceRuleTypeID ?? null,
     day: apiDayToGridDay(dow),
@@ -576,7 +582,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const blocks = draftBlocks ?? serverBlocks
   const events = blocks.map((b) => blockToEvent(b, currentMonday))
 
-  const newBlocks = blocks.filter((b) => !b.courtPriceRuleID)
+  const newBlocks = blocks.filter((b) => !b.courtPriceRuleID && !b.isMapping && !b.isLocked)
   const modifiedBlocks = blocks.filter((b) => {
     if (!b.courtPriceRuleID) return false
     const original = serverBlocks.find((s) => s.courtPriceRuleID === b.courtPriceRuleID)
@@ -837,7 +843,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   }
 
   const handleModalCancel = () => {
-    if (editingBlock && !editingBlock.courtPriceRuleID) {
+    if (editingBlock && !editingBlock.courtPriceRuleID && !editingBlock.isMapping) {
       stage(blocks.filter((b) => b.id !== editingBlock.id))
     }
     setModalOpen(false)

@@ -530,153 +530,238 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
               style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}
             >
               <LockOutlined className="text-rose-500" />
-              <span>Chặn lịch / Đóng cửa sân</span>
+              <span>
+                {editingLock?.courtLockedSlotID
+                  ? 'Chi tiết khung giờ đang khóa'
+                  : 'Chặn lịch / Đóng cửa sân'}
+              </span>
             </Title>
             <Text type="secondary" className="text-xs mt-1 block">
-              Thiết lập khóa khung giờ hoặc đóng cửa sân nguyên ngày để ngăn chặn đặt
-              lịch.
+              {editingLock?.courtLockedSlotID
+                ? 'Thông tin chi tiết về khung giờ đang bị khóa và tùy chọn mở khóa.'
+                : 'Thiết lập khóa khung giờ hoặc đóng cửa sân nguyên ngày để ngăn chặn đặt lịch.'}
             </Text>
           </div>
         }
       >
-        {editingLock && (
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={{
-              applyType: editingLock.isWeekly ? 'weekly' : 'specific',
-              isAllDay: editingLock.isAllDay,
-              timeRange: [
-                dayjs(editingLock.startTime || '06:00', 'HH:mm'),
-                dayjs(editingLock.endTime || '22:00', 'HH:mm'),
-              ],
-              lockReason: editingLock.lockReason,
-            }}
-            onFinish={handleSaveLock}
-            className="pt-4 space-y-4 text-left"
-          >
-            {/* Kiểu Áp Dụng */}
-            <Form.Item
-              label={
-                <span className="text-xs font-bold text-slate-600">Kiểu áp dụng</span>
-              }
-              name="applyType"
-            >
-              <Radio.Group className="w-full flex" buttonStyle="solid">
-                <Radio.Button
-                  value="weekly"
-                  className="flex-1 text-center text-xs font-bold"
-                >
-                  Hàng tuần
-                </Radio.Button>
-                <Radio.Button
-                  value="specific"
-                  className="flex-1 text-center text-xs font-bold"
-                >
-                  Chỉ ngày {dayjs(editingLock.specificDate).format('DD/MM')}
-                </Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-
-            {/* Switch Khóa Cả Ngày */}
-            <div
-              className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"
-              style={{ marginBottom: 12 }}
-            >
-              <div>
-                <div className="text-xs font-bold text-slate-700">
-                  🚫 Khóa cả ngày (Đóng cửa sân)
+        {editingLock &&
+          (editingLock.courtLockedSlotID ? (
+            /* View & Unlock Mode for Existing Locks */
+            <div className="pt-4 space-y-4 text-left">
+              <div className="bg-rose-50/40 border border-rose-100 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge status="error" color="#f43f5e" />
+                  <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">
+                    Trạng thái: Đang khóa sân
+                  </span>
                 </div>
-                <div className="text-[10px] text-slate-400 mt-0.5">
-                  Khóa toàn bộ thời gian hoạt động của ngày
+
+                <div className="border-t border-rose-100/50 pt-2 space-y-2.5">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Kiểu áp dụng:
+                    </span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {editingLock.isWeekly
+                        ? 'Lặp lại hàng tuần (Cố định)'
+                        : 'Chỉ một ngày duy nhất'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Thời gian áp dụng:
+                    </span>
+                    <span className="text-xs font-bold text-slate-750">
+                      {editingLock.isWeekly
+                        ? `Thứ ${editingLock.dayOfWeek === 0 ? 'Chủ Nhật' : editingLock.dayOfWeek + 1}`
+                        : `Ngày ${dayjs(editingLock.specificDate).format('DD/MM/YYYY')}`}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Khung giờ khóa:
+                    </span>
+                    <span className="text-xs font-bold text-slate-750">
+                      {editingLock.isAllDay
+                        ? '🚫 Đóng cửa cả ngày (06:00 – 22:00)'
+                        : `⏰ ${editingLock.startTime} – ${editingLock.endTime}`}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Lý do khóa sân:
+                    </span>
+                    <span className="text-xs font-semibold text-slate-600 italic block mt-0.5">
+                      "{editingLock.lockReason || 'Không có lý do cụ thể'}"
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Form.Item name="isAllDay" valuePropName="checked" noStyle>
-                <Switch
-                  onChange={(checked) => {
-                    if (checked) {
-                      form.setFieldsValue({
-                        timeRange: [dayjs('06:00', 'HH:mm'), dayjs('22:00', 'HH:mm')],
-                      })
-                    }
+
+              <div className="flex gap-2.5 pt-2">
+                <Button
+                  onClick={() => {
+                    setIsLockModalOpen(false)
+                    setEditingLock(null)
                   }}
-                />
-              </Form.Item>
-            </div>
-
-            {/* Chọn Khung Giờ (Chỉ hiển thị khi không khóa cả ngày) */}
-            <Form.Item
-              noStyle
-              shouldUpdate={(prev, curr) => prev.isAllDay !== curr.isAllDay}
-            >
-              {({ getFieldValue }) => {
-                const isAllDay = getFieldValue('isAllDay')
-                if (isAllDay) return null
-
-                return (
-                  <Form.Item
-                    label={
-                      <span className="text-xs font-bold text-slate-600">
-                        Khoảng thời gian khóa
-                      </span>
-                    }
-                    name="timeRange"
-                    rules={[{ required: true, message: 'Vui lòng chọn khung giờ khóa!' }]}
-                  >
-                    <TimePicker.RangePicker
-                      format="HH:mm"
-                      step={30}
-                      className="w-full rounded-xl py-2 px-4"
-                      allowClear={false}
-                    />
-                  </Form.Item>
-                )
-              }}
-            </Form.Item>
-
-            {/* Lý Do */}
-            <Form.Item
-              label={
-                <span className="text-xs font-bold text-slate-600">
-                  Lý do khóa sân / Đóng cửa
-                </span>
-              }
-              name="lockReason"
-              rules={[{ required: true, message: 'Vui lòng điền lý do!' }]}
-            >
-              <Input.TextArea
-                placeholder="Ví dụ: Dành riêng cho Học viện tập luyện cố định, Bảo trì mặt sân, Nghỉ lễ..."
-                rows={3}
-                className="rounded-xl"
-              />
-            </Form.Item>
-
-            <div className="flex gap-2 pt-2">
-              {editingLock.id && !editingLock.id.startsWith('lock-temp') && (
+                  className="rounded-xl font-bold flex-1 h-11 border-slate-200 text-slate-500 hover:text-slate-700"
+                >
+                  Đóng
+                </Button>
                 <Button
                   danger
-                  type="default"
+                  type="primary"
                   icon={<DeleteOutlined />}
                   onClick={handleDeleteLock}
                   loading={deleteLockedSlotMutation.isPending}
-                  className="rounded-xl font-bold flex-1"
+                  className="rounded-xl font-bold flex-1 h-11 bg-linear-to-r from-rose-500 to-rose-600 border-0 flex items-center justify-center gap-1.5 shadow-md shadow-rose-100"
                 >
-                  Mở khóa
+                  Mở khóa sân
                 </Button>
-              )}
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={
-                  createLockedSlotMutation.isPending || updateLockedSlotMutation.isPending
-                }
-                className="rounded-xl font-bold flex-1 bg-linear-to-r from-rose-500 to-rose-600 border-0"
-              >
-                Lưu cấu hình
-              </Button>
+              </div>
             </div>
-          </Form>
-        )}
+          ) : (
+            /* Create Mode Form for New Locks */
+            <Form
+              form={form}
+              layout="vertical"
+              initialValues={{
+                applyType: editingLock.isWeekly ? 'weekly' : 'specific',
+                isAllDay: editingLock.isAllDay,
+                timeRange: [
+                  dayjs(editingLock.startTime || '06:00', 'HH:mm'),
+                  dayjs(editingLock.endTime || '22:00', 'HH:mm'),
+                ],
+                lockReason: editingLock.lockReason,
+              }}
+              onFinish={handleSaveLock}
+              className="pt-4 space-y-4 text-left"
+            >
+              {/* Kiểu Áp Dụng */}
+              <Form.Item
+                label={
+                  <span className="text-xs font-bold text-slate-600">Kiểu áp dụng</span>
+                }
+                name="applyType"
+              >
+                <Radio.Group className="w-full flex" buttonStyle="solid">
+                  <Radio.Button
+                    value="weekly"
+                    className="flex-1 text-center text-xs font-bold"
+                  >
+                    Hàng tuần
+                  </Radio.Button>
+                  <Radio.Button
+                    value="specific"
+                    className="flex-1 text-center text-xs font-bold"
+                  >
+                    Chỉ ngày{' '}
+                    {editingLock.specificDate
+                      ? dayjs(editingLock.specificDate).format('DD/MM')
+                      : dayjs().format('DD/MM')}
+                  </Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+
+              {/* Switch Khóa Cả Ngày */}
+              <div
+                className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"
+                style={{ marginBottom: 12 }}
+              >
+                <div>
+                  <div className="text-xs font-bold text-slate-700">
+                    🚫 Khóa cả ngày (Đóng cửa sân)
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Khóa toàn bộ thời gian hoạt động của ngày
+                  </div>
+                </div>
+                <Form.Item name="isAllDay" valuePropName="checked" noStyle>
+                  <Switch
+                    onChange={(checked) => {
+                      if (checked) {
+                        form.setFieldsValue({
+                          timeRange: [dayjs('06:00', 'HH:mm'), dayjs('22:00', 'HH:mm')],
+                        })
+                      }
+                    }}
+                  />
+                </Form.Item>
+              </div>
+
+              {/* Chọn Khung Giờ (Chỉ hiển thị khi không khóa cả ngày) */}
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.isAllDay !== curr.isAllDay}
+              >
+                {({ getFieldValue }) => {
+                  const isAllDay = getFieldValue('isAllDay')
+                  if (isAllDay) return null
+
+                  return (
+                    <Form.Item
+                      label={
+                        <span className="text-xs font-bold text-slate-600">
+                          Khoảng thời gian khóa
+                        </span>
+                      }
+                      name="timeRange"
+                      rules={[
+                        { required: true, message: 'Vui lòng chọn khung giờ khóa!' },
+                      ]}
+                    >
+                      <TimePicker.RangePicker
+                        format="HH:mm"
+                        step={30}
+                        className="w-full rounded-xl py-2 px-4"
+                        allowClear={false}
+                      />
+                    </Form.Item>
+                  )
+                }}
+              </Form.Item>
+
+              {/* Lý Do */}
+              <Form.Item
+                label={
+                  <span className="text-xs font-bold text-slate-600">
+                    Lý do khóa sân / Đóng cửa
+                  </span>
+                }
+                name="lockReason"
+                rules={[{ required: true, message: 'Vui lòng điền lý do!' }]}
+              >
+                <Input.TextArea
+                  placeholder="Ví dụ: Dành riêng cho Học viện tập luyện cố định, Bảo trì mặt sân, Nghỉ lễ..."
+                  rows={3}
+                  className="rounded-xl"
+                />
+              </Form.Item>
+
+              <div className="flex gap-2.5 pt-2">
+                <Button
+                  onClick={() => {
+                    setIsLockModalOpen(false)
+                    setEditingLock(null)
+                    form.resetFields()
+                  }}
+                  className="rounded-xl font-bold flex-1 h-11 border-slate-200 text-slate-500 hover:text-slate-700"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="rounded-xl font-bold flex-1 h-11 bg-linear-to-r from-rose-500 to-rose-600 border-0 flex items-center justify-center shadow-md shadow-rose-100"
+                >
+                  Lưu cấu hình
+                </Button>
+              </div>
+            </Form>
+          ))}
       </Modal>
     </div>
   )

@@ -5,12 +5,11 @@ import {
   Select,
   Table,
   Tag,
-  Space,
-  Card,
   Row,
   Col,
   TimePicker,
   Switch,
+  DatePicker,
 } from 'antd'
 import {
   PlusOutlined,
@@ -20,9 +19,9 @@ import {
   RightOutlined,
   SyncOutlined,
   ThunderboltOutlined,
-
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import 'dayjs/locale/vi'
 
 import { useNavigate } from 'react-router-dom'
 import {
@@ -66,9 +65,6 @@ export function BookingsPage() {
     navigate('/bookings/create')
   }
 
-
-
-
   // List view filtering (across all dates)
   const filteredBookings = useMemo(() => {
     const q = searchText.trim().toLowerCase()
@@ -86,7 +82,6 @@ export function BookingsPage() {
     })
   }, [searchText, statusFilter])
 
-  const dateLabel = dayjs(selectedDate).format('dddd, DD/MM/YYYY')
   const isToday = selectedDate === dayjs().format('YYYY-MM-DD')
   const shiftDate = (dir: -1 | 1) => {
     setSelectedDate(dayjs(selectedDate).add(dir, 'day').format('YYYY-MM-DD'))
@@ -105,11 +100,20 @@ export function BookingsPage() {
   }
 
   return (
-    <Space className="w-full" direction="vertical" size={16}>
-      {/* ── Toolbar ── */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
+    <div className="w-full flex flex-col gap-5 font-sans">
+      {/* ── Main Dashboard Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight m-0">
+            Quản lý Lịch Đặt Sân
+          </h1>
+          <p className="text-xs text-slate-500 font-medium m-0 mt-1">
+            Theo dõi, tìm kiếm sân trống và điều phối lịch đặt sân trực quan.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+          {/* View Switcher Segmented Control */}
           <div className="inline-flex items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-lg">
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 border-none rounded-md text-xs font-semibold cursor-pointer transition-all duration-150 ${
@@ -133,165 +137,208 @@ export function BookingsPage() {
             </button>
           </div>
 
-          {/* Date nav (timeline mode) */}
-          {view === 'timeline' && (
-            <div className="flex items-center gap-1">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => openCreate()}
+            className="h-10 rounded-xl px-5 font-bold shadow-md shadow-blue-100 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 flex items-center gap-1.5"
+          >
+            Tạo booking
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Control & Filter Card (for Timeline View) ── */}
+      {view === 'timeline' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Left: Date Selector Group */}
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
                 icon={<LeftOutlined />}
                 onClick={() => shiftDate(-1)}
+                className="flex items-center justify-center rounded-xl h-10 w-10 hover:text-blue-600 hover:border-blue-300 border-slate-200"
               />
-              <Button
-                className="font-semibold text-slate-700"
-                onClick={() => {
-                  setSelectedDate(dayjs().format('YYYY-MM-DD'))
+              <DatePicker
+                allowClear={false}
+                picker="date"
+                value={dayjs(selectedDate)}
+                onChange={(date) => {
+                  if (date) setSelectedDate(date.format('YYYY-MM-DD'))
                 }}
-              >
-                {isToday ? `Hôm nay · ${dateLabel}` : dateLabel}
-              </Button>
+                format="dddd, DD/MM/YYYY"
+                className="font-bold text-slate-750 h-10 rounded-xl px-4 border-slate-200 shadow-xs hover:border-blue-400 focus:border-blue-500 cursor-pointer"
+                style={{ width: 240, borderRadius: '12px' }}
+              />
               <Button
                 icon={<RightOutlined />}
                 onClick={() => shiftDate(1)}
+                className="flex items-center justify-center rounded-xl h-10 w-10 hover:text-blue-600 hover:border-blue-300 border-slate-200"
+              />
+
+              {/* Về hôm nay Button */}
+              <Button
+                onClick={() => setSelectedDate(dayjs().format('YYYY-MM-DD'))}
+                disabled={isToday}
+                className={`rounded-xl px-3.5 font-semibold text-xs h-10 flex items-center justify-center transition-all cursor-pointer ${
+                  isToday
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200/80 hover:bg-emerald-50! hover:text-emerald-600!'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'
+                }`}
+              >
+                {isToday ? '• Hôm nay' : 'Về hôm nay'}
+              </Button>
+            </div>
+
+            {/* Right: Quick Switch Finder */}
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/60 p-2 px-4 rounded-xl self-start lg:self-auto">
+              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                <ThunderboltOutlined className="text-amber-500 text-sm" />
+                Bộ lọc thời gian & loại sân khả dụng
+              </span>
+              <Switch
+                checked={isFilterActive}
+                onChange={(checked) => setIsFilterActive(checked)}
+                checkedChildren="Bật"
+                unCheckedChildren="Tắt"
+                className="bg-slate-350"
               />
             </div>
-          )}
+          </div>
 
-          {/* Search (list mode) */}
-          {view === 'list' && (
-            <Space wrap>
-              <Input.Search
-                allowClear
-                placeholder="Tìm booking, khách, sân..."
-                style={{ width: 280 }}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-              <Select
-                allowClear
-                placeholder="Trạng thái"
-                style={{ width: 160 }}
-                value={statusFilter}
-                onChange={setStatusFilter}
-                options={Object.entries(STATUS_CONFIG).map(([k, v]) => ({
-                  value: k,
-                  label: v.label,
-                }))}
-              />
-            </Space>
+          {/* Sub-row: Availability Details Filter (Collapsible) */}
+          {isFilterActive && (
+            <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4 transition-all duration-300 ease-in-out">
+              <Row gutter={[16, 16]} align="middle">
+                <Col xs={24} sm={8} md={7}>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">
+                    Giờ bắt đầu
+                  </div>
+                  <TimePicker
+                    format="HH:mm"
+                    minuteStep={30}
+                    size="large"
+                    className="w-full rounded-xl"
+                    showNow={false}
+                    value={searchTimeStart ? dayjs(searchTimeStart, 'HH:mm') : null}
+                    onChange={(time) => {
+                      if (time) {
+                        setSearchTimeStart(time.format('HH:mm'))
+                      }
+                    }}
+                    style={{ borderRadius: '12px', height: '40px' }}
+                  />
+                </Col>
+                <Col xs={24} sm={8} md={7}>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">
+                    Giờ kết thúc
+                  </div>
+                  <TimePicker
+                    format="HH:mm"
+                    minuteStep={30}
+                    size="large"
+                    className="w-full rounded-xl"
+                    showNow={false}
+                    value={searchTimeEnd ? dayjs(searchTimeEnd, 'HH:mm') : null}
+                    onChange={(time) => {
+                      if (time) {
+                        setSearchTimeEnd(time.format('HH:mm'))
+                      }
+                    }}
+                    style={{ borderRadius: '12px', height: '40px' }}
+                  />
+                </Col>
+                <Col xs={24} sm={8} md={6}>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">
+                    Loại sân
+                  </div>
+                  <Select
+                    className="w-full"
+                    size="large"
+                    value={searchCourtType}
+                    onChange={(v) => setSearchCourtType(v)}
+                    options={uniqueCourtTypes.map((t) => ({
+                      value: t,
+                      label: t === 'All' ? 'Tất cả loại sân' : t,
+                    }))}
+                    style={{ borderRadius: '12px', height: '40px' }}
+                  />
+                </Col>
+                <Col xs={24} md={4} className="flex flex-col justify-end">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5 invisible hidden md:block">
+                    &nbsp;
+                  </div>
+                  <Button
+                    size="large"
+                    className="w-full font-bold hover:text-red-500 hover:border-red-300 border-slate-200 flex items-center justify-center gap-1.5"
+                    icon={<SyncOutlined />}
+                    onClick={handleResetFilter}
+                    style={{ borderRadius: '12px', height: '40px' }}
+                  >
+                    Đặt lại
+                  </Button>
+                </Col>
+              </Row>
+            </div>
           )}
         </div>
-
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate()}>
-          Tạo booking
-        </Button>
-      </div>
-
- 
-
-      {/* ── ADVANCED AVAILABLE COURT FINDER WIDGET ── */}
-      {view === 'timeline' && (
-        <Card
-          className="border border-slate-200 shadow-sm bg-white"
-          styles={{ body: { padding: '16px 20px' } }}
-          style={{
-            borderRadius: 12,
-          }}
-        >
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-slate-800 tracking-wide uppercase flex items-center gap-1.5">
-                  <ThunderboltOutlined /> Bộ lọc thời gian & loại sân khả dụng
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-semibold">
-                  Kích hoạt lọc giờ:
-                </span>
-                <Switch
-                  checked={isFilterActive}
-                  onChange={(checked) => setIsFilterActive(checked)}
-                  checkedChildren="Bật"
-                  unCheckedChildren="Tắt"
-                />
-              </div>
-            </div>
-
-            <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} sm={8} md={7}>
-                <div className="text-xs text-slate-500 font-semibold mb-1">
-                  Giờ bắt đầu
-                </div>
-                <TimePicker
-                  format="HH:mm"
-                  minuteStep={30}
-                  className="w-full"
-                  showNow={false}
-                  disabled={!isFilterActive}
-                  value={searchTimeStart ? dayjs(searchTimeStart, 'HH:mm') : null}
-                  onChange={(time) => {
-                    if (time) {
-                      setSearchTimeStart(time.format('HH:mm'))
-                    }
-                  }}
-                />
-              </Col>
-              <Col xs={24} sm={8} md={7}>
-                <div className="text-xs text-slate-500 font-semibold mb-1">
-                  Giờ kết thúc
-                </div>
-                <TimePicker
-                  format="HH:mm"
-                  minuteStep={30}
-                  className="w-full"
-                  showNow={false}
-                  disabled={!isFilterActive}
-                  value={searchTimeEnd ? dayjs(searchTimeEnd, 'HH:mm') : null}
-                  onChange={(time) => {
-                    if (time) {
-                      setSearchTimeEnd(time.format('HH:mm'))
-                    }
-                  }}
-                />
-              </Col>
-              <Col xs={24} sm={8} md={6}>
-                <div className="text-xs text-slate-500 font-semibold mb-1">Loại sân</div>
-                <Select
-                  className="w-full"
-                  disabled={!isFilterActive}
-                  value={searchCourtType}
-                  onChange={(v) => setSearchCourtType(v)}
-                  options={uniqueCourtTypes.map((t) => ({
-                    value: t,
-                    label: t === 'All' ? 'Tất cả loại sân' : t,
-                  }))}
-                />
-              </Col>
-              <Col xs={24} md={4} className="flex justify-end">
-                <div className="hidden md:block mb-5" />
-                <Button
-                  className="w-full font-bold"
-                  icon={<SyncOutlined />}
-                  onClick={handleResetFilter}
-                  disabled={!isFilterActive}
-                >
-                  Đặt lại
-                </Button>
-              </Col>
-            </Row>
-          </div>
-        </Card>
       )}
 
-      {/* ── Status legend ── */}
+      {/* ── Search & Filters for List View ── */}
+      {view === 'list' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 flex flex-wrap items-center gap-3">
+          <Input.Search
+            allowClear
+            placeholder="Tìm kiếm mã booking, tên khách, số điện thoại, tên sân..."
+            className="max-w-md w-full"
+            size="large"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ borderRadius: '12px' }}
+          />
+          <Select
+            allowClear
+            placeholder="Trạng thái"
+            size="large"
+            style={{ width: 180, borderRadius: '12px' }}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={Object.entries(STATUS_CONFIG).map(([k, v]) => ({
+              value: k,
+              label: v.label,
+            }))}
+          />
+          {statusFilter || searchText ? (
+            <Button
+              type="text"
+              onClick={() => {
+                setStatusFilter(undefined)
+                setSearchText('')
+              }}
+              className="text-slate-400 hover:text-red-500 font-bold"
+            >
+              Xóa bộ lọc
+            </Button>
+          ) : null}
+        </div>
+      )}
+
+      {/* ── Status Legend (Placed right above timeline/list for quick scanning) ── */}
       {view === 'timeline' && (
-        <div className="flex flex-wrap items-center gap-3 mt-3">
+        <div className="flex flex-wrap items-center gap-2.5 px-1 mt-1">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mr-1.5">
+            Chú thích lịch:
+          </span>
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-            <div key={key} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-md">
+            <div
+              key={key}
+              className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200/50 rounded-xl shadow-3xs"
+            >
               <span
                 className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
                 style={{ background: cfg.dot }}
               />
-              <span className="text-[11px] font-semibold text-slate-500">{cfg.label}</span>
+              <span className="text-xs font-bold text-slate-600">{cfg.label}</span>
             </div>
           ))}
         </div>
@@ -299,36 +346,40 @@ export function BookingsPage() {
 
       {/* ── Timeline view ── */}
       {view === 'timeline' && (
-        <BookingTimeline
-          selectedDate={selectedDate}
-          onBookingClick={openDetail}
-          onSlotClick={() => openCreate()}
-          searchTimeStart={searchTimeStart}
-          searchTimeEnd={searchTimeEnd}
-          hasSearchedAvailable={isFilterActive}
-        />
+        <div className="timeline-container mt-1">
+          <BookingTimeline
+            selectedDate={selectedDate}
+            onBookingClick={openDetail}
+            onSlotClick={() => openCreate()}
+            searchTimeStart={searchTimeStart}
+            searchTimeEnd={searchTimeEnd}
+            hasSearchedAvailable={isFilterActive}
+          />
+        </div>
       )}
 
       {/* ── List view ── */}
       {view === 'list' && (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
           <Table<MockBooking>
             columns={[
               {
                 title: 'Khách hàng',
-                width: 200,
+                width: 220,
                 render: (_, r) => {
                   const c = MOCK_CUSTOMERS.find((x) => x.customerID === r.customerID)
                   return (
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-600">
                         {c?.avatar}
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-slate-800">
+                        <div className="text-sm font-bold text-slate-800 leading-tight">
                           {c?.fullName}
                         </div>
-                        <div className="text-xs text-slate-400">{c?.phone}</div>
+                        <div className="text-xs text-slate-400 font-medium mt-0.5">
+                          {c?.phone}
+                        </div>
                       </div>
                     </div>
                   )
@@ -336,32 +387,49 @@ export function BookingsPage() {
               },
               {
                 title: 'Sân',
-                width: 140,
+                width: 150,
                 render: (_, r) => {
                   const court = MOCK_COURTS.find((x) => x.courtID === r.courtID)
-                  return <span className="text-sm font-semibold">{court?.courtName}</span>
+                  return (
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-800">
+                        {court?.courtName}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
+                        {court?.courtType}
+                      </span>
+                    </div>
+                  )
                 },
               },
               {
                 title: 'Ngày',
                 dataIndex: 'bookingDate',
-                width: 120,
-                render: (v: string) => dayjs(v).format('DD/MM/YYYY'),
+                width: 130,
+                render: (v: string) => (
+                  <span className="text-sm font-semibold text-slate-700">
+                    {dayjs(v).format('DD/MM/YYYY')}
+                  </span>
+                ),
               },
               {
-                title: 'Giờ',
-                width: 120,
+                title: 'Khung giờ',
+                width: 135,
                 render: (_, r) => {
                   if (!r.slots.length) return '-'
-                  return `${r.slots[0].startTime}–${r.slots[r.slots.length - 1].endTime}`
+                  return (
+                    <Tag className="m-0 font-bold border-0 bg-slate-100 text-slate-700 rounded-md text-xs px-2 py-0.5">
+                      {r.slots[0].startTime} – {r.slots[r.slots.length - 1].endTime}
+                    </Tag>
+                  )
                 },
               },
               {
                 title: 'Tổng tiền',
                 dataIndex: 'totalAmount',
-                width: 120,
+                width: 130,
                 render: (v: number) => (
-                  <span className="font-bold text-emerald-600">
+                  <span className="font-extrabold text-emerald-650 text-sm">
                     {formatCompactCurrency(v)}
                   </span>
                 ),
@@ -369,14 +437,15 @@ export function BookingsPage() {
               {
                 title: 'Trạng thái',
                 dataIndex: 'status',
-                width: 130,
+                width: 140,
                 render: (v: string) => {
                   const cfg = STATUS_CONFIG[v]
                   return (
                     <Tag
                       color={cfg?.color}
                       bordered={false}
-                      style={{ fontWeight: 600, fontSize: 12 }}
+                      style={{ fontWeight: 700, fontSize: 11, borderRadius: '6px' }}
+                      className="m-0 px-2.5 py-0.5"
                     >
                       <span
                         className={`status-dot ${v === 'playing' ? 'is-playing' : ''}`}
@@ -394,11 +463,11 @@ export function BookingsPage() {
               {
                 title: 'Thanh toán',
                 dataIndex: 'paymentStatus',
-                width: 150,
+                width: 155,
                 render: (v: string) => {
                   const cfg = PAYMENT_CONFIG[v]
                   return (
-                    <span className="text-xs font-semibold" style={{ color: cfg?.color }}>
+                    <span className="text-xs font-bold" style={{ color: cfg?.color }}>
                       {cfg?.label}
                     </span>
                   )
@@ -425,6 +494,6 @@ export function BookingsPage() {
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
       />
-    </Space>
+    </div>
   )
 }

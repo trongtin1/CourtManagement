@@ -70,8 +70,7 @@
 }
 
 .rbc-court-wrapper .rbc-current-time-indicator {
-  background-color: #f97316;
-  height: 2px;
+  display: none !important;
 }
 
 .rbc-court-wrapper .rbc-day-bg + .rbc-day-bg {
