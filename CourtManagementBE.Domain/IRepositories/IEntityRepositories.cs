@@ -22,7 +22,6 @@ public interface IBookingSlotRepository : IGenericRepository<BookingSlots> { }
 public interface IBookingServiceRepository : IGenericRepository<BookingServices> { }
 public interface IPaymentRepository : IGenericRepository<Payments> { }
 public interface IServiceRepository : IGenericRepository<Services> { }
-public interface IServicePriceRepository : IGenericRepository<ServicePrice> { }
 public interface ICourtAreaMappingRepository : IGenericRepository<CourtAreaMapping> { }
 public interface ICourtUtilityRepository : IGenericRepository<CourtUtilities> { }
 public interface ICourtPriceRuleHistoryRepository : IGenericRepository<CourtPriceRuleHistory> { }

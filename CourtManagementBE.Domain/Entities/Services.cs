@@ -21,6 +21,6 @@ public class Services
     public string ModifiedBy { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
 
-    public ICollection<ServicePrice> ServicePrices { get; set; } = new List<ServicePrice>();
+    public decimal Price { get; set; }
 
 }

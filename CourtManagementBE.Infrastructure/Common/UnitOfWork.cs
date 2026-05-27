@@ -42,7 +42,7 @@ public class UnitOfWork : IUnitOfWork
     public IBookingServiceRepository IBookingServiceRepository => new BookingServiceRepository(_context);
     public IPaymentRepository IPaymentRepository => new PaymentRepository(_context);
     public IServiceRepository IServiceRepository => new ServiceRepository(_context);
-    public IServicePriceRepository IServicePriceRepository => new ServicePriceRepository(_context);
+
     public ICourtAreaMappingRepository ICourtAreaMappingRepository => new CourtAreaMappingRepository(_context);
     public ICourtUtilityRepository ICourtUtilityRepository => new CourtUtilityRepository(_context);
     public ICourtPriceRuleHistoryRepository ICourtPriceRuleHistoryRepository => new CourtPriceRuleHistoryRepository(_context);

@@ -62,8 +62,6 @@ public class PaymentRepository : GenericRepository<Payments>, IPaymentRepository
 public class ServiceRepository : GenericRepository<Services>, IServiceRepository
 { public ServiceRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class ServicePriceRepository : GenericRepository<ServicePrice>, IServicePriceRepository
-{ public ServicePriceRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class CourtAreaMappingRepository : GenericRepository<CourtAreaMapping>, ICourtAreaMappingRepository
 { public CourtAreaMappingRepository(AppDbContext ctx) : base(ctx) { } }

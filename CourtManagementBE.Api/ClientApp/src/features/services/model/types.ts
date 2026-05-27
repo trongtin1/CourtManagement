@@ -9,7 +9,7 @@ export type Service = {
   maxQuantity: number
   createDate: string
   isActive: boolean
-  servicePrices: ServicePrice[]
+  price: number
 }
 
 export type CreateServiceRequest = {
@@ -21,27 +21,10 @@ export type CreateServiceRequest = {
   minQuantity?: number
   maxQuantity?: number
   isActive?: boolean
+  price?: number
 }
 
 export type UpdateServiceRequest = CreateServiceRequest
-
-export type ServicePrice = {
-  id: number
-  serviceID: number
-  price: number
-  effectiveDate: string
-  expiryDate: string | null
-  createDate: string
-}
-
-export type CreateServicePriceRequest = {
-  serviceID: number
-  price: number
-  effectiveDate: string
-  expiryDate?: string | null
-}
-
-export type UpdateServicePriceRequest = CreateServicePriceRequest
 
 export type Utility = {
   utilityID: number

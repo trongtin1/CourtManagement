@@ -48,7 +48,6 @@ public class AppDbContext : DbContext
 
     // ── Dịch vụ ───────────────────────────────────────────────────────────────
     public DbSet<Services> Services => Set<Services>();
-    public DbSet<ServicePrice> ServicePrices => Set<ServicePrice>();
     public DbSet<Combos> Combos => Set<Combos>();
     public DbSet<ComboServices> ComboServices => Set<ComboServices>();
 
@@ -360,19 +359,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.ServiceName).HasColumnType("nvarchar(200)").IsRequired();
             e.Property(x => x.ServiceType).HasColumnType("varchar(50)");
             e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
-            e.HasIndex(x => new { x.FacilityID, x.ServiceCode }).IsUnique();
-            e.HasMany(x => x.ServicePrices)
-                .WithOne(x => x.Service)
-                .HasForeignKey(x => x.ServiceID)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ── ServicePrice ─────────────────────────────────────────────────────
-        modelBuilder.Entity<ServicePrice>(e =>
-        {
-            e.HasKey(x => x.ID);
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
-            e.HasIndex(x => new { x.ServiceID, x.EffectiveDate });
+            e.HasIndex(x => new { x.FacilityID, x.ServiceCode }).IsUnique();
         });
 
         // ── Combos & ComboServices ───────────────────────────────────────────

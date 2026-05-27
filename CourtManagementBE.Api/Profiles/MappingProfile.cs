@@ -86,9 +86,7 @@ public class MappingProfile : Profile
         CreateMap<BookingServices, BookingServiceResponse>();
         CreateMap<BookingServiceRequest, BookingServices>();
 
-        // ── ServicePrice ─────────────────────────────────────────────────
-        CreateMap<ServicePrice, ServicePriceResponse>();
-        CreateMap<ServicePriceRequest, ServicePrice>();
+
 
         // ── Combos & ComboServices ───────────────────────────────────────
         CreateMap<Combos, ComboResponse>();

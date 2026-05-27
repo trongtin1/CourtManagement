@@ -32,7 +32,6 @@ public static class AppDbSeeder
         await SeedCourtFeatureMappingsAsync(db, courts, courtFeatures, cancellationToken);
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
         await SeedCourtAssetsAsync(db, courts, cancellationToken);
-        await SeedServicePricesAsync(db, services, cancellationToken);
         await SeedBookingsAsync(db, courts, services, customers, cancellationToken);
     }
 
@@ -375,9 +374,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Services { ServiceCode = "WATER", ServiceName = "Bottled Water", ServiceType = "drink", Unit = "bottle", MinQuantity = 1, MaxQuantity = 50, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "RACKET", ServiceName = "Racket Rental", ServiceType = "rental", Unit = "racket", MinQuantity = 1, MaxQuantity = 10, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "SHUTTLE", ServiceName = "Shuttlecock Tube", ServiceType = "equipment", Unit = "tube", MinQuantity = 1, MaxQuantity = 20, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "WATER", ServiceName = "Bottled Water", ServiceType = "drink", Unit = "bottle", MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "RACKET", ServiceName = "Racket Rental", ServiceType = "rental", Unit = "racket", MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "SHUTTLE", ServiceName = "Shuttlecock Tube", ServiceType = "equipment", Unit = "tube", MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -562,40 +561,7 @@ public static class AppDbSeeder
     }
 
 
-    private static async Task SeedServicePricesAsync(
-        AppDbContext db,
-        List<Services> services,
-        CancellationToken cancellationToken)
-    {
-        var prices = new Dictionary<string, decimal>
-        {
-            ["WATER"] = 10_000m,
-            ["RACKET"] = 30_000m,
-            ["SHUTTLE"] = 120_000m,
-        };
 
-        foreach (var service in services)
-        {
-            if (!prices.TryGetValue(service.ServiceCode, out var price))
-            {
-                continue;
-            }
-
-            if (!await db.ServicePrices.AnyAsync(x => x.ServiceID == service.ServiceID && x.ExpiryDate == null, cancellationToken))
-            {
-                db.ServicePrices.Add(new ServicePrice
-                {
-                    ServiceID = service.ServiceID,
-                    Price = price,
-                    EffectiveDate = DateTimeOffset.UtcNow.Date,
-                    ExpiryDate = null,
-                    CreatedBy = AdminLogin,
-                });
-            }
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-    }
 
     private static async Task SeedBookingsAsync(
         AppDbContext db,
@@ -618,10 +584,7 @@ public static class AppDbSeeder
         var endTime = new TimeSpan(8, 0, 0);
         var customer = customers.First();
         var service = services.First(x => x.ServiceCode == "WATER");
-        var servicePrice = await db.ServicePrices
-            .Where(x => x.ServiceID == service.ServiceID && x.ExpiryDate == null)
-            .Select(x => x.Price)
-            .FirstOrDefaultAsync(cancellationToken);
+        var servicePrice = service.Price;
         var courtPrice = 100_000m;
         var serviceQuantity = 2;
         var serviceTotal = servicePrice * serviceQuantity;

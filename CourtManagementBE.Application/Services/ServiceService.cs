@@ -3,6 +3,7 @@ using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
+using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,20 +17,15 @@ public class ServiceService : BaseService, IServiceService
     public async Task<Result<PageList<ServiceResponse>>> GetAll(QueryResource query)
     {
         var workingFacilityId = WorkingFacilityId;
-        var now = DateTimeOffset.UtcNow;
         var page = await _unitOfWork.IServiceRepository.FindAll(
             x => x.FacilityID == null || workingFacilityId == null || x.FacilityID == workingFacilityId,
-            include: q => q.Include(x => x.ServicePrices
-                .Where(p => p.EffectiveDate <= now && (p.ExpiryDate == null || p.ExpiryDate > now))),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Domain.Entities.Services, ServiceResponse>(page));
     }
 
     public async Task<Result<ServiceResponse>> GetById(int id)
     {
-        var entity = await _unitOfWork.IServiceRepository.FindFirst(
-            x => x.ServiceID == id,
-            include: q => q.Include(x => x.ServicePrices));
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy dịch vụ.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền truy cập dịch vụ này.");
         return Success(_mapper.Map<ServiceResponse>(entity));
@@ -46,6 +42,8 @@ public class ServiceService : BaseService, IServiceService
         var entity = _mapper.Map<Domain.Entities.Services>(request);
         entity.CreateDate = DateTimeOffset.UtcNow;
         entity.ModifiedDate = DateTimeOffset.UtcNow;
+        entity.Price = request.Price ?? 0;
+
         await _unitOfWork.IServiceRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
         return Created(_mapper.Map<ServiceResponse>(entity));
@@ -65,6 +63,11 @@ public class ServiceService : BaseService, IServiceService
 
         _mapper.Map(request, entity);
         entity.ModifiedDate = DateTimeOffset.UtcNow;
+        if (request.Price.HasValue)
+        {
+            entity.Price = request.Price.Value;
+        }
+
         _unitOfWork.IServiceRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(_mapper.Map<ServiceResponse>(entity));

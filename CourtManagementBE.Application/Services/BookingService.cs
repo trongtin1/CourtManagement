@@ -329,12 +329,8 @@ public class BookingService : BaseService, IBookingService
 
     private async Task<decimal?> GetCurrentServicePrice(int serviceId)
     {
-        var now = DateTimeOffset.UtcNow;
-        var price = await _unitOfWork.IServicePriceRepository.FindFirst(
-            x => x.ServiceID == serviceId && x.EffectiveDate <= now && (x.ExpiryDate == null || x.ExpiryDate > now),
-            orderBy: q => q.OrderByDescending(x => x.EffectiveDate));
-
-        return price?.Price;
+        var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == serviceId);
+        return service?.Price;
     }
 
     private static decimal CalculateComboCourtTotal(

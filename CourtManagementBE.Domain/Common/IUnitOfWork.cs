@@ -25,7 +25,7 @@ public interface IUnitOfWork : IDisposable
     IBookingServiceRepository IBookingServiceRepository { get; }
     IPaymentRepository IPaymentRepository { get; }
     IServiceRepository IServiceRepository { get; }
-    IServicePriceRepository IServicePriceRepository { get; }
+
     ICourtAreaMappingRepository ICourtAreaMappingRepository { get; }
     ICourtUtilityRepository ICourtUtilityRepository { get; }
     ICourtPriceRuleHistoryRepository ICourtPriceRuleHistoryRepository { get; }

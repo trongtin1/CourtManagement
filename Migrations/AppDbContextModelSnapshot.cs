@@ -1502,40 +1502,6 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("RefundReasons");
                 });
 
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ServicePrice", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<DateTimeOffset>("CreateDate")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("EffectiveDate")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset?>("ExpiryDate")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ServiceID")
-                        .HasColumnType("int");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("ServiceID", "EffectiveDate");
-
-                    b.ToTable("ServicePrices");
-                });
-
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.ServiceTypes", b =>
                 {
                     b.Property<int>("ServiceTypeID")
@@ -1606,6 +1572,9 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<DateTimeOffset>("ModifiedDate")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ServiceCode")
                         .IsRequired()
@@ -1871,17 +1840,6 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Court");
                 });
 
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ServicePrice", b =>
-                {
-                    b.HasOne("CourtManagementBE.Domain.Entities.Services", "Service")
-                        .WithMany("ServicePrices")
-                        .HasForeignKey("ServiceID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Service");
-                });
-
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
                 {
                     b.Navigation("CourtFeatures");
@@ -1897,11 +1855,6 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("CourtFeatureMappings");
 
                     b.Navigation("CourtLockedSlots");
-                });
-
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Services", b =>
-                {
-                    b.Navigation("ServicePrices");
                 });
 #pragma warning restore 612, 618
         }

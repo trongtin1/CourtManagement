@@ -190,7 +190,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<ICourtUtilityService, CourtUtilityService>();
             builder.Services.AddScoped<IBookingSlotService, BookingSlotService>();
             builder.Services.AddScoped<IBookingServiceService, BookingServiceService>();
-            builder.Services.AddScoped<IServicePriceService, ServicePriceService>();
+
             builder.Services.AddScoped<ICourtPriceHistoryService, CourtPriceHistoryService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();
             builder.Services.AddScoped<IBookingStatusService, BookingStatusService>();
