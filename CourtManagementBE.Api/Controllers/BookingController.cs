@@ -66,6 +66,13 @@ public class BookingController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpPost("full")]
+    public async Task<IActionResult> CreateFull([FromBody] CreateFullBookingRequest req)
+    {
+        var r = await _service.CreateFull(req);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] BookingRequest req)
     {

@@ -361,6 +361,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.ServiceType).HasColumnType("varchar(50)");
             e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
             e.HasIndex(x => new { x.FacilityID, x.ServiceCode }).IsUnique();
+            e.HasMany(x => x.ServicePrices)
+                .WithOne(x => x.Service)
+                .HasForeignKey(x => x.ServiceID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── ServicePrice ─────────────────────────────────────────────────────

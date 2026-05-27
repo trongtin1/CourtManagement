@@ -20,9 +20,7 @@ import {
   RightOutlined,
   SyncOutlined,
   ThunderboltOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  DollarOutlined,
+
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -68,20 +66,8 @@ export function BookingsPage() {
     navigate('/bookings/create')
   }
 
-  // Summary stats
-  const todayBookings = useMemo(
-    () => MOCK_BOOKINGS.filter((b) => b.bookingDate === selectedDate),
-    [selectedDate],
-  )
-  const stats = useMemo(() => {
-    const active = todayBookings.filter((b) => b.status !== 'cancelled')
-    return {
-      total: todayBookings.length,
-      pending: todayBookings.filter((b) => b.status === 'pending').length,
-      playing: todayBookings.filter((b) => b.status === 'playing').length,
-      revenue: active.reduce((s, b) => s + b.totalAmount, 0),
-    }
-  }, [todayBookings])
+
+
 
   // List view filtering (across all dates)
   const filteredBookings = useMemo(() => {
@@ -199,47 +185,7 @@ export function BookingsPage() {
         </Button>
       </div>
 
-      {/* ── Summary cards ── */}
-      {view === 'timeline' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
-            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
-              <CalendarOutlined />
-            </div>
-            <div>
-              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{stats.total}</h4>
-              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Tổng booking</p>
-            </div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
-            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
-              <ClockCircleOutlined />
-            </div>
-            <div>
-              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{stats.pending}</h4>
-              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Chờ xử lý</p>
-            </div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
-            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
-              <CheckCircleOutlined />
-            </div>
-            <div>
-              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{stats.playing}</h4>
-              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Đang chơi</p>
-            </div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
-            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
-              <DollarOutlined />
-            </div>
-            <div>
-              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{formatCompactCurrency(stats.revenue)}</h4>
-              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Doanh thu ngày</p>
-            </div>
-          </div>
-        </div>
-      )}
+ 
 
       {/* ── ADVANCED AVAILABLE COURT FINDER WIDGET ── */}
       {view === 'timeline' && (

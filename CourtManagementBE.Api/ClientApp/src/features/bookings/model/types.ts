@@ -4,6 +4,7 @@ export type Booking = {
   customerID: number
   bookingDate: string
   totalAmount: number
+  comboID?: number | null
   status: string
   note: string
   cancellationReason: string
@@ -16,8 +17,25 @@ export type CreateBookingRequest = {
   customerID: number
   bookingDate: string
   totalAmount?: number
+  comboID?: number | null
   status?: string
   note?: string
+}
+
+export type CreateFullBookingRequest = {
+  courtID: number
+  customerID: number
+  bookingDate: string
+  comboID?: number | null
+  note?: string
+  slots: Array<{
+    startTime: string
+    endTime: string
+  }>
+  services: Array<{
+    serviceID: number
+    quantity: number
+  }>
 }
 
 export type UpdateBookingRequest = {

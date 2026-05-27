@@ -14,4 +14,5 @@ public class ServiceResponse
     public int MaxQuantity { get; set; }
     public DateTimeOffset CreateDate { get; set; }
     public bool IsActive { get; set; }
+    public ICollection<ServicePriceResponse> ServicePrices { get; set; } = new List<ServicePriceResponse>();
 }

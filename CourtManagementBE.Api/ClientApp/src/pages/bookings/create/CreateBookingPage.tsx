@@ -23,12 +23,21 @@ import type { CourtSlotAvailability } from '@/features/courts/model/types'
 import { useServicesQuery } from '@/features/services/api/useServiceQueries'
 import { useCustomersQuery } from '@/features/customers/api/useCustomerQueries'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
-import { bookingSlotApi } from '@/features/bookings/api/bookingSlotApi'
-import { bookingServiceApi } from '@/features/bookings/api/bookingServiceApi'
 import { formatCompactCurrency } from '@/utils/format'
 import '../bookings.css'
 
 type SelectedSvc = { quantity: number; unitPrice: number }
+
+const formatTimeSpan = (timeStr: string) => {
+  const parts = timeStr.split(':')
+  if (parts.length >= 2) {
+    const hh = parts[0].padStart(2, '0')
+    const mm = parts[1].padStart(2, '0')
+    const ss = parts[2] ? parts[2].substring(0, 2).padStart(2, '0') : '00'
+    return `${hh}:${mm}:${ss}`
+  }
+  return timeStr
+}
 
 const steps = ['Chọn sân', 'Chọn giờ', 'Dịch vụ', 'Xác nhận']
 
@@ -158,52 +167,24 @@ export function CreateBookingPage() {
     try {
       setSubmitting(true)
 
-      const newBooking = await bookingApi.create({
+      await bookingApi.createFull({
         courtID: courtID,
         customerID: customerID,
         bookingDate: date,
-        totalAmount: total,
-        status: 'pending',
+        comboID: selectedComboID,
         note: note,
-      })
-
-      const bookingId = newBooking.bookingID
-
-      const formatTimeSpan = (timeStr: string) => {
-        const parts = timeStr.split(':')
-        if (parts.length >= 2) {
-          const hh = parts[0].padStart(2, '0')
-          const mm = parts[1].padStart(2, '0')
-          const ss = parts[2] ? parts[2].substring(0, 2).padStart(2, '0') : '00'
-          return `${hh}:${mm}:${ss}`
-        }
-        return timeStr
-      }
-
-      const slotPromises = selectedSlots.map((id) => {
-        const slotObj = timeSlots.find((s) => s.slotIndex === id)
-        if (!slotObj) return Promise.resolve()
-        return bookingSlotApi.create({
-          bookingID: bookingId,
-          courtID: courtID,
-          bookingDate: date,
-          startTime: formatTimeSpan(slotObj.startTime),
-          endTime: formatTimeSpan(slotObj.endTime),
-        })
-      })
-
-      const svcPromises = Object.entries(services).map(([svcId, svc]) => {
-        return bookingServiceApi.create({
-          bookingID: bookingId,
+        slots: selectedSlots
+          .map((id) => timeSlots.find((s) => s.slotIndex === id))
+          .filter((slot): slot is CourtSlotAvailability => !!slot)
+          .map((slot) => ({
+            startTime: formatTimeSpan(slot.startTime),
+            endTime: formatTimeSpan(slot.endTime),
+          })),
+        services: Object.entries(services).map(([svcId, svc]) => ({
           serviceID: Number(svcId),
           quantity: svc.quantity,
-          unitPrice: svc.unitPrice,
-          discountAmount: 0,
-          status: 'active',
-        })
+        })),
       })
-
-      await Promise.all([...slotPromises, ...svcPromises])
 
       message.success('Tạo booking thành công!')
       navigate('/bookings')
@@ -507,26 +488,6 @@ export function CreateBookingPage() {
                                 const sel = services[svc.serviceID]
                                 const quantity = sel?.quantity || 0
 
-                                const getServicePrice = (name: string) => {
-                                  if (
-                                    name.includes('nước') ||
-                                    name.toLowerCase().includes('water') ||
-                                    name.toLowerCase().includes('aquafina')
-                                  )
-                                    return 15000
-                                  if (
-                                    name.includes('vợt') ||
-                                    name.toLowerCase().includes('racket')
-                                  )
-                                    return 50000
-                                  if (
-                                    name.includes('cầu') ||
-                                    name.toLowerCase().includes('shuttle')
-                                  )
-                                    return 25000
-                                  return 30000
-                                }
-
                                 const getServiceIcon = (name: string) => {
                                   if (
                                     name.includes('nước') ||
@@ -547,7 +508,7 @@ export function CreateBookingPage() {
                                   return '📦'
                                 }
 
-                                const svcPrice = getServicePrice(svc.serviceName)
+                                const svcPrice = svc.servicePrices?.[0]?.price ?? 0
                                 const icon = getServiceIcon(svc.serviceName)
 
                                 return (
@@ -597,7 +558,9 @@ export function CreateBookingPage() {
                                         {svc.serviceName}
                                       </div>
                                       <div className="text-xs font-semibold text-emerald-600 mt-1">
-                                        {formatCompactCurrency(svcPrice)} / {svc.unit}
+                                        {svc.servicePrices?.[0] == null
+                                          ? 'Chưa có giá'
+                                          : `${formatCompactCurrency(svcPrice)} / ${svc.unit}`}
                                       </div>
                                     </div>
 

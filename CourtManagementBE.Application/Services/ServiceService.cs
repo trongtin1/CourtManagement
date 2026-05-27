@@ -4,6 +4,7 @@ using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -15,15 +16,20 @@ public class ServiceService : BaseService, IServiceService
     public async Task<Result<PageList<ServiceResponse>>> GetAll(QueryResource query)
     {
         var workingFacilityId = WorkingFacilityId;
+        var now = DateTimeOffset.UtcNow;
         var page = await _unitOfWork.IServiceRepository.FindAll(
             x => x.FacilityID == null || workingFacilityId == null || x.FacilityID == workingFacilityId,
+            include: q => q.Include(x => x.ServicePrices
+                .Where(p => p.EffectiveDate <= now && (p.ExpiryDate == null || p.ExpiryDate > now))),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Domain.Entities.Services, ServiceResponse>(page));
     }
 
     public async Task<Result<ServiceResponse>> GetById(int id)
     {
-        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == id,
+            include: q => q.Include(x => x.ServicePrices));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy dịch vụ.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền truy cập dịch vụ này.");
         return Success(_mapper.Map<ServiceResponse>(entity));
@@ -88,4 +94,5 @@ public class ServiceService : BaseService, IServiceService
 
     private bool CanAccessService(Domain.Entities.Services service)
         => service.FacilityID is null || CanAccessFacility(service.FacilityID.Value);
+
 }

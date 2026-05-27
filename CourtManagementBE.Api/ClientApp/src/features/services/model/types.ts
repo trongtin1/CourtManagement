@@ -9,6 +9,7 @@ export type Service = {
   maxQuantity: number
   createDate: string
   isActive: boolean
+  servicePrices: ServicePrice[]
 }
 
 export type CreateServiceRequest = {
@@ -40,10 +41,7 @@ export type CreateServicePriceRequest = {
   expiryDate?: string | null
 }
 
-export type UpdateServicePriceRequest = {
-  price: number
-  expiryDate?: string | null
-}
+export type UpdateServicePriceRequest = CreateServicePriceRequest
 
 export type Utility = {
   utilityID: number

@@ -1871,6 +1871,17 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Court");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ServicePrice", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Services", "Service")
+                        .WithMany("ServicePrices")
+                        .HasForeignKey("ServiceID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Service");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>
                 {
                     b.Navigation("CourtFeatures");
@@ -1886,6 +1897,11 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("CourtFeatureMappings");
 
                     b.Navigation("CourtLockedSlots");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Services", b =>
+                {
+                    b.Navigation("ServicePrices");
                 });
 #pragma warning restore 612, 618
         }

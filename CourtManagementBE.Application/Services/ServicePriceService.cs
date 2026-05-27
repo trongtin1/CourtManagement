@@ -12,24 +12,6 @@ public class ServicePriceService : BaseService, IServicePriceService
     public ServicePriceService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
         : base(unitOfWork, mapper, currentUser) { }
 
-    public async Task<Result<List<ServicePriceResponse>>> GetByService(int serviceId)
-    {
-        if (!await CanAccessService(serviceId)) return Unauthorized<List<ServicePriceResponse>>("Bạn không có quyền truy cập dịch vụ này.");
-        var list = await _unitOfWork.IServicePriceRepository.FindList(x => x.ServiceID == serviceId);
-        return Success(_mapper.Map<List<ServicePriceResponse>>(list));
-    }
-
-    public async Task<Result<ServicePriceResponse>> GetCurrentPrice(int serviceId)
-    {
-        if (!await CanAccessService(serviceId)) return Unauthorized<ServicePriceResponse>("Bạn không có quyền truy cập dịch vụ này.");
-
-        var now = DateTimeOffset.UtcNow;
-        var entity = await _unitOfWork.IServicePriceRepository.FindFirst(
-            x => x.ServiceID == serviceId && x.EffectiveDate <= now && (x.ExpiryDate == null || x.ExpiryDate > now));
-        if (entity is null) return NotFound<ServicePriceResponse>("Không tìm thấy giá hiện hành.");
-        return Success(_mapper.Map<ServicePriceResponse>(entity));
-    }
-
     public async Task<Result<ServicePriceResponse>> Create(ServicePriceRequest request)
     {
         if (!await CanAccessService(request.ServiceID)) return Unauthorized<ServicePriceResponse>("Bạn không có quyền tạo giá cho dịch vụ này.");

@@ -13,6 +13,7 @@ public interface IBookingService
     Task<Result<List<BookingResponse>>> GetByDate(DateTime date);
     Task<Result<BookingResponse>> GetById(Guid id);
     Task<Result<BookingResponse>> Create(BookingRequest request);
+    Task<Result<BookingResponse>> CreateFull(CreateFullBookingRequest request);
     Task<Result<BookingResponse>> Update(Guid id, BookingRequest request);
     Task<Result<BookingResponse>> Cancel(Guid id, BookingRequest request);
     Task<Result<bool>> Delete(Guid id);

@@ -12,4 +12,6 @@ public class ServicePrice
     public DateTimeOffset? ExpiryDate { get; set; }    // null = còn hiệu lực, có giá trị = đã hết hạn
     public DateTimeOffset CreateDate { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
+
+    public Services Service { get; set; } = null!;
 }

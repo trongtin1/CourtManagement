@@ -3,6 +3,7 @@ import type { PageList, PaginationQuery } from '@/types/api'
 import type {
   Booking,
   CreateBookingRequest,
+  CreateFullBookingRequest,
   UpdateBookingRequest,
   CancelBookingRequest,
 } from '../model/types'
@@ -16,6 +17,7 @@ export const bookingApi = {
   getByStatus: (status: string) => apiGet<Booking[]>(`/booking/status/${status}`),
   getByDate: (date: string) => apiGet<Booking[]>(`/booking/date/${date}`),
   create: (data: CreateBookingRequest) => apiPost<Booking>('/booking', data),
+  createFull: (data: CreateFullBookingRequest) => apiPost<Booking>('/booking/full', data),
   update: (id: string, data: UpdateBookingRequest) => apiPut<Booking>(`/booking/${id}`, data),
   cancel: (id: string, data: CancelBookingRequest) => apiPatch<Booking>(`/booking/${id}/cancel`, data),
   delete: (id: string) => apiDelete(`/booking/${id}`),
