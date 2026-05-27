@@ -60,11 +60,12 @@ const DnDCalendar = withDragAndDrop(Calendar)
 const START_HOUR = 6
 const END_HOUR = 22
 const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60
-const SNAP = 30
 const DEFAULT_PRICE = 150000
 const INITIAL_MONDAY = getMonday()
 const MIN_TIME = new Date(0, 0, 0, START_HOUR, 0, 0)
 const MAX_TIME = new Date(0, 0, 0, END_HOUR, 0, 0)
+const SNAP = 60
+const timeSlots = 1
 
 export interface PriceBlock {
   id: string
@@ -1026,8 +1027,8 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           date={currentMonday.toDate()}
           min={MIN_TIME}
           max={MAX_TIME}
-          step={30}
-          timeslots={2}
+          step={SNAP}
+          timeslots={timeSlots}
           selectable
           resizable
           components={calendarComponents}
