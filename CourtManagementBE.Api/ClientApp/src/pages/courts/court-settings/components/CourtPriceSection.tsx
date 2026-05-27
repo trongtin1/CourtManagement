@@ -16,6 +16,8 @@ import {
   Select,
   Space,
   Typography,
+  Popover,
+  Tag,
 } from 'antd'
 import {
   CalendarOutlined,
@@ -210,6 +212,97 @@ const FORMATS = {
 }
 
 // ── Custom Event ──────────────────────────────────────────────────────────────
+function PriceEventTooltipContent({ block }: { block: PriceBlock }) {
+  const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
+  const durationMin = block.end - block.start
+
+  return (
+    <div className="p-1 space-y-2.5 min-w-52.5 text-xs font-sans">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <span className="font-bold text-slate-800 flex items-center gap-1.5">
+          <CalendarOutlined className="text-blue-500 text-[13px]" />
+          {gridDayLabel(block.day)}
+        </span>
+        <Tag
+          color="blue"
+          className="m-0 text-[10px] px-1.5 py-0 border-0 bg-blue-50 text-blue-600 font-semibold rounded-md"
+        >
+          {durationMin} phút
+        </Tag>
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-slate-400 font-medium">Thời gian:</span>
+          <span className="font-semibold text-slate-700">{timeStr}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-slate-400 font-medium">Đơn giá:</span>
+          <span className="font-extrabold text-blue-600 text-[13px]">
+            {formatCurrency(block.price)}
+          </span>
+        </div>
+
+        {block.label && (
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 font-medium">
+              Loại khung giờ:
+            </span>
+            <Tag
+              color="cyan"
+              className="m-0 text-[10px] font-semibold border-0 rounded-md"
+            >
+              {block.label}
+            </Tag>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-slate-400 font-medium">Áp dụng:</span>
+          {block.specificDate ? (
+            <Tag
+              color="orange"
+              className="m-0 text-[10px] font-semibold border-0 rounded-md"
+            >
+              📌 {dayjs(block.specificDate).format('DD/MM/YYYY')}
+            </Tag>
+          ) : (
+            <Tag
+              color="green"
+              className="m-0 text-[10px] font-semibold border-0 rounded-md"
+            >
+              🔄 Hằng tuần
+            </Tag>
+          )}
+        </div>
+
+        {block.isMapping && (
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 font-medium">Nguồn gốc:</span>
+            <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1">
+              ⚙️ Giá hệ thống
+            </span>
+          </div>
+        )}
+
+        {block.isLocked && (
+          <div className="bg-red-50 border border-red-100 rounded-lg p-2 mt-2 space-y-1">
+            <div className="text-[10px] font-bold text-red-600 flex items-center gap-1">
+              <LockOutlined className="text-[11px]" /> Đã khóa
+            </div>
+            {block.lockReason && (
+              <div className="text-[10px] text-red-500 leading-tight">
+                Lý do: {block.lockReason}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function PriceEvent({
   event,
   onDelete,
@@ -218,52 +311,81 @@ function PriceEvent({
   onDelete: (id: string) => void
 }) {
   const block = event.resource
-  const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
+  const duration = block.end - block.start
+  const isShort = duration <= 30
 
-  return (
+  const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
+  const displayPrice = isShort ? `${block.price / 1000}k` : formatCurrency(block.price)
+
+  const content = (
     <div
-      className={`group relative h-full flex flex-col justify-start overflow-hidden px-2 py-1.5 gap-0.5 ${block.isLocked ? 'cursor-not-allowed opacity-90 font-medium' : ''}`}
+      className={`group relative h-full flex flex-col justify-between overflow-hidden px-1.5 py-1 gap-0.5 ${
+        block.isLocked ? 'cursor-not-allowed opacity-90 font-medium' : ''
+      }`}
+      style={{ minHeight: '100%' }}
     >
-      <p className="text-[10px] font-semibold leading-none truncate opacity-75 m-0 flex items-center justify-between">
-        <span>{timeStr}</span>
-        {block.isLocked && (
-          <LockOutlined
-            className="text-[10px] text-red-500"
-            title={`Đã khóa: ${block.lockReason || 'Không có lý do'}`}
-          />
-        )}
-      </p>
-      <p className="text-xs font-bold leading-tight truncate m-0 flex items-center gap-1">
-        {block.specificDate && (
-          <span title="Chỉ áp dụng cho ngày cụ thể này" style={{ fontSize: '10px' }}>
-            📌
+      {isShort ? (
+        <div className="flex items-center justify-between w-full h-full text-[10px] leading-none select-none font-bold">
+          <div className="flex items-center gap-0.5 truncate mr-4">
+            {block.isLocked && <LockOutlined className="text-red-500 text-[9px]" />}
+            {block.specificDate && <span className="text-[8px]">📌</span>}
+            {block.isMapping && <span className="text-[9px]">⚙️</span>}
+            <span className="text-[10.5px] font-extrabold">{displayPrice}</span>
+          </div>
+          <span className="opacity-60 text-[8px] font-medium hidden sm:inline shrink-0">
+            {formatMinutesAsTime(START_HOUR * 60 + block.start)}
           </span>
-        )}
-        {block.isMapping && (
-          <span title="Giá mặc định của hệ thống" style={{ fontSize: '12px' }}>
-            ⚙️
-          </span>
-        )}
-        {formatCurrency(block.price)}
-      </p>
-      {block.label && (
-        <span className="text-[9px] font-semibold truncate opacity-70">
-          {block.label}
-        </span>
+        </div>
+      ) : (
+        <div className="flex flex-col h-full justify-between">
+          <div className="space-y-0.5">
+            <p className="text-[9px] font-semibold leading-none truncate opacity-75 m-0 flex items-center justify-between">
+              <span>{timeStr}</span>
+              {block.isLocked && (
+                <LockOutlined
+                  className="text-[9px] text-red-500 shrink-0"
+                  title={`Đã khóa: ${block.lockReason || 'Không có lý do'}`}
+                />
+              )}
+            </p>
+            <p className="text-xs font-bold leading-tight truncate m-0 flex items-center gap-0.5">
+              {block.specificDate && (
+                <span
+                  title="Chỉ áp dụng cho ngày cụ thể này"
+                  className="text-[9px] shrink-0"
+                >
+                  📌
+                </span>
+              )}
+              {block.isMapping && (
+                <span title="Giá mặc định của hệ thống" className="text-[10px] shrink-0">
+                  ⚙️
+                </span>
+              )}
+              <span className="font-extrabold text-[11.5px]">{displayPrice}</span>
+            </p>
+            {block.label && (
+              <span className="text-[8.5px] font-bold truncate opacity-75 block leading-none">
+                {block.label}
+              </span>
+            )}
+          </div>
+          {block.isLocked && block.lockReason && (
+            <span
+              className="text-[8px] font-bold truncate text-red-600 block mt-auto leading-none"
+              title={block.lockReason}
+            >
+              🔒 {block.lockReason}
+            </span>
+          )}
+        </div>
       )}
-      {block.isLocked && block.lockReason && (
-        <span
-          className="text-[8px] font-bold truncate text-red-600 mt-0.5"
-          title={block.lockReason}
-        >
-          🔒 {block.lockReason}
-        </span>
-      )}
+
       {!block.isMapping && !block.isLocked && (
         <button
-          className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-white/60 text-inherit
+          className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-white/90 text-slate-800
                      opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center
-                     hover:bg-red-500 hover:text-white z-20 font-bold text-[11px] leading-none border-0 cursor-pointer"
+                     hover:bg-red-500 hover:text-white z-20 font-black text-[9px] leading-none border border-slate-200 cursor-pointer shadow-sm"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation()
@@ -274,6 +396,18 @@ function PriceEvent({
         </button>
       )}
     </div>
+  )
+
+  return (
+    <Popover
+      content={<PriceEventTooltipContent block={block} />}
+      trigger="hover"
+      placement="right"
+      mouseEnterDelay={0.15}
+      overlayClassName="court-price-popover"
+    >
+      {content}
+    </Popover>
   )
 }
 
@@ -423,7 +557,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
 
   const targetDateStr = currentMonday.format('YYYY-MM-DD')
   const pricesQuery = useCourtPricesByCourtQuery(courtId, targetDateStr)
-  const defaultRulesQuery = useCourtDefaultPriceRulesQuery({ page: 1, pageSize: 1000 })
+  const defaultRulesQuery = useCourtDefaultPriceRulesQuery()
   const ruleTypesQuery = usePriceRuleTypesQuery()
   const createMut = useCreateCourtPriceMutation()
   const updateMut = useUpdateCourtPriceMutation()
@@ -515,13 +649,22 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
     }
   }
 
-  const performLoadDefaults = () => {
-    if (!defaultRulesQuery.data) {
-      message.error('Dữ liệu cấu hình giá mặc định chưa sẵn sàng, vui lòng thử lại sau.')
-      return
-    }
+  const performLoadDefaults = async () => {
     try {
-      const activeDefaults = (defaultRulesQuery.data.items ?? []).filter(
+      let data = defaultRulesQuery.data
+      if (!data) {
+        const res = await defaultRulesQuery.refetch()
+        data = res.data
+      }
+
+      if (!data) {
+        message.error(
+          'Dữ liệu cấu hình giá mặc định chưa sẵn sàng, vui lòng thử lại sau.',
+        )
+        return
+      }
+
+      const activeDefaults = (data.items ?? []).filter(
         (r) => r.isActive && r.isLoadDefault,
       )
 
@@ -776,7 +919,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           <Button
             type="default"
             icon={<ImportOutlined />}
-            loading={defaultRulesQuery.isLoading}
+            loading={defaultRulesQuery.isFetching}
             onClick={handleLoadDefaults}
             className="border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-400 font-medium"
           >

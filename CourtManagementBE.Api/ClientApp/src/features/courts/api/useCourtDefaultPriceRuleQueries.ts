@@ -15,10 +15,14 @@ export const courtDefaultPriceRuleKeys = {
     [...courtDefaultPriceRuleKeys.all, 'day', dayOfWeek] as const,
 }
 
-export const useCourtDefaultPriceRulesQuery = (params?: PaginationQuery) =>
+export const useCourtDefaultPriceRulesQuery = (
+  params?: PaginationQuery,
+  options?: { enabled?: boolean }
+) =>
   useQuery({
     queryKey: courtDefaultPriceRuleKeys.list(params),
     queryFn: () => courtDefaultPriceRuleApi.getAll(params),
+    ...options,
   })
 
 export const useCourtDefaultPriceRulesByDayQuery = (dayOfWeek: number) =>
