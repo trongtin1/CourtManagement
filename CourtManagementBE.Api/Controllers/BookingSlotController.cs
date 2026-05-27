@@ -23,6 +23,13 @@ public class BookingSlotController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("court/{courtId}/date/{date}")]
+    public async Task<IActionResult> GetByCourtAndDate(int courtId, DateTime date)
+    {
+        var r = await _service.GetByCourtAndDate(courtId, date);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] BookingSlotRequest req)
     {

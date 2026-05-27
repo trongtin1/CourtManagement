@@ -63,12 +63,14 @@ export type BookingSlot = {
   bookingID: string
   courtID: number
   bookingDate: string
-  timeSlotID: number
+  startTime: string
+  endTime: string
 }
 
 export type CreateBookingSlotRequest = {
   bookingID: string
   courtID: number
   bookingDate: string
-  timeSlotID: number
+  startTime: string
+  endTime: string
 }

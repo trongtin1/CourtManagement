@@ -20,9 +20,13 @@ import {
   RightOutlined,
   SyncOutlined,
   ThunderboltOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  DollarOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
+import { useNavigate } from 'react-router-dom'
 import {
   MOCK_BOOKINGS,
   MOCK_CUSTOMERS,
@@ -34,7 +38,6 @@ import {
 import { formatCompactCurrency } from '@/utils/format'
 import { BookingTimeline } from './BookingTimeline'
 import { BookingDetailDrawer } from './BookingDetailDrawer'
-import { CreateBookingModal } from './CreateBookingModal'
 import './bookings.css'
 
 type ViewMode = 'timeline' | 'list'
@@ -54,18 +57,15 @@ export function BookingsPage() {
   // Drawers / modals
   const [detailBooking, setDetailBooking] = useState<MockBooking | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [createInit, setCreateInit] = useState<{ courtID?: number; slotTime?: string }>(
-    {},
-  )
+  const navigate = useNavigate()
 
   const openDetail = (booking: MockBooking) => {
     setDetailBooking(booking)
     setDetailOpen(true)
   }
-  const openCreate = (courtID?: number, slotTime?: string) => {
-    setCreateInit({ courtID, slotTime })
-    setCreateOpen(true)
+
+  const openCreate = () => {
+    navigate('/bookings/create')
   }
 
   // Summary stats
@@ -124,15 +124,23 @@ export function BookingsPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           {/* View toggle */}
-          <div className="view-toggle-group">
+          <div className="inline-flex items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-lg">
             <button
-              className={`view-toggle-btn ${view === 'timeline' ? 'active' : ''}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border-none rounded-md text-xs font-semibold cursor-pointer transition-all duration-150 ${
+                view === 'timeline'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'bg-transparent text-slate-500 hover:text-slate-900'
+              }`}
               onClick={() => setView('timeline')}
             >
               <CalendarOutlined /> Lịch biểu
             </button>
             <button
-              className={`view-toggle-btn ${view === 'list' ? 'active' : ''}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border-none rounded-md text-xs font-semibold cursor-pointer transition-all duration-150 ${
+                view === 'list'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'bg-transparent text-slate-500 hover:text-slate-900'
+              }`}
               onClick={() => setView('list')}
             >
               <UnorderedListOutlined /> Danh sách
@@ -143,20 +151,18 @@ export function BookingsPage() {
           {view === 'timeline' && (
             <div className="flex items-center gap-1">
               <Button
-                size="small"
                 icon={<LeftOutlined />}
                 onClick={() => shiftDate(-1)}
               />
-              <button
-                className="px-3 py-1 rounded-lg text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 transition"
+              <Button
+                className="font-semibold text-slate-700"
                 onClick={() => {
                   setSelectedDate(dayjs().format('YYYY-MM-DD'))
                 }}
               >
                 {isToday ? `Hôm nay · ${dateLabel}` : dateLabel}
-              </button>
+              </Button>
               <Button
-                size="small"
                 icon={<RightOutlined />}
                 onClick={() => shiftDate(1)}
               />
@@ -195,53 +201,41 @@ export function BookingsPage() {
 
       {/* ── Summary cards ── */}
       {view === 'timeline' && (
-        <div className="summary-card-grid">
-          <div className="summary-card">
-            <div
-              className="card-icon"
-              style={{ background: '#eff6ff', color: '#3b82f6' }}
-            >
-              📋
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
+              <CalendarOutlined />
             </div>
-            <div className="card-content">
-              <h4>{stats.total}</h4>
-              <p>Tổng booking</p>
+            <div>
+              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{stats.total}</h4>
+              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Tổng booking</p>
             </div>
           </div>
-          <div className="summary-card">
-            <div
-              className="card-icon"
-              style={{ background: '#fffbeb', color: '#f59e0b' }}
-            >
-              ⏳
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
+              <ClockCircleOutlined />
             </div>
-            <div className="card-content">
-              <h4>{stats.pending}</h4>
-              <p>Chờ xử lý</p>
+            <div>
+              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{stats.pending}</h4>
+              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Chờ xử lý</p>
             </div>
           </div>
-          <div className="summary-card">
-            <div
-              className="card-icon"
-              style={{ background: '#ecfdf5', color: '#10b981' }}
-            >
-              🏃
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
+              <CheckCircleOutlined />
             </div>
-            <div className="card-content">
-              <h4>{stats.playing}</h4>
-              <p>Đang chơi</p>
+            <div>
+              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{stats.playing}</h4>
+              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Đang chơi</p>
             </div>
           </div>
-          <div className="summary-card">
-            <div
-              className="card-icon"
-              style={{ background: '#f0fdfa', color: '#14b8a6' }}
-            >
-              💰
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+            <div className="w-11 h-11 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100 text-slate-500 shrink-0">
+              <DollarOutlined />
             </div>
-            <div className="card-content">
-              <h4>{formatCompactCurrency(stats.revenue)}</h4>
-              <p>Doanh thu ngày</p>
+            <div>
+              <h4 className="m-0 text-xl font-extrabold text-slate-800 leading-tight">{formatCompactCurrency(stats.revenue)}</h4>
+              <p className="m-0 mt-1 text-xs text-slate-400 font-medium">Doanh thu ngày</p>
             </div>
           </div>
         </div>
@@ -250,17 +244,16 @@ export function BookingsPage() {
       {/* ── ADVANCED AVAILABLE COURT FINDER WIDGET ── */}
       {view === 'timeline' && (
         <Card
-          className="border border-teal-100 shadow-sm"
+          className="border border-slate-200 shadow-sm bg-white"
           styles={{ body: { padding: '16px 20px' } }}
           style={{
-            background: 'linear-gradient(to right, #f9fdfd, #f0fdfa)',
             borderRadius: 12,
           }}
         >
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm text-teal-800 tracking-wide uppercase flex items-center gap-1.5">
+                <span className="font-bold text-sm text-slate-800 tracking-wide uppercase flex items-center gap-1.5">
                   <ThunderboltOutlined /> Bộ lọc thời gian & loại sân khả dụng
                 </span>
               </div>
@@ -345,14 +338,14 @@ export function BookingsPage() {
 
       {/* ── Status legend ── */}
       {view === 'timeline' && (
-        <div className="quick-stat-bar" style={{ marginTop: 8 }}>
+        <div className="flex flex-wrap items-center gap-3 mt-3">
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-            <div key={key} className="quick-stat-item">
+            <div key={key} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-md">
               <span
-                className={`status-dot ${key === 'playing' ? 'is-playing' : ''}`}
+                className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
                 style={{ background: cfg.dot }}
               />
-              <span className="stat-label">{cfg.label}</span>
+              <span className="text-[11px] font-semibold text-slate-500">{cfg.label}</span>
             </div>
           ))}
         </div>
@@ -363,7 +356,7 @@ export function BookingsPage() {
         <BookingTimeline
           selectedDate={selectedDate}
           onBookingClick={openDetail}
-          onSlotClick={(courtID, startTime) => openCreate(courtID, startTime)}
+          onSlotClick={() => openCreate()}
           searchTimeStart={searchTimeStart}
           searchTimeEnd={searchTimeEnd}
           hasSearchedAvailable={isFilterActive}
@@ -480,18 +473,11 @@ export function BookingsPage() {
         </div>
       )}
 
-      {/* ── Drawers / Modals ── */}
+      {/* Drawers / Modals */}
       <BookingDetailDrawer
         booking={detailBooking}
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
-      />
-      <CreateBookingModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        initialCourtID={createInit.courtID}
-        initialSlotTime={createInit.slotTime}
-        initialDate={selectedDate}
       />
     </Space>
   )

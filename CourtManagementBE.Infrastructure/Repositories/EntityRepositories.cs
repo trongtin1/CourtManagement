@@ -16,8 +16,6 @@ public class FacilityRepository : GenericRepository<Facilities>, IFacilityReposi
 public class AreaRepository : GenericRepository<Areas>, IAreaRepository
 { public AreaRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class CourtRepository : GenericRepository<Courts>, ICourtRepository
-{ public CourtRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class CourtTypeRepository : GenericRepository<CourtTypes>, ICourtTypeRepository
 { public CourtTypeRepository(AppDbContext ctx) : base(ctx) { } }

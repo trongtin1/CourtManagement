@@ -91,4 +91,25 @@ public class CourtService : BaseService, ICourtService
         await _unitOfWork.SaveChangesAsync();
         return Success(true, entity.IsActive ? "Kích hoạt sân thành công." : "Vô hiệu hóa sân thành công.");
     }
+
+    public async Task<Result<List<CourtSlotAvailabilityResponse>>> GetSlotsAvailability(int courtId, DateTime date)
+    {
+        if (!await CanAccessCourt(courtId))
+            return Unauthorized<List<CourtSlotAvailabilityResponse>>("Bạn không có quyền truy cập sân này.");
+
+        var slots = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(courtId, date);
+
+        // Sinh SlotName nếu SP chưa có
+        foreach (var slot in slots)
+        {
+            if (string.IsNullOrEmpty(slot.SlotName))
+            {
+                var start = slot.StartTime.Length >= 5 ? slot.StartTime[..5] : slot.StartTime;
+                var end = slot.EndTime.Length >= 5 ? slot.EndTime[..5] : slot.EndTime;
+                slot.SlotName = $"{start} - {end}";
+            }
+        }
+
+        return Success(slots);
+    }
 }

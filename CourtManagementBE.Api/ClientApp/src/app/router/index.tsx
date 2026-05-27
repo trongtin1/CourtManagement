@@ -11,6 +11,7 @@ import {
   AssetConditionsPage,
   BookingStatusesPage,
   BookingsPage,
+  CreateBookingPage,
   CombosPage,
   CancellationReasonsPage,
   CourtAssetsPage,
@@ -114,6 +115,10 @@ export const router = createBrowserRouter([
         element: withSuspense(<CustomersPage />),
       },
       { path: ROUTES.bookings.replace('/', ''), element: withSuspense(<BookingsPage />) },
+      {
+        path: ROUTES.createBooking.replace('/', ''),
+        element: withSuspense(<CreateBookingPage />),
+      },
       { path: ROUTES.services.replace('/', ''), element: withSuspense(<ServicesPage />) },
       { path: ROUTES.combos.replace('/', ''), element: withSuspense(<CombosPage />) },
       { path: ROUTES.payments.replace('/', ''), element: withSuspense(<PaymentsPage />) },

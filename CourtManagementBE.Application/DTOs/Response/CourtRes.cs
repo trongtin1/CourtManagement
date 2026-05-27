@@ -17,3 +17,15 @@ public class CourtResponse
     public bool IsActive { get; set; }
     public DateTimeOffset CreateDate { get; set; }
 }
+
+public class CourtSlotAvailabilityResponse
+{
+    public int SlotIndex { get; set; }
+    public string SlotName { get; set; } = string.Empty;
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public bool IsLocked { get; set; }
+    public bool IsBooked { get; set; }
+    public string? LockReason { get; set; }
+}

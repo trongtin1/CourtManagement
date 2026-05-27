@@ -1,12 +1,12 @@
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
+using CourtManagementBE.Application.DTOs;
 
 namespace CourtManagementBE.Domain.IRepositories;
 
 public interface IFacilityRepository : IGenericRepository<Facilities> { }
 public interface IAreaRepository : IGenericRepository<Areas> { }
-public interface ICourtRepository : IGenericRepository<Courts> { }
 public interface ICourtTypeRepository : IGenericRepository<CourtTypes> { }
 public interface ICourtStatusRepository : IGenericRepository<CourtStatus> { }
 public interface ICourtFeatureRepository : IGenericRepository<CourtFeatures> { }

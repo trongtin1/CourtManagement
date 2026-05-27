@@ -14,4 +14,5 @@ public interface ICourtService
     Task<Result<CourtResponse>> Update(int id, CourtRequest request);
     Task<Result<bool>> Delete(int id);
     Task<Result<bool>> ToggleActive(int id);
+    Task<Result<List<CourtSlotAvailabilityResponse>>> GetSlotsAvailability(int courtId, DateTime date);
 }

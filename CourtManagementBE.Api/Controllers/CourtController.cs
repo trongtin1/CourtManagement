@@ -66,6 +66,13 @@ public class CourtController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("{id}/slots")]
+    public async Task<IActionResult> GetSlotsAvailability(int id, [FromQuery] DateTime date)
+    {
+        var r = await _service.GetSlotsAvailability(id, date);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
+import { bookingSlotApi } from '@/features/bookings/api/bookingSlotApi'
 import type { PaginationQuery } from '@/types/api'
 import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest } from '../model/types'
 
@@ -7,12 +8,21 @@ export const bookingKeys = {
   all: ['bookings'] as const,
   list: (params?: PaginationQuery) => [...bookingKeys.all, 'list', params] as const,
   detail: (id: string) => [...bookingKeys.all, 'detail', id] as const,
+  bookedSlots: (courtId: number, date: string) => [...bookingKeys.all, 'bookedSlots', courtId, date] as const,
 }
 
 export const useBookingsQuery = (params?: PaginationQuery) => {
   return useQuery({
     queryKey: bookingKeys.list(params),
     queryFn: () => bookingApi.getAll(params)
+  })
+}
+
+export const useCourtBookedSlotsQuery = (courtId: number | null, date: string) => {
+  return useQuery({
+    queryKey: bookingKeys.bookedSlots(courtId ?? 0, date),
+    queryFn: () => bookingSlotApi.getByCourtAndDate(courtId!, date),
+    enabled: !!courtId && !!date,
   })
 }
 

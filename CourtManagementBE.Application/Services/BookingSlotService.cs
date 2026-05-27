@@ -19,6 +19,13 @@ public class BookingSlotService : BaseService, IBookingSlotService
         return Success(_mapper.Map<List<BookingSlotResponse>>(list));
     }
 
+    public async Task<Result<List<BookingSlotResponse>>> GetByCourtAndDate(int courtId, DateTime date)
+    {
+        if (!await CanAccessCourt(courtId)) return Unauthorized<List<BookingSlotResponse>>("Bạn không có quyền truy cập sân này.");
+        var list = await _unitOfWork.IBookingSlotRepository.FindList(x => x.CourtID == courtId && x.BookingDate.Date == date.Date);
+        return Success(_mapper.Map<List<BookingSlotResponse>>(list));
+    }
+
     public async Task<Result<BookingSlotResponse>> Create(BookingSlotRequest request)
     {
         if (!await CanAccessBooking(request.BookingID) || !await CanAccessCourt(request.CourtID))

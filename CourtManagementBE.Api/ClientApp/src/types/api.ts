@@ -6,8 +6,8 @@ export type ApiResponse<T> = {
 }
 
 export type PaginationQuery = {
-  page: number
-  pageSize: number
+  page?: number
+  pageSize?: number
 }
 
 export type PageList<T> = {

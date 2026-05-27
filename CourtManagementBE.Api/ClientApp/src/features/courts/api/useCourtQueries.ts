@@ -7,6 +7,8 @@ export const courtKeys = {
   all: ['courts'] as const,
   list: (params?: PaginationQuery) => [...courtKeys.all, 'list', params] as const,
   detail: (id: number) => [...courtKeys.all, 'detail', id] as const,
+  slotsAvailability: (id: number, date: string) =>
+    [...courtKeys.all, 'slotsAvailability', id, date] as const,
 }
 
 export const useCourtsQuery = (params?: PaginationQuery, enabled = true) => {
@@ -22,6 +24,14 @@ export const useCourtQuery = (id: number) => {
     queryKey: courtKeys.detail(id), 
     queryFn: () => courtApi.getById(id), 
     enabled: id > 0 });
+}
+
+export const useCourtSlotsAvailabilityQuery = (id: number | null, date: string) => {
+  return useQuery({
+    queryKey: courtKeys.slotsAvailability(id ?? 0, date),
+    queryFn: () => courtApi.getSlotsAvailability(id!, date),
+    enabled: !!id && !!date,
+  })
 }
 
 export const useCreateCourtMutation = () => {

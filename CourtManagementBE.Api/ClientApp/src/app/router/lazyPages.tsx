@@ -86,6 +86,12 @@ export const BookingsPage = lazy(() =>
   import('@/pages/bookings/BookingsPage').then((m) => ({ default: m.BookingsPage })),
 )
 
+export const CreateBookingPage = lazy(() =>
+  import('@/pages/bookings/create/CreateBookingPage').then((m) => ({
+    default: m.CreateBookingPage,
+  })),
+)
+
 export const ServicesPage = lazy(() =>
   import('@/pages/services/ServicesPage').then((m) => ({ default: m.ServicesPage })),
 )

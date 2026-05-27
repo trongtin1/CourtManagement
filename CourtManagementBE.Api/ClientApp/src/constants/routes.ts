@@ -17,6 +17,7 @@ export const ROUTES = {
   timeSlots: '/time-slots',
   customers: '/customers',
   bookings: '/bookings',
+  createBooking: '/bookings/create',
   services: '/services',
   combos: '/combos',
   payments: '/payments',

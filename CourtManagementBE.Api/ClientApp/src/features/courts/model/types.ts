@@ -164,6 +164,17 @@ export type TimeSlot = {
   isActive: boolean
 }
 
+export type CourtSlotAvailability = {
+  slotIndex: number
+  slotName: string
+  startTime: string
+  endTime: string
+  price: number
+  isLocked: boolean
+  isBooked: boolean
+  lockReason?: string | null
+}
+
 export type CreateTimeSlotRequest = {
   slotName: string
   startTime: string

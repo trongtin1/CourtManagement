@@ -9,16 +9,6 @@ import {
 } from './mockData'
 import { formatCompactCurrency } from '@/utils/format'
 
-// ─── Color palette for booking blocks ─────────────────────────────────────────
-
-const BLOCK_COLORS: Record<string, string> = {
-  pending: '#f59e0b',
-  confirmed: '#3b82f6',
-  playing: '#10b981',
-  completed: '#6b7280',
-  cancelled: '#ef4444',
-}
-
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -140,11 +130,11 @@ export function BookingTimeline({
               key={t}
               className="gantt-time-cell"
               style={{
-                background: hasSearchedAvailable ? '#f0fdfa' : '#fff',
-                color: hasSearchedAvailable ? '#0d9488' : '#94a3b8',
-                borderBottom: hasSearchedAvailable ? '2px solid #0d9488' : '1px solid #e2e8f0',
-                fontWeight: hasSearchedAvailable ? 'bold' : 'normal',
-                transition: 'all 0.3s ease',
+                background: hasSearchedAvailable ? '#f8fafc' : '#fff',
+                color: hasSearchedAvailable ? '#475569' : '#94a3b8',
+                borderBottom: hasSearchedAvailable ? '2px solid #64748b' : '1px solid #e2e8f0',
+                fontWeight: hasSearchedAvailable ? '600' : '500',
+                transition: 'all 0.2s ease',
               }}
             >
               {t}
@@ -167,7 +157,7 @@ export function BookingTimeline({
                     key={t}
                     className="gantt-cell"
                     style={{
-                      background: hasSearchedAvailable ? 'rgba(13, 148, 136, 0.02)' : undefined,
+                      background: hasSearchedAvailable ? 'rgba(100, 116, 139, 0.02)' : undefined,
                     }}
                     onClick={() => onSlotClick(court.courtID, t)}
                   >
@@ -205,7 +195,6 @@ export function BookingTimeline({
                           const { left, width, visible } = getBlockLeftAndWidth(first.startTime, last.endTime)
                           if (!visible) return null
 
-                          const color = BLOCK_COLORS[bk.status] ?? '#6b7280'
                           const cust = MOCK_CUSTOMERS.find(c => c.customerID === bk.customerID)
                           const displayName = cust
                             ? (bk.status === 'playing'
@@ -219,11 +208,10 @@ export function BookingTimeline({
                               title={`${cust?.fullName} · ${first.startTime}–${last.endTime} · ${formatCompactCurrency(bk.totalAmount)}`}
                             >
                               <div
-                                className="gantt-booking-block"
+                                className={`gantt-booking-block bk-${bk.status}`}
                                 style={{
                                   left,
                                   width,
-                                  background: color,
                                 }}
                                 onClick={e => { e.stopPropagation(); onBookingClick(bk) }}
                               >
