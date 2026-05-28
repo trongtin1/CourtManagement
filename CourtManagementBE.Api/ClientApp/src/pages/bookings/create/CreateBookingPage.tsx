@@ -508,7 +508,7 @@ export function CreateBookingPage() {
                                   return '📦'
                                 }
 
-                                const svcPrice = svc.servicePrices?.[0]?.price ?? 0
+                                const svcPrice = svc.price ?? 0
                                 const icon = getServiceIcon(svc.serviceName)
 
                                 return (

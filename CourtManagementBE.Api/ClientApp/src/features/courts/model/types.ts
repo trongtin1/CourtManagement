@@ -175,6 +175,58 @@ export type CourtSlotAvailability = {
   lockReason?: string | null
 }
 
+export type TimelineBookingSlotResponse = {
+  timeSlotID: number
+  startTime: string
+  endTime: string
+  price: number
+}
+
+export type TimelineCustomerResponse = {
+  customerID: number
+  customerName: string
+  phone: string
+  customerType: string
+  email: string
+}
+
+export type TimelineBookingResponse = {
+  bookingID: string
+  courtID: number
+  customerID: number
+  bookingDate: string
+  totalAmount: number
+  status: string
+  note: string
+  customer?: TimelineCustomerResponse | null
+  slots: TimelineBookingSlotResponse[]
+}
+
+export type TimelineLockResponse = {
+  courtID: number
+  startTime: string
+  endTime: string
+  reason: string
+  date: string
+}
+
+export type TimelineAvailableSlot = {
+  timeSlotID: number
+  startTime: string
+  endTime: string
+  price: number
+}
+
+export type CourtTimelineAvailability = {
+  courtID: number
+  courtName: string
+  courtCode: string
+  courtType: string
+  bookings: TimelineBookingResponse[]
+  locks: TimelineLockResponse[]
+  availableSlots: TimelineAvailableSlot[]
+}
+
 export type CreateTimeSlotRequest = {
   slotName: string
   startTime: string

@@ -1,102 +1,130 @@
-import { Divider, Drawer, Button, Tag, Space, Popconfirm, App } from 'antd'
+import { Divider, Drawer, Button, Space, Popconfirm, App, Spin } from 'antd'
 import {
   CalendarOutlined,
   ClockCircleOutlined,
-  PhoneOutlined,
-  MailOutlined,
   DollarOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
 
-import {
-  MOCK_CUSTOMERS,
-  MOCK_COURTS,
-  MOCK_SERVICES,
-  STATUS_CONFIG,
-  PAYMENT_CONFIG,
-  type MockBooking,
-} from './mockData'
 import { formatCompactCurrency } from '@/utils/format'
+import {
+  useBookingSlotsQuery,
+  useBookingServicesQuery,
+  useUpdateBookingMutation,
+  useCancelBookingMutation,
+} from '@/features/bookings/api/useBookingQueries'
+import { useServicesQuery } from '@/features/services/api/useServiceQueries'
 
-interface Props {
-  booking: MockBooking | null
+import type { Booking } from '@/features/bookings/model/types'
+import type {
+  CourtTimelineAvailability,
+  TimelineBookingResponse,
+} from '@/features/courts/model/types'
+
+type AnyBooking = Booking | TimelineBookingResponse
+
+interface BookingDetailDrawerProps {
+  booking: AnyBooking | null
   open: boolean
   onClose: () => void
+  courts: CourtTimelineAvailability[]
 }
 
-export function BookingDetailDrawer({ booking, open, onClose }: Props) {
+export function BookingDetailDrawer({
+  booking: selectedBooking,
+  open: isOpen,
+  onClose,
+  courts: courtList,
+}: BookingDetailDrawerProps) {
   const { message } = App.useApp()
-  if (!booking) return null
+  const updateBooking = useUpdateBookingMutation()
+  const cancelBooking = useCancelBookingMutation()
 
-  const cust = MOCK_CUSTOMERS.find((c) => c.customerID === booking.customerID)
-  const court = MOCK_COURTS.find((c) => c.courtID === booking.courtID)
-  const statusCfg = STATUS_CONFIG[booking.status]
-  const payCfg = PAYMENT_CONFIG[booking.paymentStatus]
-  const slotsTotal = booking.slots.reduce((s, sl) => s + sl.price, 0)
-  const svcTotal = booking.services.reduce((s, sv) => s + sv.quantity * sv.unitPrice, 0)
+  // ─── Data Queries ───────────────────────────────────────────────────────────
+  const { data: slotsData, isLoading: isSlotsLoading } = useBookingSlotsQuery(
+    selectedBooking?.bookingID ?? null,
+  )
+  const { data: bookingServicesData, isLoading: isServicesLoading } = useBookingServicesQuery(
+    selectedBooking?.bookingID ?? null,
+  )
+  const { data: availableServicesData } = useServicesQuery({ page: 1, pageSize: 100 })
 
+  if (!selectedBooking) return null
+
+  // Find the matching court details
+  const matchedCourt = courtList.find((court) => court.courtID === selectedBooking.courtID)
+
+  const bookingSlots = slotsData ?? []
+  const bookingServices = bookingServicesData ?? []
+  const availableServices = availableServicesData?.items ?? []
+
+  // ─── Price Calculations ──────────────────────────────────────────────────────
+  const totalServicesAmount = bookingServices.reduce(
+    (sum, service) => sum + service.quantity * service.unitPrice,
+    0,
+  )
+  const totalCourtAmount = Math.max(0, selectedBooking.totalAmount - totalServicesAmount)
+
+  // ─── Actions ─────────────────────────────────────────────────────────────────
+  const handleConfirm = async () => {
+    try {
+      await updateBooking.mutateAsync({
+        id: selectedBooking.bookingID,
+        data: { status: 'confirmed' },
+      })
+      message.success('Đã xác nhận booking')
+    } catch {
+      message.error('Không thể xác nhận booking')
+    }
+  }
+
+  const handlePayment = async () => {
+    try {
+      await updateBooking.mutateAsync({
+        id: selectedBooking.bookingID,
+        data: { status: 'completed' },
+      })
+      message.success('Đã ghi nhận thanh toán và hoàn tất')
+    } catch {
+      message.error('Không thể ghi nhận thanh toán')
+    }
+  }
+
+  const handleCancel = async () => {
+    try {
+      await cancelBooking.mutateAsync({
+        id: selectedBooking.bookingID,
+        data: { cancellationReason: 'Khách yêu cầu hủy qua giao diện' },
+      })
+      message.success('Đã hủy booking thành công')
+      onClose()
+    } catch {
+      message.error('Không thể hủy booking')
+    }
+  }
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <Drawer
-      open={open}
+      open={isOpen}
       onClose={onClose}
       width={400}
       title={null}
       closeIcon={null}
       styles={{ body: { padding: '0 20px 20px' }, header: { display: 'none' } }}
     >
-      {/* Close */}
+      {/* Close Button */}
       <div className="flex justify-end pt-3">
         <Button type="text" icon={<CloseOutlined />} onClick={onClose} size="small" />
       </div>
 
-      {/* Customer header */}
-      <div className="flex items-center gap-3 py-4 border-b border-slate-100 mb-4">
-        <div
-          className="w-11 h-11 rounded-lg flex items-center justify-center font-bold text-sm text-white shrink-0"
-          style={{ background: statusCfg.color }}
-        >
-          {cust?.avatar ?? '?'}
-        </div>
-        <div>
-          <h4 className="m-0 text-base font-semibold text-slate-800 leading-tight">
-            {cust?.fullName ?? 'Khách vãng lai'}
-          </h4>
-          <p className="mt-1 flex items-center gap-1">
-            <Tag
-              color={statusCfg.color}
-              bordered={false}
-              style={{ fontSize: 11, marginRight: 0 }}
-            >
-              {statusCfg.label}
-            </Tag>
-            {cust?.customerType && (
-              <Tag bordered={false} style={{ fontSize: 11 }}>
-                {cust.customerType}
-              </Tag>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {/* Contact */}
-      {cust && (
-        <div className="mb-3 flex flex-col gap-1">
-          <span className="text-xs text-slate-400 flex items-center gap-1">
-            <PhoneOutlined /> {cust.phone}
-          </span>
-          <span className="text-xs text-slate-400 flex items-center gap-1">
-            <MailOutlined /> {cust.email}
-          </span>
-        </div>
-      )}
-
-      {/* Info rows */}
-      <div className="flex justify-between items-center py-2.5 border-b border-slate-50 text-slate-700">
+      {/* Booking Details Grid */}
+      <div className="flex justify-between items-center py-2.5 border-b border-slate-50">
         <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
           <CalendarOutlined /> Ngày đặt
         </span>
-        <span className="text-xs text-slate-800 font-semibold text-right">
-          {new Date(booking.bookingDate).toLocaleDateString('vi-VN', {
+        <span className="text-xs text-slate-800 font-semibold">
+          {new Date(selectedBooking.bookingDate).toLocaleDateString('vi-VN', {
             weekday: 'long',
             day: '2-digit',
             month: '2-digit',
@@ -104,105 +132,101 @@ export function BookingDetailDrawer({ booking, open, onClose }: Props) {
           })}
         </span>
       </div>
-      <div className="flex justify-between items-center py-2.5 border-b border-slate-50 text-slate-700">
-        <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-          Sân
-        </span>
-        <span className="text-xs text-slate-800 font-semibold text-right">
-          {court?.courtName ?? `Sân #${booking.courtID}`}
+      <div className="flex justify-between items-center py-2.5 border-b border-slate-50">
+        <span className="text-xs text-slate-400 font-medium">Sân</span>
+        <span className="text-xs text-slate-800 font-semibold">
+          {matchedCourt?.courtName || `Sân #${selectedBooking.courtID}`}
         </span>
       </div>
-      <div className="flex justify-between items-center py-2.5 border-b border-slate-50 text-slate-700">
-        <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-          Thanh toán
-        </span>
-        <span
-          className="text-xs font-semibold text-right"
-          style={{ color: payCfg.color }}
-        >
-          {payCfg.label}
-        </span>
-      </div>
-      <div className="flex justify-between items-center py-2.5 border-b border-slate-50 text-slate-700">
-        <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-          Mã booking
-        </span>
-        <span className="text-xs text-slate-800 font-semibold text-right font-mono">
-          {booking.bookingID}
+      <div className="flex justify-between items-center py-2.5 border-b border-slate-50">
+        <span className="text-xs text-slate-400 font-medium">Mã booking</span>
+        <span className="text-xs text-slate-800 font-semibold font-mono">
+          {selectedBooking.bookingID}
         </span>
       </div>
 
       <Divider style={{ margin: '14px 0' }} />
 
-      {/* Slots */}
-      <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-          <ClockCircleOutlined /> Khung giờ đã đặt
-        </p>
+      {/* Booking Slots */}
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        <ClockCircleOutlined /> Khung giờ đã đặt
+      </p>
+      {isSlotsLoading ? (
+        <div className="flex justify-center p-3">
+          <Spin size="small" />
+        </div>
+      ) : (
         <div className="flex flex-col gap-1.5 mt-2">
-          {booking.slots.map((sl) => (
+          {bookingSlots.length === 0 && (
+            <p className="text-xs text-slate-400 italic">Không có dữ liệu khung giờ</p>
+          )}
+          {bookingSlots.map((slot) => (
             <div
-              key={sl.timeSlotID}
+              key={slot.id}
               className="flex justify-between items-center px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600"
             >
               <span>
-                {sl.startTime} – {sl.endTime}
-              </span>
-              <span className="text-emerald-600 font-bold">
-                {formatCompactCurrency(sl.price)}
+                {slot.startTime.substring(0, 5)} – {slot.endTime.substring(0, 5)}
               </span>
             </div>
           ))}
         </div>
-      </div>
+      )}
 
       {/* Services */}
-      {booking.services.length > 0 && (
-        <>
-          <Divider style={{ margin: '14px 0' }} />
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Dịch vụ đi kèm
-          </p>
-          <div className="flex flex-col gap-2">
-            {booking.services.map((sv) => {
-              const svc = MOCK_SERVICES.find((s) => s.serviceID === sv.serviceID)
-              return (
-                <div key={sv.serviceID} className="flex justify-between text-sm">
-                  <span className="text-slate-700">
-                    {svc?.icon} {svc?.serviceName} × {sv.quantity}
-                  </span>
-                  <span className="font-bold text-slate-800">
-                    {formatCompactCurrency(sv.quantity * sv.unitPrice)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </>
+      <Divider style={{ margin: '14px 0' }} />
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        Dịch vụ đi kèm
+      </p>
+      {isServicesLoading ? (
+        <div className="flex justify-center p-3">
+          <Spin size="small" />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {bookingServices.length === 0 && (
+            <p className="text-xs text-slate-400 italic">Không có dịch vụ đi kèm</p>
+          )}
+          {bookingServices.map((bookingService) => {
+            const serviceDetail = availableServices.find(
+              (service) => service.serviceID === bookingService.serviceID,
+            )
+            return (
+              <div key={bookingService.bookingServiceID} className="flex justify-between text-xs">
+                <span className="text-slate-700">
+                  📦 {serviceDetail?.serviceName || `Dịch vụ #${bookingService.serviceID}`} × {bookingService.quantity}
+                </span>
+                <span className="font-bold text-slate-800">
+                  {formatCompactCurrency(bookingService.quantity * bookingService.unitPrice)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
       )}
 
       {/* Note */}
-      {booking.note && (
+      {selectedBooking.note && (
         <>
           <Divider style={{ margin: '14px 0' }} />
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
             Ghi chú
           </p>
-          <p className="text-sm text-slate-600 italic">{booking.note}</p>
+          <p className="text-sm text-slate-600 italic">{selectedBooking.note}</p>
         </>
       )}
 
-      {/* Total */}
+      {/* Total Calculations */}
       <Divider style={{ margin: '14px 0' }} />
       <div className="flex flex-col gap-1 text-sm mb-1">
         <div className="flex justify-between text-slate-500">
           <span>Tiền sân</span>
-          <span>{formatCompactCurrency(slotsTotal)}</span>
+          <span>{formatCompactCurrency(totalCourtAmount)}</span>
         </div>
-        {svcTotal > 0 && (
+        {totalServicesAmount > 0 && (
           <div className="flex justify-between text-slate-500">
             <span>Dịch vụ</span>
-            <span>{formatCompactCurrency(svcTotal)}</span>
+            <span>{formatCompactCurrency(totalServicesAmount)}</span>
           </div>
         )}
       </div>
@@ -211,36 +235,38 @@ export function BookingDetailDrawer({ booking, open, onClose }: Props) {
           <DollarOutlined /> Tổng cộng
         </span>
         <span className="text-xl font-extrabold text-teal-600">
-          {formatCompactCurrency(booking.totalAmount)}
+          {formatCompactCurrency(selectedBooking.totalAmount)}
         </span>
       </div>
 
-      {/* Actions */}
+      {/* Action Buttons */}
       <Divider style={{ margin: '16px 0 12px' }} />
       <Space className="w-full" direction="vertical" size={8}>
-        {booking.status === 'pending' && (
+        {selectedBooking.status === 'pending' && (
           <Button
             type="primary"
             block
-            onClick={() => message.success('Đã xác nhận booking')}
+            loading={updateBooking.isPending}
+            onClick={handleConfirm}
           >
             Xác nhận booking
           </Button>
         )}
-        {(booking.status === 'confirmed' || booking.status === 'playing') &&
-          booking.paymentStatus !== 'paid' && (
-            <Button
-              block
-              style={{ borderColor: '#10b981', color: '#10b981' }}
-              onClick={() => message.success('Đã ghi nhận thanh toán')}
-            >
-              Ghi nhận thanh toán
-            </Button>
-          )}
-        {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+        {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'playing') && (
+          <Button
+            block
+            style={{ borderColor: '#10b981', color: '#10b981' }}
+            loading={updateBooking.isPending}
+            onClick={handlePayment}
+          >
+            Hoàn tất booking
+          </Button>
+        )}
+        {selectedBooking.status !== 'cancelled' && selectedBooking.status !== 'completed' && (
           <Popconfirm
-            title="Xác nhận hủy booking?"
-            onConfirm={() => message.info('Đã hủy booking')}
+            title="Xác nhận hủy booking này?"
+            onConfirm={handleCancel}
+            okButtonProps={{ loading: cancelBooking.isPending }}
           >
             <Button danger block>
               Hủy booking

@@ -10,6 +10,7 @@ public class FacilityRequest
     [MaxLength(255)] public string Email { get; set; } = string.Empty;
     public TimeSpan OpeningTime { get; set; } = new(6, 0, 0);
     public TimeSpan ClosingTime { get; set; } = new(22, 0, 0);
+    public int SlotDurationMinutes { get; set; } = 60;
     [MaxLength(500)] public string ImageURL { get; set; } = string.Empty;
     [MaxLength(1000)] public string Description { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;

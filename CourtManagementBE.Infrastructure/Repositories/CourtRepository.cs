@@ -37,4 +37,34 @@ public class CourtRepository : GenericRepository<Courts>, ICourtRepository
         }
         return ls;
     }
+
+    public async Task<List<CourtTimelineAvailabilityResponse>> GetTimelineAvailabilityAsync(int facilityId, DateTime targetDate)
+    {
+        string jsonResult = string.Empty;
+        using (var command = _ctx.Database.GetDbConnection().CreateCommand())
+        {
+            command.CommandText = "dbo.sp_GetAllCourtsSlotAvailability";
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.Add(new SqlParameter("@FacilityID", facilityId));
+            command.Parameters.Add(new SqlParameter("@TargetDate", targetDate.Date));
+
+            await _ctx.Database.OpenConnectionAsync();
+            using var result = await command.ExecuteReaderAsync();
+            if (await result.ReadAsync())
+            {
+                jsonResult = result.IsDBNull(0) ? string.Empty : result.GetString(0);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(jsonResult))
+            return new List<CourtTimelineAvailabilityResponse>();
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        return System.Text.Json.JsonSerializer.Deserialize<List<CourtTimelineAvailabilityResponse>>(jsonResult, options)
+               ?? new List<CourtTimelineAvailabilityResponse>();
+    }
 }

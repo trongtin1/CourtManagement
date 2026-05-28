@@ -112,4 +112,13 @@ public class CourtService : BaseService, ICourtService
 
         return Success(slots);
     }
+
+    public async Task<Result<List<CourtTimelineAvailabilityResponse>>> GetTimelineAvailability(int facilityId, DateTime date)
+    {
+        if (!CanAccessFacility(facilityId))
+            return Unauthorized<List<CourtTimelineAvailabilityResponse>>("Bạn không có quyền truy cập cơ sở này.");
+
+        var timeline = await _unitOfWork.ICourtRepository.GetTimelineAvailabilityAsync(facilityId, date);
+        return Success(timeline);
+    }
 }

@@ -1,225 +1,302 @@
 import { useMemo, useRef, useEffect } from 'react'
-import { Tooltip } from 'antd'
-import dayjs from 'dayjs'
+import { Tooltip, Spin } from 'antd'
+import { LockOutlined } from '@ant-design/icons'
 
-import {
-  MOCK_COURTS, MOCK_TIME_SLOTS, MOCK_CUSTOMERS, MOCK_BOOKINGS,
-  MOCK_LOCKED_SLOTS,
-  type MockBooking,
-} from './mockData'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import type { CourtTimelineAvailability, TimelineBookingResponse } from '@/features/courts/model/types'
 import { formatCompactCurrency } from '@/utils/format'
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
-interface Props {
-  selectedDate: string
-  onBookingClick: (booking: MockBooking) => void
-  onSlotClick: (courtID: number, startTime: string) => void
+interface BookingTimelineProps {
+  facilityId: number
+  courts: CourtTimelineAvailability[]
+  onBookingClick: (booking: TimelineBookingResponse) => void
+  onSlotClick: (courtId: number, startTime: string, endTime: string, price: number) => void
   searchTimeStart?: string
   searchTimeEnd?: string
   hasSearchedAvailable?: boolean
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** "HH:MM:SS" or "HH:MM" → total minutes from midnight */
+const timeToMinutes = (timeString: string) => {
+  const [hours, minutes] = timeString.split(':').map(Number)
+  return hours * 60 + (minutes ?? 0)
+}
+
+/** "HH:MM:SS" or "HH:MM" → "HH:MM" */
+const formatTimeHHMM = (timeString: string) => timeString.substring(0, 5)
 
 export function BookingTimeline({
-  selectedDate,
+  facilityId,
+  courts: courtList,
   onBookingClick,
   onSlotClick,
   searchTimeStart,
   searchTimeEnd,
-  hasSearchedAvailable,
-}: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  hasSearchedAvailable: isFilterActive,
+}: BookingTimelineProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // Data for selected date
-  const dayBookings = useMemo(
-    () => MOCK_BOOKINGS.filter(b => b.bookingDate === selectedDate && b.status !== 'cancelled'),
-    [selectedDate],
+  // ─── Fetch Facility Configuration ──────────────────────────────────────────
+  const { data: facilityData, isLoading: isFacilityLoading } = useFacilityQuery(facilityId)
+
+  const openingTimeInMinutes = useMemo(
+    () => (facilityData ? timeToMinutes(facilityData.openingTime) : 6 * 60),
+    [facilityData],
   )
-  const dayLocks = useMemo(
-    () => MOCK_LOCKED_SLOTS.filter(l => l.date === selectedDate),
-    [selectedDate],
+  const closingTimeInMinutes = useMemo(
+    () => (facilityData ? timeToMinutes(facilityData.closingTime) : 22 * 60),
+    [facilityData],
+  )
+  const slotDurationMinutes = useMemo(
+    () => facilityData?.slotDurationMinutes ?? 60,
+    [facilityData],
   )
 
-  const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
-
-  // Dynamically compute min/max hour bounds based on the filter
-  const minHour = useMemo(() => {
-    if (hasSearchedAvailable && searchTimeStart) {
-      const parsed = parseInt(searchTimeStart.split(':')[0], 10)
-      if (!isNaN(parsed)) return parsed
+  // ─── Compute Visible Viewport Range ─────────────────────────────────────────
+  const viewportStartMinutes = useMemo(() => {
+    if (isFilterActive && searchTimeStart) {
+      const minutes = timeToMinutes(searchTimeStart)
+      if (!isNaN(minutes)) return Math.max(minutes, openingTimeInMinutes)
     }
-    const hours = MOCK_TIME_SLOTS.map(s => parseInt(s.startTime.split(':')[0], 10))
-    return Math.min(...hours)
-  }, [hasSearchedAvailable, searchTimeStart])
+    return openingTimeInMinutes
+  }, [isFilterActive, searchTimeStart, openingTimeInMinutes])
 
-  const maxHour = useMemo(() => {
-    if (hasSearchedAvailable && searchTimeEnd) {
-      const parsed = parseInt(searchTimeEnd.split(':')[0], 10)
-      if (!isNaN(parsed)) return parsed
+  const viewportEndMinutes = useMemo(() => {
+    if (isFilterActive && searchTimeEnd) {
+      const minutes = timeToMinutes(searchTimeEnd)
+      if (!isNaN(minutes)) return Math.min(minutes, closingTimeInMinutes)
     }
-    const hours = MOCK_TIME_SLOTS.map(s => parseInt(s.startTime.split(':')[0], 10))
-    return Math.max(...hours) + 1
-  }, [hasSearchedAvailable, searchTimeEnd])
+    return closingTimeInMinutes
+  }, [isFilterActive, searchTimeEnd, closingTimeInMinutes])
 
-  const totalHours = useMemo(() => Math.max(1, maxHour - minHour), [minHour, maxHour])
+  // ─── Generate Timeline Column Headers ──────────────────────────────────────
+  const timeLabels = useMemo(() => {
+    const labels: { label: string; startMinutes: number; endMinutes: number }[] = []
+    let currentMinutes = viewportStartMinutes
 
-  // Column sizing
-  const labelW = 140
-  const hourW = 100 // px per hour
+    while (currentMinutes < viewportEndMinutes) {
+      const nextMinutes = Math.min(currentMinutes + slotDurationMinutes, viewportEndMinutes)
+      const hoursStr = String(Math.floor(currentMinutes / 60)).padStart(2, '0')
+      const minutesStr = String(currentMinutes % 60).padStart(2, '0')
 
-  // Scroll to start hour on mount or filter change
+      labels.push({
+        label: `${hoursStr}:${minutesStr}`,
+        startMinutes: currentMinutes,
+        endMinutes: nextMinutes,
+      })
+      currentMinutes = nextMinutes
+    }
+    return labels
+  }, [viewportStartMinutes, viewportEndMinutes, slotDurationMinutes])
+
+  const totalTimeSlots = timeLabels.length
+  const slotWidthPx = 88
+  const courtLabelWidthPx = 148
+  const gridTemplateColumns = `${courtLabelWidthPx}px repeat(${totalTimeSlots}, ${slotWidthPx}px)`
+
+  // Scroll to the current hour on mount
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const targetHour = hasSearchedAvailable && searchTimeStart
-      ? parseInt(searchTimeStart.split(':')[0], 10)
-      : dayjs().hour()
+    const container = scrollContainerRef.current
+    if (!container || timeLabels.length === 0) return
 
-    const xTarget = Math.max(0, (targetHour - minHour - 1) * hourW)
-    el.scrollTo({
-      left: xTarget,
+    const now = new Date()
+    const currentMinutesFromMidnight = now.getHours() * 60 + now.getMinutes()
+    const scrollOffsetSlots = Math.max(
+      0,
+      Math.floor((currentMinutesFromMidnight - viewportStartMinutes) / slotDurationMinutes) - 1,
+    )
+
+    container.scrollTo({
+      left: scrollOffsetSlots * slotWidthPx,
       behavior: 'smooth',
     })
-  }, [minHour, searchTimeStart, hasSearchedAvailable])
+  }, [viewportStartMinutes, slotDurationMinutes, timeLabels])
 
-  // Grid template columns: label + N hour columns
-  const gridCols = `${labelW}px repeat(${totalHours}, ${hourW}px)`
-  const timeLabels = useMemo(() => {
-    return Array.from({ length: totalHours }, (_, i) => {
-      const h = minHour + i
-      return `${String(h).padStart(2, '0')}:00`
-    })
-  }, [totalHours, minHour])
+  // Helper: converts time slot boundaries to px coordinates
+  const calculateBlockPosition = (startTime: string, endTime: string) => {
+    const startMinutes = timeToMinutes(startTime)
+    const endMinutes = timeToMinutes(endTime)
 
-  // Calculate block positions and clipping widths based on visible range (minHour -> maxHour)
-  const getBlockLeftAndWidth = (startTime: string, endTime: string) => {
-    const startMin = toMin(startTime)
-    const endMin = toMin(endTime)
-    const viewStartMin = minHour * 60
-    const viewEndMin = maxHour * 60
-
-    // Out of bounds checking
-    if (endMin <= viewStartMin || startMin >= viewEndMin) {
+    if (endMinutes <= viewportStartMinutes || startMinutes >= viewportEndMinutes) {
       return { left: 0, width: 0, visible: false }
     }
 
-    const clampedStart = Math.max(startMin, viewStartMin)
-    const clampedEnd = Math.min(endMin, viewEndMin)
+    const clampedStartMinutes = Math.max(startMinutes, viewportStartMinutes)
+    const clampedEndMinutes = Math.min(endMinutes, viewportEndMinutes)
 
-    const left = ((clampedStart - viewStartMin) / 60) * hourW
-    const width = ((clampedEnd - clampedStart) / 60) * hourW
+    const left = ((clampedStartMinutes - viewportStartMinutes) / slotDurationMinutes) * slotWidthPx
+    const width = ((clampedEndMinutes - clampedStartMinutes) / slotDurationMinutes) * slotWidthPx
 
     return { left, width, visible: width > 0 }
   }
 
+  if (isFacilityLoading) {
+    return (
+      <div className="gantt-loading">
+        <Spin tip="Đang tải cấu hình cơ sở…" />
+      </div>
+    )
+  }
+
   return (
     <div className="gantt-wrapper">
+      {/* ── Header ── */}
       <div className="gantt-header-bar">
-        <h3>Lịch hoạt động</h3>
-        <p>Kéo để di chuyển · click để xem chi tiết</p>
+        <div className="gantt-header-meta">
+          <h3 className="gantt-title">Lịch hoạt động</h3>
+          <span className="gantt-subtitle">
+            {facilityData
+              ? `${formatTimeHHMM(facilityData.openingTime)} – ${formatTimeHHMM(facilityData.closingTime)} · Slot ${slotDurationMinutes} phút`
+              : 'Kéo để di chuyển · click để xem chi tiết'}
+          </span>
+        </div>
+        <div className="gantt-legend">
+          <span className="legend-item legend-available">Trống</span>
+          <span className="legend-item legend-booked">Đã đặt</span>
+          <span className="legend-item legend-locked">Bảo trì</span>
+        </div>
       </div>
 
-      <div className="gantt-scroll" ref={scrollRef}>
-        <div className="gantt-grid" style={{ gridTemplateColumns: gridCols }}>
-          {/* ── Time header row ── */}
+      {/* ── Scrollable Grid ── */}
+      <div className="gantt-scroll" ref={scrollContainerRef}>
+        <div className="gantt-grid" style={{ gridTemplateColumns }}>
+          {/* Corner cell */}
           <div className="gantt-corner" />
-          {timeLabels.map(t => (
-            <div
-              key={t}
-              className="gantt-time-cell"
-              style={{
-                background: hasSearchedAvailable ? '#f8fafc' : '#fff',
-                color: hasSearchedAvailable ? '#475569' : '#94a3b8',
-                borderBottom: hasSearchedAvailable ? '2px solid #64748b' : '1px solid #e2e8f0',
-                fontWeight: hasSearchedAvailable ? '600' : '500',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {t}
+
+          {/* Time Headers */}
+          {timeLabels.map((timeSlot) => (
+            <div key={timeSlot.label} className="gantt-time-cell">
+              {timeSlot.label}
             </div>
           ))}
 
-          {/* ── Court rows ── */}
-          {MOCK_COURTS.map(court => {
-            const courtBookings = dayBookings.filter(b => b.courtID === court.courtID)
-            const courtLocks = dayLocks.filter(l => l.courtID === court.courtID)
+          {/* Court Rows */}
+          {courtList.map((court) => (
+            <div key={court.courtID} className="gantt-court-row">
+              {/* Court Label Column */}
+              <div className="gantt-court-label">
+                <div className="court-label-text">
+                  <span className="court-name">{court.courtName}</span>
+                  <span className="court-type">{court.courtType}</span>
+                </div>
+              </div>
 
-            return (
-              <div key={court.courtID} className="gantt-court-row">
-                {/* Court label (sticky left) */}
-                <div className="gantt-court-label">{court.courtName}</div>
+              {/* Court Timeline Grid Cells */}
+              {timeLabels.map((timeSlot, cellIndex) => {
+                const matchedAvailableSlot = court.availableSlots?.find((slot) => {
+                  const startMin = timeToMinutes(slot.startTime)
+                  const endMin = timeToMinutes(slot.endTime)
+                  return timeSlot.startMinutes >= startMin && timeSlot.endMinutes <= endMin
+                })
+                const isSlotAvailable = !!matchedAvailableSlot
 
-                {/* Hour cells */}
-                {timeLabels.map((t, i) => (
+                return (
                   <div
-                    key={t}
-                    className="gantt-cell"
-                    style={{
-                      background: hasSearchedAvailable ? 'rgba(100, 116, 139, 0.02)' : undefined,
+                    key={timeSlot.label}
+                    className={`gantt-cell ${isSlotAvailable ? 'gantt-cell--available' : ''}`}
+                    onClick={() => {
+                      if (matchedAvailableSlot) {
+                        const cellHoursEnd = Math.floor(timeSlot.endMinutes / 60)
+                        const cellMinutesEnd = timeSlot.endMinutes % 60
+                        const cellEndTime = `${String(cellHoursEnd).padStart(2, '0')}:${String(cellMinutesEnd).padStart(2, '0')}`
+                        onSlotClick(
+                          court.courtID,
+                          timeSlot.label,
+                          cellEndTime,
+                          matchedAvailableSlot.price,
+                        )
+                      }
                     }}
-                    onClick={() => onSlotClick(court.courtID, t)}
                   >
-                    {/* Booking & lock blocks only rendered in first cell for positioning */}
-                    {i === 0 && (
+                    {isSlotAvailable && (
+                      <span className="gantt-price-tag">
+                        {formatCompactCurrency(matchedAvailableSlot.price)}
+                      </span>
+                    )}
+
+                    {/* Block layer: absolutely positioned across the entire row width (only drawn once in first cell) */}
+                    {cellIndex === 0 && (
                       <div
                         className="gantt-block-layer"
-                        style={{ width: totalHours * hourW }}
+                        style={{ width: totalTimeSlots * slotWidthPx }}
                       >
-                        {/* Locked blocks */}
-                        {courtLocks.map((lk, li) => {
-                          const { left, width, visible } = getBlockLeftAndWidth(lk.startTime, lk.endTime)
-                          if (!visible) return null
+                        {court.locks.map((lock, lockIndex) => {
+                          const openTime = formatTimeHHMM(facilityData?.openingTime ?? '06:00')
+                          const closeTime = formatTimeHHMM(facilityData?.closingTime ?? '22:00')
+                          const isAllDay =
+                            formatTimeHHMM(lock.startTime) === openTime &&
+                            formatTimeHHMM(lock.endTime) === closeTime
+
+                          const blockPosition = calculateBlockPosition(lock.startTime, lock.endTime)
+
+                          if (!blockPosition.visible) return null
+
                           return (
-                            <Tooltip key={`lock-${li}`} title={lk.reason}>
-                              <div
-                                className="gantt-locked-block"
-                                style={{ left, width }}
-                              >
-                                <span className="lock-label">BẢO TRÌ</span>
-                                <span className="lock-time">
-                                  {lk.startTime} – {lk.endTime}
+                            <Tooltip
+                              key={`lock-${lockIndex}`}
+                              title={
+                                <span>
+                                  <LockOutlined /> {lock.reason}
+                                  {isAllDay ? ' · Cả ngày' : ` · ${formatTimeHHMM(lock.startTime)} – ${formatTimeHHMM(lock.endTime)}`}
                                 </span>
+                              }
+                            >
+                              <div
+                                className={`gantt-locked-block ${isAllDay ? 'gantt-locked-block--allday' : ''}`}
+                                style={{ left: blockPosition.left, width: blockPosition.width }}
+                              >
+                                <LockOutlined className="lock-icon" />
+                                <span className="lock-label">
+                                  {isAllDay ? 'CẢ NGÀY' : 'BẢO TRÌ'}
+                                </span>
+                                {!isAllDay && (
+                                  <span className="lock-time">
+                                    {formatTimeHHMM(lock.startTime)} – {formatTimeHHMM(lock.endTime)}
+                                  </span>
+                                )}
                               </div>
                             </Tooltip>
                           )
                         })}
 
-                        {/* Booking blocks */}
-                        {courtBookings.map(bk => {
-                          const first = bk.slots[0]
-                          const last = bk.slots[bk.slots.length - 1]
-                          if (!first || !last) return null
+                        {/* Booking Blocks */}
+                        {court.bookings.map((booking) => {
+                          const firstSlot = booking.slots[0]
+                          const lastSlot = booking.slots[booking.slots.length - 1]
+                          if (!firstSlot || !lastSlot) return null
 
-                          const { left, width, visible } = getBlockLeftAndWidth(first.startTime, last.endTime)
-                          if (!visible) return null
+                          const blockPosition = calculateBlockPosition(firstSlot.startTime, lastSlot.endTime)
+                          if (!blockPosition.visible) return null
 
-                          const cust = MOCK_CUSTOMERS.find(c => c.customerID === bk.customerID)
-                          const displayName = cust
-                            ? (bk.status === 'playing'
-                              ? cust.fullName
-                              : `${cust.fullName.split(' ').slice(-1)[0]}`)
+                          const customer = booking.customer
+                          const customerShortName = customer
+                            ? customer.customerName.split(' ').slice(-1)[0]
                             : '—'
 
                           return (
                             <Tooltip
-                              key={bk.bookingID}
-                              title={`${cust?.fullName} · ${first.startTime}–${last.endTime} · ${formatCompactCurrency(bk.totalAmount)}`}
+                              key={booking.bookingID}
+                              title={
+                                <span>
+                                  {customer?.customerName ?? 'Khách'} · {formatTimeHHMM(firstSlot.startTime)}–{formatTimeHHMM(lastSlot.endTime)} · {formatCompactCurrency(booking.totalAmount)}
+                                </span>
+                              }
                             >
                               <div
-                                className={`gantt-booking-block bk-${bk.status}`}
-                                style={{
-                                  left,
-                                  width,
+                                className={`gantt-booking-block bk-${booking.status}`}
+                                style={{ left: blockPosition.left, width: blockPosition.width }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onBookingClick(booking)
                                 }}
-                                onClick={e => { e.stopPropagation(); onBookingClick(bk) }}
                               >
                                 <span className="bk-name">
-                                  {cust?.customerType === 'VIP' ? `VIP – ${displayName}` : displayName}
+                                  {customer?.customerType === 'vip' ? `VIP – ${customerShortName}` : customerShortName}
                                 </span>
                                 <span className="bk-time">
-                                  {first.startTime} – {last.endTime}
+                                  {formatTimeHHMM(firstSlot.startTime)} – {formatTimeHHMM(lastSlot.endTime)}
                                 </span>
                               </div>
                             </Tooltip>
@@ -228,10 +305,10 @@ export function BookingTimeline({
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          ))}
         </div>
       </div>
     </div>

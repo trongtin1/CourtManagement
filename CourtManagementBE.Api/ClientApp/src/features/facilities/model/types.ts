@@ -6,6 +6,7 @@ export type Facility = {
   email: string
   openingTime: string
   closingTime: string
+  slotDurationMinutes: number
   imageURL: string
   description: string
   createDate: string
@@ -19,6 +20,7 @@ export type FacilityRequest = {
   email?: string
   openingTime?: string
   closingTime?: string
+  slotDurationMinutes?: number
   imageURL?: string
   description?: string
   isActive?: boolean

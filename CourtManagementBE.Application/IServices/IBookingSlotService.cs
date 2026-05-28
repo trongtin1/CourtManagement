@@ -7,6 +7,7 @@ public interface IBookingSlotService
 {
     Task<Result<List<BookingSlotResponse>>> GetByBooking(Guid bookingId);
     Task<Result<List<BookingSlotResponse>>> GetByCourtAndDate(int courtId, DateTime date);
+    Task<Result<List<BookingSlotResponse>>> GetByDate(DateTime date);
     Task<Result<BookingSlotResponse>> Create(BookingSlotRequest request);
     Task<Result<bool>> Delete(int id);
 }

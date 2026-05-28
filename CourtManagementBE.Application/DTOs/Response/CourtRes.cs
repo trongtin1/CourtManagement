@@ -29,3 +29,65 @@ public class CourtSlotAvailabilityResponse
     public bool IsBooked { get; set; }
     public string? LockReason { get; set; }
 }
+
+public class CourtTimelineAvailabilityResponse
+{
+    public int CourtID { get; set; }
+    public string CourtName { get; set; } = string.Empty;
+    public string CourtCode { get; set; } = string.Empty;
+    public string CourtType { get; set; } = string.Empty;
+    public List<TimelineBookingResponse> Bookings { get; set; } = new();
+    public List<TimelineLockResponse> Locks { get; set; } = new();
+    public List<TimelineAvailableSlotResponse> AvailableSlots { get; set; } = new();
+}
+
+public class TimelineAvailableSlotResponse
+{
+    public int TimeSlotID { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}
+
+public class TimelineBookingResponse
+{
+    public string BookingID { get; set; } = string.Empty;
+    public int CourtID { get; set; }
+    public int CustomerID { get; set; }
+    public string BookingDate { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string Note { get; set; } = string.Empty;
+    public TimelineCustomerResponse? Customer { get; set; }
+    public List<TimelineBookingSlotResponse> Slots { get; set; } = new();
+}
+
+public class TimelineBookingSlotResponse
+{
+    public int TimeSlotID { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}
+
+public class TimelineLockResponse
+{
+    public int CourtID { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public string Date { get; set; } = string.Empty;
+}
+
+public class TimelineCustomerResponse
+{
+    public int CustomerID { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string CustomerType { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
+
+
+

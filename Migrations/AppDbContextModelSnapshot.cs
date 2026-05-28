@@ -1274,6 +1274,9 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int>("SlotDurationMinutes")
+                        .HasColumnType("int");
+
                     b.HasKey("FacilityID");
 
                     b.ToTable("Facilities");

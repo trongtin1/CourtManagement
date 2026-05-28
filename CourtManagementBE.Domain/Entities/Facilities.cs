@@ -12,6 +12,7 @@ public class Facilities
     public string Email { get; set; } = string.Empty;
     public TimeSpan OpeningTime { get; set; } = new TimeSpan(6, 0, 0);  // default 06:00
     public TimeSpan ClosingTime { get; set; } = new TimeSpan(22, 0, 0); // default 22:00
+    public int SlotDurationMinutes { get; set; } = 60;
     public string ImageURL { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public DateTimeOffset CreateDate { get; set; } = DateTimeOffset.UtcNow;

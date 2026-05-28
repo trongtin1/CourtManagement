@@ -9,6 +9,7 @@ public class FacilityResponse
     public string Email { get; set; } = string.Empty;
     public TimeSpan OpeningTime { get; set; }
     public TimeSpan ClosingTime { get; set; }
+    public int SlotDurationMinutes { get; set; }
     public string ImageURL { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public DateTimeOffset CreateDate { get; set; }

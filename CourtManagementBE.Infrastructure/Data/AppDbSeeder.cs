@@ -82,6 +82,7 @@ public static class AppDbSeeder
             Email = "demo@court.local",
             OpeningTime = new TimeSpan(6, 0, 0),
             ClosingTime = new TimeSpan(22, 0, 0),
+            SlotDurationMinutes = 60,
             ImageURL = "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea",
             Description = "Seed facility for local development.",
             IsActive = true,

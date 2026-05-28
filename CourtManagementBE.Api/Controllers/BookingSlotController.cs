@@ -30,6 +30,13 @@ public class BookingSlotController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("date/{date}")]
+    public async Task<IActionResult> GetByDate(DateTime date)
+    {
+        var r = await _service.GetByDate(date);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] BookingSlotRequest req)
     {

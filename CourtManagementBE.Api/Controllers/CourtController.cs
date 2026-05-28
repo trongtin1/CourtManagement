@@ -73,6 +73,13 @@ public class CourtController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("facility/{facilityId}/timeline")]
+    public async Task<IActionResult> GetTimelineAvailability(int facilityId, [FromQuery] DateTime date)
+    {
+        var r = await _service.GetTimelineAvailability(facilityId, date);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
