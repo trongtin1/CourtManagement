@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar'
 import _withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -34,6 +34,10 @@ import type {
   CreateCourtLockedSlotRequest,
 } from '@/features/courts/model/types'
 import { formatTime, toTimeSpan } from '@/utils/format'
+import { storage } from '@/utils/storage'
+import { AUTH_STORAGE_KEYS } from '@/constants/auth'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { getDisabledTime } from '@/utils/format'
 
 const withDragAndDrop: typeof _withDragAndDrop =
   (_withDragAndDrop as unknown as { default: typeof _withDragAndDrop }).default ??
@@ -44,12 +48,7 @@ const DnDCalendar = withDragAndDrop(Calendar)
 const { Title, Text } = Typography
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const START_HOUR = 6
-const END_HOUR = 22
-const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60
 const INITIAL_MONDAY = dayjs().startOf('week').add(1, 'day') // Monday
-const MIN_TIME = new Date(0, 0, 0, START_HOUR, 0, 0)
-const MAX_TIME = new Date(0, 0, 0, END_HOUR, 0, 0)
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 export interface LockedSlot {
@@ -87,13 +86,6 @@ interface RbcEvent {
 const apiDayToGridDay = (dow: number) => (dow === 0 ? 6 : dow - 1)
 const gridDayToApiDay = (day: number) => (day === 6 ? 0 : day + 1)
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
-
-const timeToMinutes = (timeStr: string): number => {
-  const [h, m] = timeStr.split(':').map(Number)
-  return clamp((h - START_HOUR) * 60 + m, 0, TOTAL_MINUTES)
-}
-
 const mapApiLockedSlot = (slot: CourtLockedSlotDto): LockedSlot => ({
   id: String(slot.courtLockedSlotID),
   courtLockedSlotID: slot.courtLockedSlotID,
@@ -107,6 +99,32 @@ const mapApiLockedSlot = (slot: CourtLockedSlotDto): LockedSlot => ({
 })
 
 export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
+  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
+  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
+  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+
+  const startHour = facility?.openingTime
+    ? parseInt(facility.openingTime.split(':')[0], 10)
+    : 6
+
+  const endHour = facility?.closingTime
+    ? parseInt(facility.closingTime.split(':')[0], 10)
+    : 22
+
+  const totalMinutes = (endHour - startHour) * 60
+  const snap = facility?.slotDurationMinutes || 60
+
+  const minTime = useMemo(() => new Date(0, 0, 0, startHour, 0, 0), [startHour])
+  const maxTime = useMemo(() => new Date(0, 0, 0, endHour, 0, 0), [endHour])
+
+  const timeToMinutes = useCallback(
+    (timeStr: string): number => {
+      const [h, m] = timeStr.split(':').map(Number)
+      return Math.max(0, Math.min(totalMinutes, (h - startHour) * 60 + m))
+    },
+    [startHour, totalMinutes],
+  )
+
   const { message } = App.useApp()
   const [currentMonday, setCurrentMonday] = useState(INITIAL_MONDAY)
   const lockedSlotsQuery = useCourtLockedSlotsByCourtQuery(courtId)
@@ -204,12 +222,20 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
     if (!editingLock) return
 
     const isAllDay = !!values.isAllDay
+    const defaultStart = facility?.openingTime
+      ? facility.openingTime.substring(0, 5)
+      : '06:00'
+    const defaultEnd = facility?.closingTime
+      ? facility.closingTime.substring(0, 5)
+      : '22:00'
     const newLock: LockedSlot = {
       id: editingLock.id || `lock-${Date.now()}`,
       startTime:
-        isAllDay || !values.timeRange ? '06:00' : values.timeRange[0].format('HH:mm'),
+        isAllDay || !values.timeRange
+          ? defaultStart
+          : values.timeRange[0].format('HH:mm'),
       endTime:
-        isAllDay || !values.timeRange ? '22:00' : values.timeRange[1].format('HH:mm'),
+        isAllDay || !values.timeRange ? defaultEnd : values.timeRange[1].format('HH:mm'),
       lockReason: values.lockReason,
       isWeekly: values.applyType === 'weekly',
       isAllDay,
@@ -485,17 +511,17 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
             defaultView={Views.WEEK}
             views={[Views.WEEK]}
             date={currentMonday.toDate()}
-            min={MIN_TIME}
-            max={MAX_TIME}
-            step={30}
-            timeslots={2}
+            min={minTime}
+            max={maxTime}
+            step={snap}
+            timeslots={1}
             selectable
             resizable={false}
             components={calendarComponents}
             eventPropGetter={eventPropGetter}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
-            scrollToTime={MIN_TIME}
+            scrollToTime={minTime}
             formats={{
               dayFormat: (date: Date) => {
                 const d = dayjs(date)
@@ -585,7 +611,7 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
                     </span>
                     <span className="text-xs font-bold text-slate-750">
                       {editingLock.isAllDay
-                        ? '🚫 Đóng cửa cả ngày (06:00 – 22:00)'
+                        ? `🚫 Đóng cửa cả ngày (${facility?.openingTime ? facility.openingTime.substring(0, 5) : '06:00'} – ${facility?.closingTime ? facility.closingTime.substring(0, 5) : '22:00'})`
                         : `⏰ ${editingLock.startTime} – ${editingLock.endTime}`}
                     </span>
                   </div>
@@ -632,8 +658,20 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
                 applyType: editingLock.isWeekly ? 'weekly' : 'specific',
                 isAllDay: editingLock.isAllDay,
                 timeRange: [
-                  dayjs(editingLock.startTime || '06:00', 'HH:mm'),
-                  dayjs(editingLock.endTime || '22:00', 'HH:mm'),
+                  dayjs(
+                    editingLock.startTime ||
+                      (facility?.openingTime
+                        ? facility.openingTime.substring(0, 5)
+                        : '06:00'),
+                    'HH:mm',
+                  ),
+                  dayjs(
+                    editingLock.endTime ||
+                      (facility?.closingTime
+                        ? facility.closingTime.substring(0, 5)
+                        : '22:00'),
+                    'HH:mm',
+                  ),
                 ],
                 lockReason: editingLock.lockReason,
               }}
@@ -684,7 +722,20 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
                     onChange={(checked) => {
                       if (checked) {
                         form.setFieldsValue({
-                          timeRange: [dayjs('06:00', 'HH:mm'), dayjs('22:00', 'HH:mm')],
+                          timeRange: [
+                            dayjs(
+                              facility?.openingTime
+                                ? facility.openingTime.substring(0, 5)
+                                : '06:00',
+                              'HH:mm',
+                            ),
+                            dayjs(
+                              facility?.closingTime
+                                ? facility.closingTime.substring(0, 5)
+                                : '22:00',
+                              'HH:mm',
+                            ),
+                          ],
                         })
                       }
                     }}
@@ -715,9 +766,12 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
                     >
                       <TimePicker.RangePicker
                         format="HH:mm"
-                        step={30}
                         className="w-full rounded-xl py-2 px-4"
                         allowClear={false}
+                        disabledTime={getDisabledTime(
+                          facility?.openingTime,
+                          facility?.closingTime,
+                        )}
                       />
                     </Form.Item>
                   )

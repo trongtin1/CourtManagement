@@ -41,6 +41,7 @@ const HeaderBar: FC<HeaderBarProps> = ({
       onClick: () => {
         dispatch(logout())
         storage.remove(AUTH_STORAGE_KEYS.workingFacilityId)
+        storage.remove(AUTH_STORAGE_KEYS.workingFacility)
         navigate(ROUTES.login, { replace: true })
       },
     },

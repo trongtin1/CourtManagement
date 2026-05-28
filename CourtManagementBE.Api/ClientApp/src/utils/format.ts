@@ -34,3 +34,38 @@ export const gridDayLabel = (day: number): string =>
   dayjs()
     .day(day === 6 ? 0 : day + 1)
     .format('dddd')
+
+export const getDisabledTime = (openingTime?: string | null, closingTime?: string | null) => {
+  if (!openingTime || !closingTime) return undefined;
+
+  const [startH, startM] = openingTime.split(':').map(Number);
+  const [endH, endM] = closingTime.split(':').map(Number);
+
+  return () => {
+    return {
+      disabledHours: () => {
+        const hours = [];
+        for (let i = 0; i < 24; i++) {
+          if (i < startH || i > endH) {
+            hours.push(i);
+          }
+        }
+        return hours;
+      },
+      disabledMinutes: (selectedHour: number) => {
+        const minutes = [];
+        if (selectedHour === startH) {
+          for (let i = 0; i < 60; i++) {
+            if (i < startM) minutes.push(i);
+          }
+        } else if (selectedHour === endH) {
+          for (let i = 0; i < 60; i++) {
+            if (i > endM) minutes.push(i);
+          }
+        }
+        return minutes;
+      },
+      disabledSeconds: () => [],
+    };
+  };
+}

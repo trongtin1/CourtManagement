@@ -29,10 +29,10 @@ import { useCourtQuery } from '@/features/courts/api/useCourtQueries'
 import { useCourtStatusesQuery } from '@/features/courts/api/useCourtStatusQueries'
 import { useCourtTypesQuery } from '@/features/courts/api/useCourtTypeQueries'
 
-import { CourtFeaturesSection } from './components/CourtFeaturesSection'
-import { CourtHoursSection } from './components/CourtHoursSection'
-import { CourtPriceSection } from './components/CourtPriceSection'
-import { CourtAssetsSection } from './components/CourtAssetsSection'
+import { CourtFeaturesSection } from './sections/CourtFeaturesSection'
+import { CourtHoursSection } from './sections/CourtHoursSection'
+import { CourtPriceSection } from './sections/CourtPriceSection'
+import { CourtAssetsSection } from './sections/CourtAssetsSection'
 
 const { Title, Text } = Typography
 
@@ -136,9 +136,7 @@ export default function CourtSettingsPage() {
                     )}
                     {s.key === 'features' && <CourtFeaturesSection courtId={courtId} />}
                     {s.key === 'assets' && <CourtAssetsSection courtId={courtId} />}
-                    {s.key === 'hours' && (
-                      <CourtHoursSection courtId={courtId} />
-                    )}
+                    {s.key === 'hours' && <CourtHoursSection courtId={courtId} />}
                     {s.key === 'pricing' && <CourtPriceSection courtId={courtId} />}
                   </div>
                 ),

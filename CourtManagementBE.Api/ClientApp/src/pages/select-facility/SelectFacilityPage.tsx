@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Button, Empty, Skeleton, Space, Typography } from 'antd'
 import {
-  AppstoreOutlined,
   PlusOutlined,
   ReloadOutlined,
   ShopOutlined,
@@ -43,6 +42,14 @@ export function SelectFacilityPage() {
 
   const openWorkspace = (facilityId: string) => {
     storage.set(AUTH_STORAGE_KEYS.workingFacilityId, facilityId)
+    const facilityObj = facilitiesQuery.data?.items.find(
+      (f) => String(f.facilityID) === facilityId,
+    )
+    if (facilityObj) {
+      storage.set(AUTH_STORAGE_KEYS.workingFacility, facilityObj)
+    } else {
+      storage.remove(AUTH_STORAGE_KEYS.workingFacility)
+    }
     queryClient.invalidateQueries()
     navigate(ROUTES.dashboard, { replace: true })
   }
@@ -132,20 +139,6 @@ export function SelectFacilityPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 md:grid-cols-4 lg:grid-cols-5">
-                <button
-                  className="group flex w-36 flex-col items-center gap-3 border-0 bg-transparent p-0 text-center outline-none md:w-44"
-                  onClick={() => openWorkspace('all')}
-                  type="button"
-                >
-                  <span className="grid aspect-square w-full place-items-center rounded-md border-2 border-transparent bg-slate-700 text-4xl text-white shadow-[0_18px_60px_rgba(0,0,0,0.35)] transition group-hover:border-white group-hover:bg-emerald-600 md:text-5xl">
-                    <AppstoreOutlined />
-                  </span>
-                  <span className="line-clamp-2 min-h-11 text-base font-medium text-slate-300 transition group-hover:text-white">
-                    Tất cả cơ sở
-                  </span>
-                  <span className="text-xs text-slate-500">Super Admin</span>
-                </button>
-
                 {(facilitiesQuery.data?.items ?? []).map(renderFacilityProfile)}
               </div>
             )}

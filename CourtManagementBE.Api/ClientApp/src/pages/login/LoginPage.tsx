@@ -35,6 +35,7 @@ export function LoginPage() {
 
     if (isSuperAdmin) {
       storage.remove(AUTH_STORAGE_KEYS.workingFacilityId)
+      storage.remove(AUTH_STORAGE_KEYS.workingFacility)
       message.success('Signed in successfully')
       navigate(ROUTES.selectFacility, { replace: true })
       return

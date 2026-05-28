@@ -6,6 +6,10 @@ import HeaderBar from '@/layouts/components/HeaderBar'
 import { pageMeta } from '@/layouts/components/AppMenu'
 import React from 'react'
 
+import { storage } from '@/utils/storage'
+import { AUTH_STORAGE_KEYS } from '@/constants/auth'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+
 const { Content } = Layout
 
 export const MainLayout: React.FC = () => {
@@ -14,6 +18,16 @@ export const MainLayout: React.FC = () => {
   const location = useLocation()
   const currentPath = location.pathname.split('/')[1] || 'dashboard'
   const currentPage = pageMeta[currentPath] ?? pageMeta.dashboard
+
+  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
+  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
+  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+
+  useEffect(() => {
+    if (facility) {
+      storage.set(AUTH_STORAGE_KEYS.workingFacility, facility)
+    }
+  }, [facility])
 
   useEffect(() => {
     const handleResize = () => {

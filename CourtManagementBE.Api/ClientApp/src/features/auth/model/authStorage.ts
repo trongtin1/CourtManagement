@@ -21,6 +21,7 @@ export const authStorage = {
     storage.remove(AUTH_STORAGE_KEYS.token)
     storage.remove(AUTH_STORAGE_KEYS.user)
     storage.remove(AUTH_STORAGE_KEYS.workingFacilityId)
+    storage.remove(AUTH_STORAGE_KEYS.workingFacility)
   },
 }
 

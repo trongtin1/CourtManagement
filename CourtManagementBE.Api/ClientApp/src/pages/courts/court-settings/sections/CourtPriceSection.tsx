@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar'
 import _withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
@@ -18,6 +18,7 @@ import {
   Typography,
   Popover,
   Tag,
+  TimePicker,
 } from 'antd'
 import {
   CalendarOutlined,
@@ -36,6 +37,9 @@ import {
 } from '@/features/courts/api/useCourtPriceQueries'
 import { usePriceRuleTypesQuery } from '@/features/courts/api/usePriceRuleTypeQueries'
 import { useCourtDefaultPriceRulesQuery } from '@/features/courts/api/useCourtDefaultPriceRuleQueries'
+import { storage } from '@/utils/storage'
+import { AUTH_STORAGE_KEYS } from '@/constants/auth'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
 import type {
   CourtPrice,
   PriceRuleType,
@@ -48,6 +52,7 @@ import {
   getMonday,
   gridDayLabel,
   toTimeSpan,
+  getDisabledTime,
 } from '@/utils/format'
 
 const withDragAndDrop: typeof _withDragAndDrop =
@@ -57,14 +62,8 @@ const localizer = dayjsLocalizer(dayjs)
 const DnDCalendar = withDragAndDrop(Calendar)
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const START_HOUR = 6
-const END_HOUR = 22
-const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60
 const DEFAULT_PRICE = 150000
 const INITIAL_MONDAY = getMonday()
-const MIN_TIME = new Date(0, 0, 0, START_HOUR, 0, 0)
-const MAX_TIME = new Date(0, 0, 0, END_HOUR, 0, 0)
-const SNAP = 60
 const timeSlots = 1
 
 export interface PriceBlock {
@@ -101,103 +100,11 @@ const getMondayOfDate = (date: dayjs.Dayjs): dayjs.Dayjs => {
   return date.add(diff, 'day').startOf('day')
 }
 
-const snapMinutes = (min: number) => Math.round(min / SNAP) * SNAP
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 const generateId = () => `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 const formatApiTime = (value?: string): string => formatTime(value) || '00:00'
 const apiDayToGridDay = (dow: number) => (dow === 0 ? 6 : dow - 1)
 const gridDayToApiDay = (day: number) => (day === 6 ? 0 : day + 1)
-
-const timeToGridMinutes = (value: string): number => {
-  const [h, m] = formatApiTime(value).split(':').map(Number)
-  return clamp((h - START_HOUR) * 60 + m, 0, TOTAL_MINUTES)
-}
-
-const gridMinutesToApiTime = (min: number) =>
-  toTimeSpan(formatMinutesAsTime(START_HOUR * 60 + min))
-
-const blockToEvent = (block: PriceBlock, mondayRef: dayjs.Dayjs): RbcEvent => {
-  const date = mondayRef.add(block.day, 'day')
-  const start = date.add(START_HOUR * 60 + block.start, 'minute').toDate()
-  const end = date.add(START_HOUR * 60 + block.end, 'minute').toDate()
-  return { id: block.id, title: formatCurrency(block.price), start, end, resource: block }
-}
-
-const eventToGridInfo = (start: Date, end: Date) => {
-  const s = dayjs(start)
-  const e = dayjs(end)
-  const dow = s.day()
-  return {
-    day: dow === 0 ? 6 : dow - 1,
-    startMin: clamp(
-      snapMinutes(s.hour() * 60 + s.minute() - START_HOUR * 60),
-      0,
-      TOTAL_MINUTES - SNAP,
-    ),
-    endMin: clamp(
-      snapMinutes(e.hour() * 60 + e.minute() - START_HOUR * 60),
-      SNAP,
-      TOTAL_MINUTES,
-    ),
-  }
-}
-
-const courtPriceToBlock = (
-  price: CourtPrice,
-  ruleById: Map<number, PriceRuleType>,
-): PriceBlock => {
-  const dow =
-    price.dayOfWeek ?? (price.specificDate ? dayjs(price.specificDate).day() : 1)
-  const id = price.courtPriceRuleID
-    ? String(price.courtPriceRuleID)
-    : price.isLocked
-      ? `locked-${price.specificDate || price.dayOfWeek}-${price.startTime}-${price.endTime}`
-      : `mapping-${price.priceRuleTypeID}-${price.specificDate || price.dayOfWeek}-${price.startTime}-${price.endTime}`
-
-  return {
-    id,
-    courtPriceRuleID: price.courtPriceRuleID,
-    priceRuleTypeID: price.priceRuleTypeID ?? null,
-    day: apiDayToGridDay(dow),
-    start: timeToGridMinutes(price.startTime),
-    end: timeToGridMinutes(price.endTime),
-    price: price.price,
-    label: price.priceRuleTypeID ? (ruleById.get(price.priceRuleTypeID)?.name ?? '') : '',
-    specificDate: price.specificDate ?? null,
-    isMapping: price.isMapping ?? false,
-    isLocked: price.isLocked ?? false,
-    lockReason: price.lockReason ?? null,
-  }
-}
-
-const defaultPriceRuleToBlock = (
-  rule: CourtDefaultPriceRule,
-  ruleById: Map<number, PriceRuleType>,
-): PriceBlock => {
-  const dow = rule.dayOfWeek ?? (rule.specificDate ? dayjs(rule.specificDate).day() : 1)
-  return {
-    id: generateId(),
-    priceRuleTypeID: rule.priceRuleTypeID ?? null,
-    day: apiDayToGridDay(dow),
-    start: timeToGridMinutes(rule.startTime),
-    end: timeToGridMinutes(rule.endTime),
-    price: rule.price,
-    label: rule.priceRuleTypeID ? (ruleById.get(rule.priceRuleTypeID)?.name ?? '') : '',
-    specificDate: rule.specificDate ?? null,
-    isMapping: false,
-  }
-}
-
-const buildPayload = (courtId: number, block: PriceBlock) => ({
-  courtID: courtId,
-  priceRuleTypeID: block.priceRuleTypeID ?? null,
-  dayOfWeek: block.specificDate ? null : gridDayToApiDay(block.day),
-  specificDate: block.specificDate ?? null,
-  startTime: gridMinutesToApiTime(block.start),
-  endTime: gridMinutesToApiTime(block.end),
-  price: block.price,
-  isActive: true,
-})
 
 const hasCollision = (blocks: PriceBlock[], candidate: PriceBlock, excludeId?: string) =>
   blocks.some(
@@ -219,8 +126,14 @@ const FORMATS = {
 }
 
 // ── Custom Event ──────────────────────────────────────────────────────────────
-function PriceEventTooltipContent({ block }: { block: PriceBlock }) {
-  const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
+function PriceEventTooltipContent({
+  block,
+  startHour,
+}: {
+  block: PriceBlock
+  startHour: number
+}) {
+  const timeStr = `${formatMinutesAsTime(startHour * 60 + block.start)} – ${formatMinutesAsTime(startHour * 60 + block.end)}`
   const durationMin = block.end - block.start
 
   return (
@@ -313,15 +226,17 @@ function PriceEventTooltipContent({ block }: { block: PriceBlock }) {
 function PriceEvent({
   event,
   onDelete,
+  startHour,
 }: {
   event: RbcEvent
   onDelete: (id: string) => void
+  startHour: number
 }) {
   const block = event.resource
   const duration = block.end - block.start
   const isShort = duration <= 30
 
-  const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
+  const timeStr = `${formatMinutesAsTime(startHour * 60 + block.start)} – ${formatMinutesAsTime(startHour * 60 + block.end)}`
   const displayPrice = isShort ? `${block.price / 1000}k` : formatCurrency(block.price)
 
   const content = (
@@ -340,7 +255,7 @@ function PriceEvent({
             <span className="text-[10.5px] font-extrabold">{displayPrice}</span>
           </div>
           <span className="opacity-60 text-[8px] font-medium hidden sm:inline shrink-0">
-            {formatMinutesAsTime(START_HOUR * 60 + block.start)}
+            {formatMinutesAsTime(startHour * 60 + block.start)}
           </span>
         </div>
       ) : (
@@ -407,7 +322,7 @@ function PriceEvent({
 
   return (
     <Popover
-      content={<PriceEventTooltipContent block={block} />}
+      content={<PriceEventTooltipContent block={block} startHour={startHour} />}
       trigger="hover"
       placement="right"
       mouseEnterDelay={0.15}
@@ -424,6 +339,8 @@ function EditModal({
   priceRuleTypes,
   open,
   currentMonday,
+  facility,
+  startHour,
   onSave,
   onCancel,
 }: {
@@ -431,17 +348,24 @@ function EditModal({
   priceRuleTypes: PriceRuleType[]
   open: boolean
   currentMonday: dayjs.Dayjs
+  facility?: { openingTime: string; closingTime: string }
+  startHour: number
   onSave: (data: {
     price: number
     priceRuleTypeID: number | null
     specificDate: string | null
+    start?: number
+    end?: number
   }) => void
   onCancel: () => void
 }) {
+  const { message } = App.useApp()
   const [prevBlockId, setPrevBlockId] = useState<string | null>(null)
   const [price, setPrice] = useState(block?.price ?? DEFAULT_PRICE)
   const [typeId, setTypeId] = useState<number | null>(block?.priceRuleTypeID ?? null)
   const [applyType, setApplyType] = useState<'weekly' | 'specific'>('weekly')
+  const [startTime, setStartTime] = useState<dayjs.Dayjs | null>(null)
+  const [endTime, setEndTime] = useState<dayjs.Dayjs | null>(null)
 
   const currentId = block?.id ?? null
   if (currentId !== prevBlockId) {
@@ -450,12 +374,20 @@ function EditModal({
       setPrice(block.price)
       setTypeId(block.priceRuleTypeID ?? null)
       setApplyType(block.specificDate ? 'specific' : 'weekly')
+      setStartTime(dayjs(formatMinutesAsTime(startHour * 60 + block.start), 'HH:mm'))
+      setEndTime(dayjs(formatMinutesAsTime(startHour * 60 + block.end), 'HH:mm'))
     }
   }
 
   if (!block) return null
 
-  const timeStr = `${formatMinutesAsTime(START_HOUR * 60 + block.start)} – ${formatMinutesAsTime(START_HOUR * 60 + block.end)}`
+  // Calculate start/end offset in minutes from startHour
+  const startMin = startTime
+    ? (startTime.hour() - startHour) * 60 + startTime.minute()
+    : block.start
+  const endMin = endTime
+    ? (endTime.hour() - startHour) * 60 + endTime.minute()
+    : block.end
 
   return (
     <Modal
@@ -469,7 +401,9 @@ function EditModal({
           <div className="text-xs text-slate-400 font-normal mb-0.5">
             {gridDayLabel(block.day)}
           </div>
-          <div className="text-base font-semibold text-slate-700">{timeStr}</div>
+          <div className="text-base font-semibold text-slate-700">
+            Chỉnh sửa khung giá
+          </div>
         </div>
       }
     >
@@ -491,6 +425,39 @@ function EditModal({
               Chỉ ngày này ({currentMonday.add(block.day, 'day').format('DD/MM')})
             </Radio.Button>
           </Radio.Group>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="mb-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+              Từ giờ
+            </div>
+            <TimePicker
+              format="HH:mm"
+              className="w-full"
+              value={startTime}
+              onChange={(v) => {
+                if (v) setStartTime(v)
+              }}
+              allowClear={false}
+              disabledTime={getDisabledTime(facility?.openingTime, facility?.closingTime)}
+            />
+          </div>
+          <div>
+            <div className="mb-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+              Đến giờ
+            </div>
+            <TimePicker
+              format="HH:mm"
+              className="w-full"
+              value={endTime}
+              onChange={(v) => {
+                if (v) setEndTime(v)
+              }}
+              allowClear={false}
+              disabledTime={getDisabledTime(facility?.openingTime, facility?.closingTime)}
+            />
+          </div>
         </div>
 
         <div>
@@ -533,7 +500,28 @@ function EditModal({
           <Button
             type="primary"
             className="flex-1"
-            onClick={() =>
+            onClick={() => {
+              if (endMin <= startMin) {
+                message.error('Giờ kết thúc phải sau giờ bắt đầu')
+                return
+              }
+              if (facility) {
+                const openStr = facility.openingTime.substring(0, 5)
+                const closeStr = facility.closingTime.substring(0, 5)
+                const startStr = startTime?.format('HH:mm') ?? ''
+                const endStr = endTime?.format('HH:mm') ?? ''
+                if (
+                  startStr < openStr ||
+                  startStr > closeStr ||
+                  endStr < openStr ||
+                  endStr > closeStr
+                ) {
+                  message.error(
+                    `Giờ hoạt động của cơ sở là từ ${openStr} đến ${closeStr}`,
+                  )
+                  return
+                }
+              }
               onSave({
                 price,
                 priceRuleTypeID: typeId,
@@ -541,8 +529,10 @@ function EditModal({
                   applyType === 'specific'
                     ? currentMonday.add(block.day, 'day').format('YYYY-MM-DD')
                     : null,
+                start: startMin,
+                end: endMin,
               })
-            }
+            }}
           >
             Lưu
           </Button>
@@ -556,6 +546,124 @@ function EditModal({
 export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps) {
   const { message } = App.useApp()
   const [currentMonday, setCurrentMonday] = useState(INITIAL_MONDAY)
+
+  // Query active facility
+  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
+  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
+  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+
+  // Derive startHour, endHour, totalMinutes dynamically
+  const openingHourStr = facility?.openingTime ? facility.openingTime.split(':')[0] : '06'
+  const closingHourStr = facility?.closingTime ? facility.closingTime.split(':')[0] : '22'
+  const startHour = parseInt(openingHourStr, 10)
+  const endHour = parseInt(closingHourStr, 10)
+  const totalMinutes = (endHour - startHour) * 60
+
+  const minTime = useMemo(() => new Date(0, 0, 0, startHour, 0, 0), [startHour])
+  const maxTime = useMemo(() => new Date(0, 0, 0, endHour, 0, 0), [endHour])
+
+  const snap = facility?.slotDurationMinutes || 60
+  const snapMinutes = (min: number) => Math.round(min / snap) * snap
+
+  const timeToGridMinutes = (value: string): number => {
+    const [h, m] = formatApiTime(value).split(':').map(Number)
+    return clamp((h - startHour) * 60 + m, 0, totalMinutes)
+  }
+
+  const gridMinutesToApiTime = (min: number) =>
+    toTimeSpan(formatMinutesAsTime(startHour * 60 + min))
+
+  const blockToEvent = (block: PriceBlock, mondayRef: dayjs.Dayjs): RbcEvent => {
+    const date = mondayRef.add(block.day, 'day')
+    const start = date.add(startHour * 60 + block.start, 'minute').toDate()
+    const end = date.add(startHour * 60 + block.end, 'minute').toDate()
+    return {
+      id: block.id,
+      title: formatCurrency(block.price),
+      start,
+      end,
+      resource: block,
+    }
+  }
+
+  const eventToGridInfo = (start: Date, end: Date) => {
+    const s = dayjs(start)
+    const e = dayjs(end)
+    const dow = s.day()
+    return {
+      day: dow === 0 ? 6 : dow - 1,
+      startMin: clamp(
+        snapMinutes(s.hour() * 60 + s.minute() - startHour * 60),
+        0,
+        totalMinutes - snap,
+      ),
+      endMin: clamp(
+        snapMinutes(e.hour() * 60 + e.minute() - startHour * 60),
+        snap,
+        totalMinutes,
+      ),
+    }
+  }
+
+  const courtPriceToBlock = (
+    price: CourtPrice,
+    ruleById: Map<number, PriceRuleType>,
+  ): PriceBlock => {
+    const dow =
+      price.dayOfWeek ?? (price.specificDate ? dayjs(price.specificDate).day() : 1)
+    const id = price.courtPriceRuleID
+      ? String(price.courtPriceRuleID)
+      : price.isLocked
+        ? `locked-${price.specificDate || price.dayOfWeek}-${price.startTime}-${price.endTime}`
+        : `mapping-${price.priceRuleTypeID}-${price.specificDate || price.dayOfWeek}-${price.startTime}-${price.endTime}`
+
+    return {
+      id,
+      courtPriceRuleID: price.courtPriceRuleID,
+      priceRuleTypeID: price.priceRuleTypeID ?? null,
+      day: apiDayToGridDay(dow),
+      start: timeToGridMinutes(price.startTime),
+      end: timeToGridMinutes(price.endTime),
+      price: price.price,
+      label: price.priceRuleTypeID
+        ? (ruleById.get(price.priceRuleTypeID)?.name ?? '')
+        : '',
+      specificDate: price.specificDate ?? null,
+      isMapping: price.isMapping ?? false,
+      isLocked: price.isLocked ?? false,
+      lockReason: price.lockReason ?? null,
+    }
+  }
+
+  const defaultPriceRuleToBlock = (
+    rule: CourtDefaultPriceRule,
+    ruleById: Map<number, PriceRuleType>,
+  ): PriceBlock => {
+    const dow = rule.dayOfWeek ?? (rule.specificDate ? dayjs(rule.specificDate).day() : 1)
+    return {
+      id: generateId(),
+      priceRuleTypeID: rule.priceRuleTypeID ?? null,
+      day: apiDayToGridDay(dow),
+      start: timeToGridMinutes(rule.startTime),
+      end: timeToGridMinutes(rule.endTime),
+      price: rule.price,
+      label: rule.priceRuleTypeID ? (ruleById.get(rule.priceRuleTypeID)?.name ?? '') : '',
+      specificDate: rule.specificDate ?? null,
+      isMapping: false,
+    }
+  }
+
+  const buildPayload = (courtId: number, block: PriceBlock) => ({
+    courtID: courtId,
+    priceRuleTypeID: block.priceRuleTypeID ?? null,
+    dayOfWeek: block.specificDate ? null : gridDayToApiDay(block.day),
+    specificDate: block.specificDate ?? null,
+    startTime: gridMinutesToApiTime(block.start),
+    endTime: gridMinutesToApiTime(block.end),
+    price: block.price,
+    isActive: true,
+  })
+
   const [saving, setSaving] = useState(false)
   const [draftBlocks, setDraftBlocks] = useState<PriceBlock[] | null>(null)
   const [deletedIds, setDeletedIds] = useState<number[]>([])
@@ -582,7 +690,9 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const blocks = draftBlocks ?? serverBlocks
   const events = blocks.map((b) => blockToEvent(b, currentMonday))
 
-  const newBlocks = blocks.filter((b) => !b.courtPriceRuleID && !b.isMapping && !b.isLocked)
+  const newBlocks = blocks.filter(
+    (b) => !b.courtPriceRuleID && !b.isMapping && !b.isLocked,
+  )
   const modifiedBlocks = blocks.filter((b) => {
     if (!b.courtPriceRuleID) return false
     const original = serverBlocks.find((s) => s.courtPriceRuleID === b.courtPriceRuleID)
@@ -743,14 +853,20 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
     setModalOpen(true)
   }
 
-  const handleEventDrop = ({ event, start, end }: EventInteractionArgs<object>) => {
-    const e = event as RbcEvent
+  const updateBlockTime = (e: RbcEvent, start: Date, end: Date, isResize: boolean) => {
     if (e.resource.isLocked) {
-      message.error('Không thể di chuyển khung giờ đang bị khóa')
+      message.error(
+        `Không thể ${isResize ? 'thay đổi kích thước' : 'di chuyển'} khung giờ đang bị khóa`,
+      )
       return
     }
-    const { day, startMin, endMin } = eventToGridInfo(start as Date, end as Date)
-    let updated: PriceBlock = { ...e.resource, day, start: startMin, end: endMin }
+    const { day, startMin, endMin } = eventToGridInfo(start, end)
+    let updated: PriceBlock = {
+      ...e.resource,
+      day: isResize ? e.resource.day : day,
+      start: startMin,
+      end: endMin,
+    }
     if (e.resource.isMapping) {
       updated = {
         ...updated,
@@ -760,36 +876,14 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
       }
     }
     if (hasCollision(blocks, updated, e.resource.id)) return
-    if (e.resource.isMapping) {
-      stage(blocks.map((b) => (b.id === e.resource.id ? updated : b)))
-    } else {
-      stage(blocks.map((b) => (b.id === updated.id ? updated : b)))
-    }
+    stage(blocks.map((b) => (b.id === e.resource.id ? updated : b)))
   }
 
-  const handleEventResize = ({ event, start, end }: EventInteractionArgs<object>) => {
-    const e = event as RbcEvent
-    if (e.resource.isLocked) {
-      message.error('Không thể thay đổi kích thước khung giờ đang bị khóa')
-      return
-    }
-    const { startMin, endMin } = eventToGridInfo(start as Date, end as Date)
-    let updated: PriceBlock = { ...e.resource, start: startMin, end: endMin }
-    if (e.resource.isMapping) {
-      updated = {
-        ...updated,
-        id: generateId(),
-        courtPriceRuleID: undefined,
-        isMapping: false,
-      }
-    }
-    if (hasCollision(blocks, updated, e.resource.id)) return
-    if (e.resource.isMapping) {
-      stage(blocks.map((b) => (b.id === e.resource.id ? updated : b)))
-    } else {
-      stage(blocks.map((b) => (b.id === updated.id ? updated : b)))
-    }
-  }
+  const handleEventDrop = ({ event, start, end }: EventInteractionArgs<object>) =>
+    updateBlockTime(event as RbcEvent, start as Date, end as Date, false)
+
+  const handleEventResize = ({ event, start, end }: EventInteractionArgs<object>) =>
+    updateBlockTime(event as RbcEvent, start as Date, end as Date, true)
 
   const handleDelete = (id: string) => {
     const block = blocks.find((b) => b.id === id)
@@ -808,36 +902,36 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
     price,
     priceRuleTypeID,
     specificDate,
+    start,
+    end,
   }: {
     price: number
     priceRuleTypeID: number | null
     specificDate: string | null
+    start?: number
+    end?: number
   }) => {
     if (!editingBlock) return
     const label = priceRuleTypeID ? (ruleById.get(priceRuleTypeID)?.name ?? '') : ''
+    const newStart = start !== undefined ? start : editingBlock.start
+    const newEnd = end !== undefined ? end : editingBlock.end
 
-    if (editingBlock.isMapping) {
-      const newBlock: PriceBlock = {
-        id: generateId(),
-        day: editingBlock.day,
-        start: editingBlock.start,
-        end: editingBlock.end,
-        price,
-        priceRuleTypeID,
-        label,
-        specificDate,
-        isMapping: false,
-      }
-      stage(blocks.map((b) => (b.id === editingBlock.id ? newBlock : b)))
-    } else {
-      stage(
-        blocks.map((b) =>
-          b.id === editingBlock.id
-            ? { ...b, price, priceRuleTypeID, label, specificDate }
-            : b,
-        ),
-      )
+    const updated: PriceBlock = {
+      ...editingBlock,
+      price,
+      priceRuleTypeID,
+      label,
+      specificDate,
+      start: newStart,
+      end: newEnd,
+      ...(editingBlock.isMapping
+        ? { id: generateId(), courtPriceRuleID: undefined, isMapping: false }
+        : {}),
     }
+
+    if (hasCollision(blocks, updated, editingBlock.id)) return
+
+    stage(blocks.map((b) => (b.id === editingBlock.id ? updated : b)))
     setModalOpen(false)
     setEditingBlock(null)
   }
@@ -893,7 +987,11 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
 
   const calendarComponents = {
     event: (props: { event: object }) => (
-      <PriceEvent event={props.event as RbcEvent} onDelete={handleDelete} />
+      <PriceEvent
+        event={props.event as RbcEvent}
+        onDelete={handleDelete}
+        startHour={startHour}
+      />
     ),
     toolbar: () => null as never,
   }
@@ -1031,9 +1129,9 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           defaultView={Views.WEEK}
           views={[Views.WEEK]}
           date={currentMonday.toDate()}
-          min={MIN_TIME}
-          max={MAX_TIME}
-          step={SNAP}
+          min={minTime}
+          max={maxTime}
+          step={snap}
           timeslots={timeSlots}
           selectable
           resizable
@@ -1043,7 +1141,7 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
           onSelectEvent={handleSelectEvent}
           onEventDrop={handleEventDrop}
           onEventResize={handleEventResize}
-          scrollToTime={MIN_TIME}
+          scrollToTime={minTime}
           formats={FORMATS}
           className="h-240"
         />
@@ -1055,6 +1153,8 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
         priceRuleTypes={priceRuleTypes}
         open={modalOpen}
         currentMonday={currentMonday}
+        facility={facility}
+        startHour={startHour}
         onSave={handleEditSave}
         onCancel={handleModalCancel}
       />

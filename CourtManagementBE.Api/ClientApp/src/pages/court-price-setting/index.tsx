@@ -13,6 +13,7 @@ import {
   Typography,
   Checkbox,
   DatePicker,
+  Tooltip,
   Radio,
   TimePicker,
 } from 'antd'
@@ -23,6 +24,7 @@ import {
   SaveOutlined,
   PlusOutlined,
   CalendarOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'
@@ -40,6 +42,10 @@ import type {
   UpdateCourtDefaultPriceRuleRequest,
 } from '@/features/courts/model/types'
 import { toApiError } from '@/utils/errors'
+import { storage } from '@/utils/storage'
+import { AUTH_STORAGE_KEYS } from '@/constants/auth'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { getDisabledTime } from '@/utils/format'
 import { formatCurrency, formatTime, toTimeSpan } from '@/utils/format'
 
 const days = [
@@ -59,7 +65,8 @@ type FormValues = {
   startTime: dayjs.Dayjs
   endTime: dayjs.Dayjs
   price: number
-  applyMode: 'default' | 'mapping'
+  isLoadDefault: boolean
+  isMapping: boolean
   isActive: boolean
 }
 
@@ -76,8 +83,8 @@ const buildPayload = (
   startTime: values.startTime ? toTimeSpan(values.startTime.format('HH:mm')) : '',
   endTime: values.endTime ? toTimeSpan(values.endTime.format('HH:mm')) : '',
   price: Number(values.price),
-  isLoadDefault: values.applyMode === 'default',
-  isMapping: values.applyMode === 'mapping',
+  isLoadDefault: !!values.isLoadDefault,
+  isMapping: !!values.isMapping,
   isActive: values.isActive,
 })
 
@@ -87,6 +94,10 @@ export default function CourtPriceSettingPage() {
   const [selectedDay, setSelectedDay] = useState(1)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isFormVisible, setIsFormVisible] = useState(false)
+  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
+  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
+  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+
   const [configType, setConfigType] = useState<'weekly' | 'specific'>('weekly')
 
   const rulesQuery = useCourtDefaultPriceRulesQuery()
@@ -149,14 +160,21 @@ export default function CourtPriceSettingPage() {
     setIsFormVisible(true)
     form.resetFields()
     setConfigType(selectedDay === -1 ? 'specific' : 'weekly')
+
+    const defaultStart = facility?.openingTime
+      ? facility.openingTime.substring(0, 5)
+      : '06:00'
+    const defaultEnd = dayjs(defaultStart, 'HH:mm').add(1, 'hour').format('HH:mm')
+
     form.setFieldsValue({
       priceRuleTypeID: null,
       dayOfWeek: selectedDay === -1 ? null : selectedDay,
       specificDate: null,
-      startTime: dayjs('06:00', 'HH:mm'),
-      endTime: dayjs('07:00', 'HH:mm'),
+      startTime: dayjs(defaultStart, 'HH:mm'),
+      endTime: dayjs(defaultEnd, 'HH:mm'),
       price: 100000,
-      applyMode: 'default',
+      isLoadDefault: true,
+      isMapping: false,
       isActive: true,
     })
   }
@@ -173,7 +191,8 @@ export default function CourtPriceSettingPage() {
       startTime: dayjs(record.startTime, 'HH:mm:ss'),
       endTime: dayjs(record.endTime, 'HH:mm:ss'),
       price: record.price,
-      applyMode: record.isMapping ? 'mapping' : 'default',
+      isLoadDefault: record.isLoadDefault,
+      isMapping: record.isMapping,
       isActive: record.isActive,
     })
   }
@@ -392,16 +411,6 @@ export default function CourtPriceSettingPage() {
                     renderPriceRuleType(value),
                 },
                 {
-                  title: 'Cách áp dụng',
-                  key: 'applyMode',
-                  render: (_: unknown, record: CourtDefaultPriceRule) =>
-                    record.isMapping ? (
-                      <Tag color="blue">Overlay</Tag>
-                    ) : (
-                      <Tag color="green">Giá nền</Tag>
-                    ),
-                },
-                {
                   title: 'Trạng thái',
                   dataIndex: 'isActive',
                   render: (value: boolean) =>
@@ -548,20 +557,33 @@ export default function CourtPriceSettingPage() {
                   />
                 </Form.Item>
 
-                <Form.Item
-                  label={<span className="font-medium text-slate-800">Cách áp dụng</span>}
-                  name="applyMode"
-                  rules={[{ required: true, message: 'Chọn cách áp dụng' }]}
-                >
-                  <Radio.Group optionType="button" buttonStyle="solid" className="w-full flex">
-                    <Radio.Button value="default" className="flex-1 text-center">
-                      Giá nền
-                    </Radio.Button>
-                    <Radio.Button value="mapping" className="flex-1 text-center">
-                      Overlay
-                    </Radio.Button>
-                  </Radio.Group>
-                </Form.Item>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 space-y-3">
+                  <div className="text-xs font-bold text-slate-700 tracking-wider">
+                    CÁCH ÁP DỤNG KHUNG GIÁ
+                  </div>
+                  <div className="flex gap-6 items-center">
+                    <Form.Item name="isLoadDefault" valuePropName="checked" noStyle>
+                      <Checkbox className="font-semibold text-slate-800 text-xs">
+                        <Tooltip title="Áp dụng làm giá chuẩn cho các khung giờ">
+                          <span>
+                            Giá mặc định (Chuẩn){' '}
+                            <QuestionCircleOutlined className="text-slate-400 text-[10px] ml-0.5" />
+                          </span>
+                        </Tooltip>
+                      </Checkbox>
+                    </Form.Item>
+                    <Form.Item name="isMapping" valuePropName="checked" noStyle>
+                      <Checkbox className="font-semibold text-slate-800 text-xs">
+                        <Tooltip title="Ghi đè lên các mức giá chuẩn (thường áp dụng cho khung giờ cao điểm, sự kiện)">
+                          <span>
+                            Giá ghi đè (Đặc biệt){' '}
+                            <QuestionCircleOutlined className="text-slate-400 text-[10px] ml-0.5" />
+                          </span>
+                        </Tooltip>
+                      </Checkbox>
+                    </Form.Item>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <Form.Item
@@ -569,13 +591,33 @@ export default function CourtPriceSettingPage() {
                       <span className="font-medium text-slate-800">Giờ bắt đầu</span>
                     }
                     name="startTime"
-                    rules={[{ required: true, message: 'Nhập giờ bắt đầu' }]}
+                    rules={[
+                      { required: true, message: 'Nhập giờ bắt đầu' },
+                      () => ({
+                        validator(_, value) {
+                          if (!value || !facility) return Promise.resolve()
+                          const timeStr = value.format('HH:mm')
+                          const openStr = facility.openingTime.substring(0, 5)
+                          const closeStr = facility.closingTime.substring(0, 5)
+                          if (timeStr < openStr || timeStr > closeStr) {
+                            return Promise.reject(
+                              new Error(`Phải từ ${openStr} đến ${closeStr}`),
+                            )
+                          }
+                          return Promise.resolve()
+                        },
+                      }),
+                    ]}
                   >
                     <TimePicker
                       format="HH:mm"
                       size="large"
                       className="w-full"
                       placeholder="Giờ bắt đầu"
+                      disabledTime={getDisabledTime(
+                        facility?.openingTime,
+                        facility?.closingTime,
+                      )}
                     />
                   </Form.Item>
                   <Form.Item
@@ -583,13 +625,37 @@ export default function CourtPriceSettingPage() {
                       <span className="font-medium text-slate-800">Giờ kết thúc</span>
                     }
                     name="endTime"
-                    rules={[{ required: true, message: 'Nhập giờ kết thúc' }]}
+                    rules={[
+                      { required: true, message: 'Nhập giờ kết thúc' },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          if (!value || !facility) return Promise.resolve()
+                          const timeStr = value.format('HH:mm')
+                          const openStr = facility.openingTime.substring(0, 5)
+                          const closeStr = facility.closingTime.substring(0, 5)
+                          if (timeStr < openStr || timeStr > closeStr) {
+                            return Promise.reject(
+                              new Error(`Phải từ ${openStr} đến ${closeStr}`),
+                            )
+                          }
+                          const startTime = getFieldValue('startTime')
+                          if (startTime && value.isBefore(startTime)) {
+                            return Promise.reject(new Error('Phải sau giờ bắt đầu'))
+                          }
+                          return Promise.resolve()
+                        },
+                      }),
+                    ]}
                   >
                     <TimePicker
                       format="HH:mm"
                       size="large"
                       className="w-full"
                       placeholder="Giờ kết thúc"
+                      disabledTime={getDisabledTime(
+                        facility?.openingTime,
+                        facility?.closingTime,
+                      )}
                     />
                   </Form.Item>
                 </div>

@@ -1,14 +1,5 @@
 import { useState, useMemo } from 'react'
-import {
-  Button,
-  Select,
-  Row,
-  Col,
-  TimePicker,
-  Switch,
-  DatePicker,
-  Spin,
-} from 'antd'
+import { Button, Select, Row, Col, TimePicker, Switch, DatePicker, Spin } from 'antd'
 import {
   PlusOutlined,
   LeftOutlined,
@@ -33,6 +24,8 @@ import {
 
 import { storage } from '@/utils/storage'
 import { AUTH_STORAGE_KEYS } from '@/constants/auth'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { getDisabledTime } from '@/utils/format'
 import './bookings.css'
 
 export function BookingsPage() {
@@ -42,8 +35,8 @@ export function BookingsPage() {
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
 
   // ─── Time & Court Filter State ──────────────────────────────────────────────
-  const [filterStartTime, setFilterStartTime] = useState('17:00')
-  const [filterEndTime, setFilterEndTime] = useState('19:00')
+  const [rawStartTime, setFilterStartTime] = useState('17:00')
+  const [rawEndTime, setFilterEndTime] = useState('19:00')
   const [filterCourtType, setFilterCourtType] = useState('All')
   const [isTimeFilterActive, setIsTimeFilterActive] = useState(false)
 
@@ -59,17 +52,40 @@ export function BookingsPage() {
   // Determine active facility from storage or first court
   const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
   const facilityId = useMemo(() => {
-    if (storedFacilityId && storedFacilityId !== 'all') {
+    if (storedFacilityId) {
       const parsed = parseInt(storedFacilityId, 10)
       if (!isNaN(parsed)) return parsed
     }
     return courtsData?.items[0]?.facilityID ?? 1
   }, [storedFacilityId, courtsData])
 
-  const { data: timelineData, isLoading: isTimelineLoading } = useCourtTimelineAvailabilityQuery(
-    facilityId,
-    selectedDate,
-  )
+  // Query active facility configuration
+  const { data: facility } = useFacilityQuery(facilityId)
+
+  // Derive filter times to stay inside selected facility operational hours
+  const filterStartTime = useMemo(() => {
+    if (!facility) return rawStartTime
+    const openStr = facility.openingTime.substring(0, 5)
+    const closeStr = facility.closingTime.substring(0, 5)
+    if (rawStartTime < openStr || rawStartTime > closeStr) {
+      return openStr
+    }
+    return rawStartTime
+  }, [facility, rawStartTime])
+
+  const filterEndTime = useMemo(() => {
+    if (!facility) return rawEndTime
+    const openStr = facility.openingTime.substring(0, 5)
+    const closeStr = facility.closingTime.substring(0, 5)
+    if (rawEndTime < openStr || rawEndTime > closeStr || rawEndTime <= filterStartTime) {
+      const newEnd = dayjs(filterStartTime, 'HH:mm').add(2, 'hour').format('HH:mm')
+      return newEnd > closeStr ? closeStr : newEnd
+    }
+    return rawEndTime
+  }, [facility, rawEndTime, filterStartTime])
+
+  const { data: timelineData, isLoading: isTimelineLoading } =
+    useCourtTimelineAvailabilityQuery(facilityId, selectedDate)
 
   const courtList = useMemo(() => timelineData ?? [], [timelineData])
 
@@ -77,7 +93,7 @@ export function BookingsPage() {
   const filteredCourtList = useMemo(() => {
     if (!isTimeFilterActive || filterCourtType === 'All') return courtList
     return courtList.filter(
-      (court) => court.courtType.toLowerCase() === filterCourtType.toLowerCase()
+      (court) => court.courtType.toLowerCase() === filterCourtType.toLowerCase(),
     )
   }, [courtList, isTimeFilterActive, filterCourtType])
 
@@ -213,6 +229,10 @@ export function BookingsPage() {
                         if (time) setFilterStartTime(time.format('HH:mm'))
                       }}
                       style={{ borderRadius: '12px', height: '40px' }}
+                      disabledTime={getDisabledTime(
+                        facility?.openingTime,
+                        facility?.closingTime,
+                      )}
                     />
                   </Col>
                   <Col xs={24} sm={8} md={7}>
@@ -230,6 +250,10 @@ export function BookingsPage() {
                         if (time) setFilterEndTime(time.format('HH:mm'))
                       }}
                       style={{ borderRadius: '12px', height: '40px' }}
+                      disabledTime={getDisabledTime(
+                        facility?.openingTime,
+                        facility?.closingTime,
+                      )}
                     />
                   </Col>
                   <Col xs={24} sm={8} md={6}>
