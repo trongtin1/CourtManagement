@@ -100,3 +100,6 @@ public class BookingGroupRepository : GenericRepository<BookingGroups>, IBooking
 { public BookingGroupRepository(AppDbContext ctx) : base(ctx) { } }
 public class RecurringConfigRepository : GenericRepository<RecurringConfigs>, IRecurringConfigRepository
 { public RecurringConfigRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class UnitConversionRepository : GenericRepository<UnitConversions>, IUnitConversionRepository
+{ public UnitConversionRepository(AppDbContext ctx) : base(ctx) { } }

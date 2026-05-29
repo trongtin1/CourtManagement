@@ -641,6 +641,8 @@ namespace CourtManagementBE.Migrations
 
                     b.HasIndex("Condition");
 
+                    b.HasIndex("UnitID");
+
                     b.HasIndex("CourtID", "AssetCode")
                         .IsUnique();
 
@@ -1623,6 +1625,11 @@ namespace CourtManagementBE.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsTrackStock")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<int>("MaxQuantity")
                         .HasColumnType("int");
 
@@ -1654,6 +1661,11 @@ namespace CourtManagementBE.Migrations
                     b.Property<int?>("ServiceTypeID")
                         .HasColumnType("int");
 
+                    b.Property<int>("StockQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
@@ -1663,11 +1675,50 @@ namespace CourtManagementBE.Migrations
 
                     b.HasKey("ServiceID");
 
+                    b.HasIndex("UnitID");
+
                     b.HasIndex("FacilityID", "ServiceCode")
                         .IsUnique()
                         .HasFilter("[FacilityID] IS NOT NULL");
 
                     b.ToTable("Services");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.UnitConversions", b =>
+                {
+                    b.Property<int>("UnitConversionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UnitConversionID"));
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("Factor")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ServiceID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SourceUnitID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TargetUnitID")
+                        .HasColumnType("int");
+
+                    b.HasKey("UnitConversionID");
+
+                    b.HasIndex("ServiceID");
+
+                    b.HasIndex("SourceUnitID");
+
+                    b.HasIndex("TargetUnitID");
+
+                    b.ToTable("UnitConversions");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Units", b =>
@@ -1918,6 +1969,16 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Service");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtAssets", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Units", "BaseUnit")
+                        .WithMany()
+                        .HasForeignKey("UnitID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BaseUnit");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtDefaultPriceRule", b =>
                 {
                     b.HasOne("CourtManagementBE.Domain.Entities.PriceRuleTypes", "PriceRuleType")
@@ -1986,6 +2047,42 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Court");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Services", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Units", "BaseUnit")
+                        .WithMany()
+                        .HasForeignKey("UnitID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BaseUnit");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.UnitConversions", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Services", "Service")
+                        .WithMany("UnitConversions")
+                        .HasForeignKey("ServiceID")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Units", "SourceUnit")
+                        .WithMany()
+                        .HasForeignKey("SourceUnitID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Units", "TargetUnit")
+                        .WithMany()
+                        .HasForeignKey("TargetUnitID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Service");
+
+                    b.Navigation("SourceUnit");
+
+                    b.Navigation("TargetUnit");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
                 {
                     b.Navigation("Bookings");
@@ -2008,6 +2105,11 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("CourtFeatureMappings");
 
                     b.Navigation("CourtLockedSlots");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Services", b =>
+                {
+                    b.Navigation("UnitConversions");
                 });
 #pragma warning restore 612, 618
         }

@@ -59,6 +59,7 @@ public class AppDbContext : DbContext
     public DbSet<CustomerTypes> CustomerTypes => Set<CustomerTypes>();
     public DbSet<ServiceTypes> ServiceTypes => Set<ServiceTypes>();
     public DbSet<Units> Units => Set<Units>();
+    public DbSet<UnitConversions> UnitConversions => Set<UnitConversions>();
     public DbSet<AssetCategories> AssetCategories => Set<AssetCategories>();
     public DbSet<AssetConditions> AssetConditions => Set<AssetConditions>();
     public DbSet<CourtFeatureCategories> CourtFeatureCategories => Set<CourtFeatureCategories>();
@@ -185,6 +186,11 @@ public class AppDbContext : DbContext
             e.HasIndex(x => new { x.CourtID, x.AssetCode }).IsUnique();
             e.HasIndex(x => x.Category);
             e.HasIndex(x => x.Condition);
+
+            e.HasOne(x => x.BaseUnit)
+                .WithMany()
+                .HasForeignKey(x => x.UnitID)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // ── Utilities ────────────────────────────────────────────────────────
@@ -321,11 +327,11 @@ public class AppDbContext : DbContext
                 .IsRequired();
             e.Property(x => x.CancellationReason).HasColumnType("nvarchar(500)");
             e.Property(x => x.Note).HasColumnType("nvarchar(500)");
-            
+
             e.HasIndex(x => x.CustomerID);
             e.HasIndex(x => x.CourtID);
             e.HasIndex(x => x.BookingDate);
-            
+
             e.HasOne(x => x.BookingGroup)
                 .WithMany(x => x.Bookings)
                 .HasForeignKey(x => x.BookingGroupID)
@@ -398,7 +404,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.EndTime).HasColumnType("time(7)");
             e.Property(x => x.StartDate).HasColumnType("date");
             e.Property(x => x.EndDate).HasColumnType("date");
-            
+
             // 1-to-1 Relationship with BookingGroups
             e.HasOne(x => x.BookingGroup)
                 .WithOne(x => x.RecurringConfig)
@@ -455,7 +461,14 @@ public class AppDbContext : DbContext
             e.Property(x => x.ServiceType).HasColumnType("varchar(50)");
             e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
+            e.Property(x => x.IsTrackStock).HasDefaultValue(false);
+            e.Property(x => x.StockQuantity).HasDefaultValue(0);
             e.HasIndex(x => new { x.FacilityID, x.ServiceCode }).IsUnique();
+
+            e.HasOne(x => x.BaseUnit)
+                .WithMany()
+                .HasForeignKey(x => x.UnitID)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // ── Combos & ComboServices ───────────────────────────────────────────
@@ -513,6 +526,28 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.TableName);
             e.HasIndex(x => x.PerformedBy);
             e.HasIndex(x => x.CreatedAt);
+        });
+
+        // ── UnitConversions ──────────────────────────────────────────────────
+        modelBuilder.Entity<UnitConversions>(e =>
+        {
+            e.HasKey(x => x.UnitConversionID);
+            e.Property(x => x.Factor).HasColumnType("decimal(18,4)").IsRequired();
+
+            e.HasOne(x => x.Service)
+                .WithMany(x => x.UnitConversions)
+                .HasForeignKey(x => x.ServiceID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(x => x.SourceUnit)
+                .WithMany()
+                .HasForeignKey(x => x.SourceUnitID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.TargetUnit)
+                .WithMany()
+                .HasForeignKey(x => x.TargetUnitID)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 

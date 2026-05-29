@@ -58,4 +58,25 @@ public class ServiceController : ControllerBase
         var r = await _service.Delete(id);
         return StatusCode((int)r.StatusCode, r);
     }
+
+    [HttpPost("{id}/deduct-stock")]
+    public async Task<IActionResult> DeductStock(int id, [FromBody] StockAdjustmentRequest req)
+    {
+        var r = await _service.DeductStock(id, req.Quantity);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPost("{id}/handout-rental")]
+    public async Task<IActionResult> HandoutRental(int id, [FromBody] StockAdjustmentRequest req)
+    {
+        var r = await _service.HandoutRental(id, req.Quantity);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPost("{id}/return-rental")]
+    public async Task<IActionResult> ReturnRental(int id, [FromBody] StockAdjustmentRequest req)
+    {
+        var r = await _service.ReturnRental(id, req.Quantity);
+        return StatusCode((int)r.StatusCode, r);
+    }
 }

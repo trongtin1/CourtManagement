@@ -12,4 +12,7 @@ public interface IServiceService
     Task<Result<ServiceResponse>> Update(int id, ServiceRequest request);
     Task<Result<bool>> Delete(int id);
     Task<Result<bool>> ToggleActive(int id);
+    Task<Result<ServiceResponse>> DeductStock(int id, int quantity);
+    Task<Result<ServiceResponse>> HandoutRental(int id, int quantity);
+    Task<Result<ServiceResponse>> ReturnRental(int id, int quantity);
 }

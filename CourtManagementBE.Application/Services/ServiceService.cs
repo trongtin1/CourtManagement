@@ -95,6 +95,61 @@ public class ServiceService : BaseService, IServiceService
         return Success(true, entity.IsActive ? "Kích hoạt thành công." : "Vô hiệu hóa thành công.");
     }
 
+    public async Task<Result<ServiceResponse>> DeductStock(int id, int quantity)
+    {
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy dịch vụ.");
+        if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác dịch vụ này.");
+        if (!entity.IsTrackStock) return BadRequest<ServiceResponse>("Dịch vụ này không cấu hình theo dõi tồn kho.");
+
+        if (entity.StockQuantity < quantity)
+        {
+            return BadRequest<ServiceResponse>($"Sản phẩm '{entity.ServiceName}' không đủ tồn kho (Hiện còn: {entity.StockQuantity}).");
+        }
+
+        entity.StockQuantity -= quantity;
+        entity.ModifiedDate = DateTimeOffset.UtcNow;
+        _unitOfWork.IServiceRepository.Update(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Success(_mapper.Map<ServiceResponse>(entity), $"Trừ kho thành công. Tồn kho mới: {entity.StockQuantity}");
+    }
+
+    public async Task<Result<ServiceResponse>> HandoutRental(int id, int quantity)
+    {
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy thiết bị cho thuê.");
+        if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác thiết bị này.");
+        if (entity.ServiceType != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
+
+        if (entity.StockQuantity < quantity)
+        {
+            return BadRequest<ServiceResponse>($"Không đủ thiết bị '{entity.ServiceName}' khả dụng trong tủ để cho thuê (Còn: {entity.StockQuantity}).");
+        }
+
+        entity.StockQuantity -= quantity;
+        entity.ModifiedDate = DateTimeOffset.UtcNow;
+        _unitOfWork.IServiceRepository.Update(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Success(_mapper.Map<ServiceResponse>(entity), $"Giao đồ cho thuê thành công. Khả dụng còn lại: {entity.StockQuantity}");
+    }
+
+    public async Task<Result<ServiceResponse>> ReturnRental(int id, int quantity)
+    {
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy thiết bị cho thuê.");
+        if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác thiết bị này.");
+        if (entity.ServiceType != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
+
+        entity.StockQuantity += quantity;
+        entity.ModifiedDate = DateTimeOffset.UtcNow;
+        _unitOfWork.IServiceRepository.Update(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Success(_mapper.Map<ServiceResponse>(entity), $"Nhận lại đồ khách trả thành công. Khả dụng hiện tại: {entity.StockQuantity}");
+    }
+
     private bool CanAccessService(Domain.Entities.Services service)
         => service.FacilityID is null || CanAccessFacility(service.FacilityID.Value);
 

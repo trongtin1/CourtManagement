@@ -13,8 +13,14 @@ public class Services
     public string ServiceType { get; set; } = string.Empty;
     public int? UnitID { get; set; }
     public string Unit { get; set; } = string.Empty;
+    public Units? BaseUnit { get; set; }
+
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }
+
+    public bool IsTrackStock { get; set; } = false;
+    public int StockQuantity { get; set; } = 0;
+
     public DateTimeOffset CreateDate { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
     public DateTimeOffset ModifiedDate { get; set; } = DateTimeOffset.UtcNow;
@@ -22,5 +28,7 @@ public class Services
     public bool IsActive { get; set; } = true;
 
     public decimal Price { get; set; }
+
+    public ICollection<UnitConversions> UnitConversions { get; set; } = new List<UnitConversions>();
 
 }

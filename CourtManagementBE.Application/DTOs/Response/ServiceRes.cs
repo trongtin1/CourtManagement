@@ -12,6 +12,8 @@ public class ServiceResponse
     public string Unit { get; set; } = string.Empty;
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }
+    public bool IsTrackStock { get; set; }
+    public int StockQuantity { get; set; }
     public DateTimeOffset CreateDate { get; set; }
     public bool IsActive { get; set; }
     public decimal Price { get; set; }

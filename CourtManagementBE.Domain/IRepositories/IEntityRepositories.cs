@@ -39,3 +39,5 @@ public interface IComboRepository : IGenericRepository<Combos> { }
 public interface IComboServiceRepository : IGenericRepository<ComboServices> { }
 public interface IBookingGroupRepository : IGenericRepository<BookingGroups> { }
 public interface IRecurringConfigRepository : IGenericRepository<RecurringConfigs> { }
+public interface IUnitConversionRepository : IGenericRepository<UnitConversions> { }
+

@@ -13,6 +13,14 @@ public class ServiceRequest
     [MaxLength(50)] public string Unit { get; set; } = string.Empty;
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }
+    public bool IsTrackStock { get; set; }
+    public int StockQuantity { get; set; }
     public bool IsActive { get; set; } = true;
     public decimal? Price { get; set; }
+}
+
+public class StockAdjustmentRequest
+{
+    [Range(1, 10000, ErrorMessage = "Số lượng điều chỉnh phải lớn hơn 0.")]
+    public int Quantity { get; set; }
 }

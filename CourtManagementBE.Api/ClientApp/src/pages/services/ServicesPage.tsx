@@ -8,6 +8,7 @@ import {
   InputNumber,
   Modal,
   Popconfirm,
+  Select,
   Space,
   Switch,
   Table,
@@ -17,6 +18,7 @@ import {
   EditOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SwapOutlined,
 } from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 import { LoadingSpin } from '@/components/common/LoadingSpin'
@@ -27,7 +29,9 @@ import {
   useDeleteServiceMutation,
   useToggleServiceMutation,
 } from '@/features/services/api/useServiceQueries'
+import { useUnitsQuery } from '@/features/units/api/useUnitQueries'
 import type { Service, CreateServiceRequest } from '@/features/services/model/types'
+import { UnitConversionDrawer } from './components/UnitConversionDrawer'
 import { toApiError } from '@/utils/errors'
 import { formatCompactCurrency } from '@/utils/format'
 
@@ -37,11 +41,19 @@ export function ServicesPage() {
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [tablePagination, setTablePagination] = useState<TablePaginationConfig>({})
+
+  // State quản lý Drawer quy đổi đơn vị
+  const [conversionOpen, setConversionOpen] = useState(false)
+  const [activeService, setActiveService] = useState<Service | null>(null)
+
   const query = useServicesQuery(
     tablePagination.current && tablePagination.pageSize
       ? { page: tablePagination.current, pageSize: tablePagination.pageSize }
       : undefined,
   )
+  const unitsQuery = useUnitsQuery({ page: 1, pageSize: 100 })
+  const unitsList = unitsQuery.data?.items ?? []
+
   const createMut = useCreateServiceMutation()
   const updateMut = useUpdateServiceMutation()
   const deleteMut = useDeleteServiceMutation()
@@ -50,7 +62,12 @@ export function ServicesPage() {
   const openCreate = () => {
     setEditingId(null)
     form.resetFields()
-    form.setFieldsValue({ isActive: true, price: undefined })
+    form.setFieldsValue({
+      isActive: true,
+      price: undefined,
+      isTrackStock: false,
+      stockQuantity: 0,
+    })
     setOpen(true)
   }
 
@@ -58,6 +75,11 @@ export function ServicesPage() {
     setEditingId(r.serviceID)
     form.setFieldsValue(r)
     setOpen(true)
+  }
+
+  const openConversion = (r: Service) => {
+    setActiveService(r)
+    setConversionOpen(true)
   }
 
   const handleSubmit = async () => {
@@ -105,6 +127,26 @@ export function ServicesPage() {
             { title: 'Loại', dataIndex: 'serviceType', width: 100 },
             { title: 'Đơn vị', dataIndex: 'unit', width: 80 },
             {
+              title: 'Kho hàng',
+              key: 'stock',
+              width: 130,
+              render: (_, r: Service) => {
+                if (!r.isTrackStock)
+                  return <span className="text-gray-400">Không quản lý</span>
+                return (
+                  <span
+                    className={
+                      r.stockQuantity <= 5
+                        ? 'text-red-500 font-bold'
+                        : 'text-green-600 font-medium'
+                    }
+                  >
+                    {r.stockQuantity} {r.unit}
+                  </span>
+                )
+              },
+            },
+            {
               title: 'Giá',
               dataIndex: 'price',
               width: 120,
@@ -124,9 +166,17 @@ export function ServicesPage() {
             },
             {
               title: '',
-              width: 100,
+              width: 130,
               render: (_: unknown, r: Service) => (
                 <Space>
+                  <Button
+                    icon={<SwapOutlined />}
+                    onClick={() => openConversion(r)}
+                    size="small"
+                    type="link"
+                    title="Quy đổi đơn vị"
+                    disabled={!r.unitID}
+                  />
                   <Button
                     icon={<EditOutlined />}
                     onClick={() => openEdit(r)}
@@ -168,27 +218,74 @@ export function ServicesPage() {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item label="Mã DV" name="serviceCode" rules={[{ required: true }]}>
+          <Form.Item
+            label="Mã DV"
+            name="serviceCode"
+            rules={[{ required: true, message: 'Nhập mã dịch vụ' }]}
+          >
             <Input />
           </Form.Item>
-          <Form.Item label="Tên DV" name="serviceName" rules={[{ required: true }]}>
+          <Form.Item
+            label="Tên DV"
+            name="serviceName"
+            rules={[{ required: true, message: 'Nhập tên dịch vụ' }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item label="Loại" name="serviceType">
             <Input />
           </Form.Item>
-          <Form.Item label="Đơn vị" name="unit">
-            <Input />
+
+          <Form.Item
+            label="Đơn vị tính cơ bản"
+            name="unitID"
+            rules={[{ required: true, message: 'Chọn đơn vị tính cơ bản!' }]}
+          >
+            <Select placeholder="Chọn đơn vị tính" loading={unitsQuery.isPending}>
+              {unitsList.map((u) => (
+                <Select.Option key={u.unitID} value={u.unitID}>
+                  {u.name} ({u.symbol})
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          <Space>
-            <Form.Item label="Min SL" name="minQuantity">
-              <InputNumber />
+
+          <Space className="w-full font-normal" size={16}>
+            <Form.Item label="Min SL" name="minQuantity" className="mb-0 flex-1">
+              <InputNumber className="w-full" min={0} />
             </Form.Item>
-            <Form.Item label="Max SL" name="maxQuantity">
-              <InputNumber />
+            <Form.Item label="Max SL" name="maxQuantity" className="mb-0 flex-1">
+              <InputNumber className="w-full" min={0} />
             </Form.Item>
           </Space>
-          <Form.Item label="Giá hiện tại" name="price">
+
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <Form.Item
+              label="Quản lý kho hàng"
+              name="isTrackStock"
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+
+            <Form.Item noStyle shouldUpdate>
+              {() => {
+                const isTrackStock = form.getFieldValue('isTrackStock')
+                if (!isTrackStock) return null
+                return (
+                  <Form.Item
+                    label="Số lượng tồn kho"
+                    name="stockQuantity"
+                    rules={[{ required: true, message: 'Nhập số lượng tồn kho' }]}
+                  >
+                    <InputNumber className="w-full" min={0} />
+                  </Form.Item>
+                )
+              }}
+            </Form.Item>
+          </div>
+
+          <Form.Item label="Giá hiện tại" name="price" className="mt-4">
             <InputNumber className="w-full" min={0} />
           </Form.Item>
           <Form.Item label="Active" name="isActive" valuePropName="checked">
@@ -196,6 +293,15 @@ export function ServicesPage() {
           </Form.Item>
         </Form>
       </Modal>
+
+      <UnitConversionDrawer
+        open={conversionOpen}
+        onClose={() => {
+          setConversionOpen(false)
+          setActiveService(null)
+        }}
+        service={activeService}
+      />
     </Space>
   )
 }

@@ -14,6 +14,7 @@ public class CourtAssets
     public int Quantity { get; set; }
     public int? UnitID { get; set; }
     public string Unit { get; set; } = string.Empty;
+    public Units? BaseUnit { get; set; }
     public int? AssetConditionID { get; set; }
     public string Condition { get; set; } = string.Empty;
     public DateTimeOffset? PurchaseDate { get; set; }

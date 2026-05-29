@@ -117,6 +117,13 @@ public class MappingProfile : Profile
         CreateMap<Units, UnitResponse>();
         CreateMap<UnitRequest, Units>();
 
+        CreateMap<UnitConversions, UnitConversionResponse>()
+            .ForMember(d => d.SourceUnitName, opt => opt.MapFrom(s => s.SourceUnit.Name))
+            .ForMember(d => d.SourceUnitSymbol, opt => opt.MapFrom(s => s.SourceUnit.Symbol))
+            .ForMember(d => d.TargetUnitName, opt => opt.MapFrom(s => s.TargetUnit.Name))
+            .ForMember(d => d.TargetUnitSymbol, opt => opt.MapFrom(s => s.TargetUnit.Symbol));
+        CreateMap<UnitConversionRequest, UnitConversions>();
+
         CreateMap<AssetCategories, AssetCategoryResponse>();
         CreateMap<AssetCategoryRequest, AssetCategories>();
 
