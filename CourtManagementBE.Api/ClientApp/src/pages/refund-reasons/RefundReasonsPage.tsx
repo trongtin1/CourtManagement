@@ -11,7 +11,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
 } from 'antd'
 import {
   DeleteOutlined,
@@ -98,13 +97,7 @@ export function RefundReasonsPage() {
   if (query.isPending) return <LoadingSpin tip="Đang tải..." />
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>Lý do hoàn tiền</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quản lý lý do hoàn tiền: hủy dịch vụ, lỗi hệ thống...
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}

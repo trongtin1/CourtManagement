@@ -11,7 +11,6 @@ import {
   Space,
   Switch,
   Table,
-  Typography,
   Select,
   Tag,
   Row,
@@ -147,16 +146,7 @@ export function CombosPage() {
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>
-            <GiftOutlined className="mr-2 text-rose-500" /> Quản lý Gói Combo
-          </Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Thiết lập gói Combo đặt sân kèm các sản phẩm/dịch vụ quà tặng đi kèm với giá
-            cố định.
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}
@@ -348,9 +338,12 @@ export function CombosPage() {
             <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
           </Form.Item>
 
-          <Typography.Title level={5} style={{ marginTop: 16, marginBottom: 12 }}>
+          <h5
+            className="text-base font-semibold"
+            style={{ marginTop: 16, marginBottom: 12 }}
+          >
             Sản phẩm & Dịch vụ đi kèm
-          </Typography.Title>
+          </h5>
 
           <Form.List name="services">
             {(fields, { add, remove }) => (

@@ -11,7 +11,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
 } from 'antd'
 import {
   DeleteOutlined,
@@ -95,13 +94,7 @@ export function UnitsPage() {
   if (query.isPending) return <LoadingSpin tip="Đang tải..." />
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>Đơn vị tính</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quản lý đơn vị tính: cái, chiếc, giờ, lần...
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}

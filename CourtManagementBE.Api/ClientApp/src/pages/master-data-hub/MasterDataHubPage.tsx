@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Card, Col, Row, Space, Typography } from 'antd'
+import { Card, Col, Row, Space } from 'antd'
 import {
   AppstoreOutlined,
   CalendarOutlined,
@@ -142,20 +142,10 @@ const masterDataGroups = [
 export function MasterDataHubPage() {
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div>
-        <Typography.Title level={2}>Cấu hình chung</Typography.Title>
-        <Typography.Paragraph type="secondary">
-          Trung tâm quản lý tất cả các danh mục cấu hình, dữ liệu nền tảng cho hệ thống
-          Court Management.
-        </Typography.Paragraph>
-      </div>
-
       <Space className="w-full" direction="vertical" size={32}>
         {masterDataGroups.map((group) => (
           <div key={group.title}>
-            <Typography.Title className="mb-4!" level={4}>
-              {group.title}
-            </Typography.Title>
+            <h4 className="mb-4! text-lg font-semibold">{group.title}</h4>
             <Row gutter={[16, 16]}>
               {group.items.map((item) => (
                 <Col key={item.path} lg={6} md={8} sm={12} xs={24}>

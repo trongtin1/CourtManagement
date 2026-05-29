@@ -12,7 +12,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
 } from 'antd'
 import {
   DeleteOutlined,
@@ -133,13 +132,7 @@ export function CourtFeaturesPage() {
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>Dac diem san</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quan ly cac nhan nhu Indoor, Outdoor, VIP, Wooden Floor va Air Conditioned.
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}

@@ -15,7 +15,6 @@ import { useServicesQuery } from '@/features/services/api/useServiceQueries'
 import { useCustomersQuery } from '@/features/customers/api/useCustomerQueries'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
 import { formatCompactCurrency } from '@/utils/format'
-import '../bookings.css'
 
 type SelectedSvc = { quantity: number; unitPrice: number }
 

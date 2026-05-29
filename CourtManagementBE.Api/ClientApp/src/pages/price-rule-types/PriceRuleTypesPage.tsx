@@ -12,7 +12,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
 } from 'antd'
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
@@ -118,13 +117,7 @@ export function PriceRuleTypesPage() {
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>Loai quy tac gia</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quan ly nhan gia dung cho cau hinh gia san: cao diem, thap diem, ngay le.
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}

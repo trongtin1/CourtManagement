@@ -10,7 +10,6 @@ import {
   Space,
   Switch,
   Table,
-  Typography,
 } from 'antd'
 import {
   DeleteOutlined,
@@ -112,13 +111,7 @@ export function TimeSlotsPage() {
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>Khung gio</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quan ly cac slot gio dat san.
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}

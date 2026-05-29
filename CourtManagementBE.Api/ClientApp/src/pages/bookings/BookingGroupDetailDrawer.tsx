@@ -81,14 +81,14 @@ export function BookingGroupDetailDrawer({
       }}
     >
       {isLoading ? (
-        <div className="group-drawer-loading">
+        <div className="flex items-center justify-center h-50">
           <Spin />
         </div>
       ) : (
         <>
           {/* Header band */}
-          <div className="group-drawer-header">
-            <div className="group-drawer-close">
+          <div className="bg-slate-50 border-b border-slate-200 p-5 pb-5 relative">
+            <div className="absolute top-3 right-3">
               <Button
                 type="text"
                 size="small"
@@ -96,40 +96,51 @@ export function BookingGroupDetailDrawer({
                 onClick={onClose}
               />
             </div>
-            <div className="group-drawer-title-block">
-              <div className="group-drawer-type">
+            <div className="flex flex-col gap-1.5 pr-9">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                 {detail.groupType === 'recurring' ? <ReloadOutlined /> : <TeamOutlined />}
                 &nbsp;{GROUP_TYPE_MAP[detail.groupType] ?? detail.groupType}
               </div>
-              <h2 className="group-drawer-name">{detail.groupName}</h2>
-              <Tag color={statusMeta?.color} className="group-drawer-status-tag">
+              <h2 className="m-0 text-lg font-bold text-slate-900 leading-tight">
+                {detail.groupName}
+              </h2>
+              <Tag
+                color={statusMeta?.color}
+                className="self-start rounded-full font-semibold text-[11px] px-2.5 py-0.5"
+              >
                 {statusMeta?.label ?? detail.status}
               </Tag>
             </div>
           </div>
 
           {/* Body */}
-          <div className="group-drawer-body">
+          <div className="p-5 overflow-y-auto">
             {/* Finance summary */}
-            <div className="group-finance-row">
-              <div className="group-finance-item">
-                <span className="group-finance-label">Tổng tiền</span>
-                <span className="group-finance-value">
+            <div className="flex items-stretch bg-white border border-slate-200 rounded-lg overflow-hidden">
+              <div className="flex-1 flex flex-col items-center gap-0.75 py-3 px-2">
+                <span className="text-[11px] font-medium text-slate-400 text-center">
+                  Tổng tiền
+                </span>
+                <span className="text-sm font-bold text-slate-800">
                   {formatCompactCurrency(detail.totalAmount)}
                 </span>
               </div>
-              <div className="group-finance-divider" />
-              <div className="group-finance-item">
-                <span className="group-finance-label">Đã thanh toán</span>
-                <span className="group-finance-value group-finance-value--paid">
+              <div className="w-px bg-slate-100" />
+              <div className="flex-1 flex flex-col items-center gap-0.75 py-3 px-2">
+                <span className="text-[11px] font-medium text-slate-400 text-center">
+                  Đã thanh toán
+                </span>
+                <span className="text-sm font-bold text-emerald-500">
                   {formatCompactCurrency(detail.paidAmount)}
                 </span>
               </div>
-              <div className="group-finance-divider" />
-              <div className="group-finance-item">
-                <span className="group-finance-label">Còn nợ</span>
+              <div className="w-px bg-slate-100" />
+              <div className="flex-1 flex flex-col items-center gap-0.75 py-3 px-2">
+                <span className="text-[11px] font-medium text-slate-400 text-center">
+                  Còn nợ
+                </span>
                 <span
-                  className={`group-finance-value ${debtAmount > 0 ? 'group-finance-value--debt' : 'group-finance-value--clear'}`}
+                  className={`text-sm font-bold ${debtAmount > 0 ? 'text-red-500' : 'text-emerald-500'}`}
                 >
                   {formatCompactCurrency(Math.max(0, debtAmount))}
                 </span>
@@ -178,51 +189,66 @@ export function BookingGroupDetailDrawer({
             {rc && (
               <>
                 <Divider style={{ margin: '16px 0' }}>
-                  <span className="drawer-section-title">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
                     <ClockCircleOutlined /> Cấu hình định kỳ
                   </span>
                 </Divider>
 
-                <div className="recurring-detail-grid">
-                  <div className="recurring-detail-item">
-                    <span className="recurring-detail-label">Mã Sân đặt</span>
-                    <span className="recurring-detail-value font-bold text-teal-650">
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 rounded-lg p-3.5 border border-slate-100">
+                  <div className="flex flex-col gap-0.75">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Mã Sân đặt
+                    </span>
+                    <span className="text-[13px] text-slate-800 font-bold text-teal-650">
                       Sân #{rc.courtID}
                     </span>
                   </div>
-                  <div className="recurring-detail-item">
-                    <span className="recurring-detail-label">Khung giờ</span>
-                    <span className="recurring-detail-value text-indigo-600 font-bold">
+                  <div className="flex flex-col gap-0.75">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Khung giờ
+                    </span>
+                    <span className="text-[13px] font-semibold text-indigo-650 text-indigo-600">
                       {rc.startTime?.substring(0, 5)} – {rc.endTime?.substring(0, 5)}
                     </span>
                   </div>
                   {parsedDays && (
-                    <div className="recurring-detail-item recurring-detail-item--full">
-                      <span className="recurring-detail-label">Các ngày trong tuần</span>
-                      <div className="recurring-days-list">
+                    <div className="flex flex-col gap-0.75 col-span-2">
+                      <span className="text-[11px] font-medium text-slate-400">
+                        Các ngày trong tuần
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 mt-0.5">
                         {rc.daysOfWeek.split(',').map((d) => (
-                          <span key={d.trim()} className="recurring-day-chip">
+                          <span
+                            key={d.trim()}
+                            className="inline-flex items-center justify-center w-8 h-6 rounded bg-sky-100 text-sky-700 text-[11px] font-bold"
+                          >
                             {DAY_MAP[d.trim()] ?? d}
                           </span>
                         ))}
                       </div>
                     </div>
                   )}
-                  <div className="recurring-detail-item">
-                    <span className="recurring-detail-label">Ngày bắt đầu</span>
-                    <span className="recurring-detail-value">
+                  <div className="flex flex-col gap-0.75">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Ngày bắt đầu
+                    </span>
+                    <span className="text-[13px] font-semibold text-slate-800">
                       {dayjs(rc.startDate).format('DD/MM/YYYY')}
                     </span>
                   </div>
-                  <div className="recurring-detail-item">
-                    <span className="recurring-detail-label">Ngày kết thúc</span>
-                    <span className="recurring-detail-value">
+                  <div className="flex flex-col gap-0.75">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Ngày kết thúc
+                    </span>
+                    <span className="text-[13px] font-semibold text-slate-800">
                       {dayjs(rc.endDate).format('DD/MM/YYYY')}
                     </span>
                   </div>
-                  <div className="recurring-detail-item recurring-detail-item--full">
-                    <span className="recurring-detail-label">Thời gian hoạt động</span>
-                    <span className="recurring-detail-value">
+                  <div className="flex flex-col gap-0.75 col-span-2">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Thời gian hoạt động
+                    </span>
+                    <span className="text-[13px] font-semibold text-slate-800">
                       Còn {Math.max(0, dayjs(rc.endDate).diff(dayjs(), 'day'))} ngày nữa
                     </span>
                   </div>
@@ -233,7 +259,10 @@ export function BookingGroupDetailDrawer({
             <Divider style={{ margin: '16px 0' }} />
 
             {/* Timeline progress */}
-            <p className="drawer-section-title" style={{ marginBottom: 12 }}>
+            <p
+              className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"
+              style={{ marginBottom: 12 }}
+            >
               <DollarOutlined /> Trạng thái tài chính
             </p>
             <Timeline
@@ -242,10 +271,10 @@ export function BookingGroupDetailDrawer({
                   color: 'green',
                   children: (
                     <div>
-                      <div className="timeline-item-label">
+                      <div className="text-xs font-medium text-slate-500 mb-0.5">
                         Đặt cọc / thanh toán trước
                       </div>
-                      <div className="timeline-item-value">
+                      <div className="text-sm font-bold text-slate-800">
                         {formatCompactCurrency(detail.paidAmount)}
                       </div>
                     </div>
@@ -255,11 +284,11 @@ export function BookingGroupDetailDrawer({
                   color: debtAmount > 0 ? 'red' : 'green',
                   children: (
                     <div>
-                      <div className="timeline-item-label">
+                      <div className="text-xs font-medium text-slate-500 mb-0.5">
                         {debtAmount > 0 ? 'Còn nợ' : 'Đã thanh toán đủ'}
                       </div>
                       <div
-                        className="timeline-item-value"
+                        className="text-sm font-bold text-slate-800"
                         style={{ color: debtAmount > 0 ? '#ef4444' : '#10b981' }}
                       >
                         {debtAmount > 0

@@ -11,7 +11,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
 } from 'antd'
 import {
   DeleteOutlined,
@@ -112,13 +111,7 @@ export function BookingStatusesPage() {
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-between">
-        <div>
-          <Typography.Title level={2}>Trạng thái đặt lịch</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quản lý trạng thái đặt lịch: pending, confirmed, cancelled...
-          </Typography.Paragraph>
-        </div>
+      <div className="flex items-center justify-end">
         <Space>
           <Button
             icon={<ReloadOutlined />}

@@ -16,7 +16,6 @@ import {
   Table,
   Tabs,
   Tooltip,
-  Typography,
 } from 'antd'
 import {
   AimOutlined,
@@ -393,15 +392,7 @@ export function AreasPage() {
 
   return (
     <Space className="w-full" direction="vertical" size={16}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Typography.Title level={2} className="mb-1!">
-            Khu vực
-          </Typography.Title>
-          <Typography.Paragraph type="secondary" className="mb-0!">
-            Quản lý khu vực và sơ đồ bố trí sân trong cơ sở
-          </Typography.Paragraph>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <Button icon={<PlusOutlined />} onClick={openCreateArea} type="primary">
           Thêm khu vực
         </Button>
@@ -437,7 +428,7 @@ export function AreasPage() {
               title: 'Tên khu vực',
               render: (_: unknown, area: Area) => (
                 <Space>
-                  <Typography.Text strong>{area.areaName}</Typography.Text>
+                  <span className="font-semibold">{area.areaName}</span>
                 </Space>
               ),
             },
@@ -532,15 +523,15 @@ export function AreasPage() {
         onClose={() => setMappingDrawerOpen(false)}
         title={
           <Space direction="vertical" size={0}>
-            <Typography.Title level={4} className="mb-0!">
+            <h4 className="mb-0! text-lg font-semibold">
               Sơ đồ khu vực: {selectedArea?.areaName ?? 'Chưa chọn khu vực'}
               {selectedArea ? ` (${selectedArea.areaCode})` : ''}
-            </Typography.Title>
-            <Typography.Text type="secondary">
+            </h4>
+            <span className="text-slate-500">
               {selectedArea
                 ? `${selectedArea.totalLength}m x ${selectedArea.totalWidth}m`
                 : 'Chọn một khu vực để quản lý sơ đồ'}
-            </Typography.Text>
+            </span>
           </Space>
         }
         extra={
@@ -587,12 +578,12 @@ export function AreasPage() {
                             style={{ background: color }}
                           />
                           <span>
-                            <Typography.Text strong>
+                            <span className="font-semibold">
                               {court?.courtName ?? `Sân #${mapping.courtID}`}
-                            </Typography.Text>
-                            <Typography.Text className="block text-xs" type="secondary">
+                            </span>
+                            <span className="block text-xs text-slate-500">
                               X {draft.positionX} · Y {draft.positionY}
-                            </Typography.Text>
+                            </span>
                           </span>
                         </Space>
                         <Popconfirm
@@ -665,18 +656,18 @@ export function AreasPage() {
               ) : designerTab === 'settings' ? (
                 <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 md:grid-cols-3">
                   <div>
-                    <Typography.Text type="secondary">Mã khu vực</Typography.Text>
-                    <Typography.Title level={5}>{selectedArea.areaCode}</Typography.Title>
+                    <span className="text-slate-500">Mã khu vực</span>
+                    <h5 className="text-base font-semibold">{selectedArea.areaCode}</h5>
                   </div>
                   <div>
-                    <Typography.Text type="secondary">Kích thước</Typography.Text>
-                    <Typography.Title level={5}>
+                    <span className="text-slate-500">Kích thước</span>
+                    <h5 className="text-base font-semibold">
                       {selectedArea.totalLength}m x {selectedArea.totalWidth}m
-                    </Typography.Title>
+                    </h5>
                   </div>
                   <div>
-                    <Typography.Text type="secondary">Số sân</Typography.Text>
-                    <Typography.Title level={5}>{mappings.length}</Typography.Title>
+                    <span className="text-slate-500">Số sân</span>
+                    <h5 className="text-base font-semibold">{mappings.length}</h5>
                   </div>
                 </div>
               ) : (
@@ -732,9 +723,9 @@ export function AreasPage() {
                         }}
                       >
                         <div className="grid h-full place-items-center rounded border border-white/70 bg-white/20">
-                          <Typography.Text strong>
+                          <span className="font-semibold">
                             {court?.courtCode ?? mapping.courtID}
-                          </Typography.Text>
+                          </span>
                         </div>
                         {selected && (
                           <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-red-500 text-xs text-white">
@@ -770,14 +761,14 @@ export function AreasPage() {
                 <Space className="w-full" direction="vertical" size={14}>
                   <Space>
                     <span className="size-3 rounded-full bg-emerald-500" />
-                    <Typography.Text strong>{selectedCourt.courtName}</Typography.Text>
+                    <span className="font-semibold">{selectedCourt.courtName}</span>
                   </Space>
                   <div>
-                    <Typography.Text type="secondary">Loại sân</Typography.Text>
+                    <span className="text-slate-500">Loại sân</span>
                     <Input readOnly value={`Loại #${selectedCourt.courtTypeID}`} />
                   </div>
                   <div>
-                    <Typography.Text type="secondary">Kích thước thực tế</Typography.Text>
+                    <span className="text-slate-500">Kích thước thực tế</span>
                     <Input
                       readOnly
                       value={`${selectedCourt.length}m x ${selectedCourt.width}m`}
