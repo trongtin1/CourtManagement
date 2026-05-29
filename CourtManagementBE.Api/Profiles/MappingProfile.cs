@@ -61,6 +61,10 @@ public class MappingProfile : Profile
         // ── Booking ──────────────────────────────────────────────────────
         CreateMap<Bookings, BookingResponse>();
         CreateMap<BookingRequest, Bookings>();
+        CreateMap<BookingGroups, BookingGroupResponse>();
+        CreateMap<BookingGroupRequest, BookingGroups>();
+        CreateMap<RecurringConfigs, RecurringConfigResponse>();
+        CreateMap<RecurringConfigRequest, RecurringConfigs>();
 
         // ── Service ──────────────────────────────────────────────────────
         CreateMap<Domain.Entities.Services, ServiceResponse>();
@@ -98,9 +102,6 @@ public class MappingProfile : Profile
         CreateMap<CourtPriceRuleHistory, CourtPriceHistoryResponse>();
 
         // ── Master Data ──────────────────────────────────────────────────
-        CreateMap<BookingStatuses, BookingStatusResponse>();
-        CreateMap<BookingStatusRequest, BookingStatuses>();
-
         CreateMap<PaymentStatuses, PaymentStatusResponse>();
         CreateMap<PaymentStatusRequest, PaymentStatuses>();
 

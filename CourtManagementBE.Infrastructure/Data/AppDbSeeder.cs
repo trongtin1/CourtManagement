@@ -1,4 +1,5 @@
 using CourtManagementBE.Domain.Entities;
+using CourtManagementBE.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourtManagementBE.Infrastructure.Data;
@@ -95,12 +96,6 @@ public static class AppDbSeeder
 
     private static async Task SeedMasterDataAsync(AppDbContext db, CancellationToken cancellationToken)
     {
-        await SeedMasterAsync(db.BookingStatuses, [
-            new BookingStatuses { Code = "pending", Name = "Pending", ColorCode = "#f59e0b", CanCancel = true, IsFinal = false, SortOrder = 1 },
-            new BookingStatuses { Code = "confirmed", Name = "Confirmed", ColorCode = "#2563eb", CanCancel = true, IsFinal = false, SortOrder = 2 },
-            new BookingStatuses { Code = "completed", Name = "Completed", ColorCode = "#16a34a", CanCancel = false, IsFinal = true, SortOrder = 3 },
-            new BookingStatuses { Code = "cancelled", Name = "Cancelled", ColorCode = "#dc2626", CanCancel = false, IsFinal = true, SortOrder = 4 },
-        ], cancellationToken);
 
         await SeedMasterAsync(db.PaymentStatuses, [
             new PaymentStatuses { Code = "pending", Name = "Pending", ColorCode = "#f59e0b", IsFinal = false, SortOrder = 1 },
@@ -598,7 +593,7 @@ public static class AppDbSeeder
             CustomerID = customer.CustomerID,
             BookingDate = bookingDate,
             TotalAmount = courtPrice + serviceTotal,
-            Status = "confirmed",
+            Status = BookingStatus.Confirmed,
             Note = "Seed booking",
             CreatedBy = AdminLogin,
             ModifiedBy = AdminLogin,

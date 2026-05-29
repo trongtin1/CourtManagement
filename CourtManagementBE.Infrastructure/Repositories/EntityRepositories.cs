@@ -72,8 +72,6 @@ public class CourtUtilityRepository : GenericRepository<CourtUtilities>, ICourtU
 public class CourtPriceRuleHistoryRepository : GenericRepository<CourtPriceRuleHistory>, ICourtPriceRuleHistoryRepository
 { public CourtPriceRuleHistoryRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class BookingStatusRepository : GenericRepository<BookingStatuses>, IBookingStatusRepository
-{ public BookingStatusRepository(AppDbContext ctx) : base(ctx) { } }
 public class PaymentStatusRepository : GenericRepository<PaymentStatuses>, IPaymentStatusRepository
 { public PaymentStatusRepository(AppDbContext ctx) : base(ctx) { } }
 public class PaymentMethodRepository : GenericRepository<PaymentMethods>, IPaymentMethodRepository
@@ -98,3 +96,7 @@ public class ComboRepository : GenericRepository<Combos>, IComboRepository
 { public ComboRepository(AppDbContext ctx) : base(ctx) { } }
 public class ComboServiceRepository : GenericRepository<ComboServices>, IComboServiceRepository
 { public ComboServiceRepository(AppDbContext ctx) : base(ctx) { } }
+public class BookingGroupRepository : GenericRepository<BookingGroups>, IBookingGroupRepository
+{ public BookingGroupRepository(AppDbContext ctx) : base(ctx) { } }
+public class RecurringConfigRepository : GenericRepository<RecurringConfigs>, IRecurringConfigRepository
+{ public RecurringConfigRepository(AppDbContext ctx) : base(ctx) { } }

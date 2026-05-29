@@ -196,6 +196,70 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
+                {
+                    b.Property<int>("BookingGroupID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingGroupID"));
+
+                    b.Property<int?>("ComboID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("CustomerID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GroupName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("GroupType")
+                        .IsRequired()
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTimeOffset>("ModifiedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("BookingGroupID");
+
+                    b.HasIndex("ComboID");
+
+                    b.HasIndex("CustomerID");
+
+                    b.HasIndex("FacilityID");
+
+                    b.ToTable("BookingGroups");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingServices", b =>
                 {
                     b.Property<int>("BookingServiceID")
@@ -276,53 +340,6 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("BookingSlots");
                 });
 
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingStatuses", b =>
-                {
-                    b.Property<int>("BookingStatusID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingStatusID"));
-
-                    b.Property<bool>("CanCancel")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("ColorCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("CreatedDate")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsFinal")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.HasKey("BookingStatusID");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("BookingStatuses");
-                });
-
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
                 {
                     b.Property<Guid>("BookingID")
@@ -332,7 +349,7 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTime>("BookingDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("BookingStatusID")
+                    b.Property<int?>("BookingGroupID")
                         .HasColumnType("int");
 
                     b.Property<string>("CancellationReason")
@@ -361,6 +378,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<int>("CustomerID")
                         .HasColumnType("int");
 
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time(7)");
+
                     b.Property<string>("ModifiedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -372,6 +392,9 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time(7)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(20)");
@@ -382,6 +405,12 @@ namespace CourtManagementBE.Migrations
                     b.HasKey("BookingID");
 
                     b.HasIndex("BookingDate");
+
+                    b.HasIndex("BookingGroupID");
+
+                    b.HasIndex("CancellationReasonID");
+
+                    b.HasIndex("ComboID");
 
                     b.HasIndex("CourtID");
 
@@ -1468,6 +1497,37 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("PriceRuleTypes");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.RecurringConfigs", b =>
+                {
+                    b.Property<int>("BookingGroupID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CourtID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DaysOfWeek")
+                        .IsRequired()
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time(7)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time(7)");
+
+                    b.HasKey("BookingGroupID");
+
+                    b.HasIndex("CourtID");
+
+                    b.ToTable("RecurringConfigs");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.RefundReasons", b =>
                 {
                     b.Property<int>("RefundReasonID")
@@ -1775,6 +1835,70 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Utilities");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
+                        .WithMany()
+                        .HasForeignKey("ComboID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Customers", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Facilities", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Combo");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Facility");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.BookingGroups", "BookingGroup")
+                        .WithMany("Bookings")
+                        .HasForeignKey("BookingGroupID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.CancellationReasons", "CancellationReasonNavigation")
+                        .WithMany()
+                        .HasForeignKey("CancellationReasonID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
+                        .WithMany()
+                        .HasForeignKey("ComboID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Courts", "Court")
+                        .WithMany()
+                        .HasForeignKey("CourtID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Customers", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BookingGroup");
+
+                    b.Navigation("CancellationReasonNavigation");
+
+                    b.Navigation("Combo");
+
+                    b.Navigation("Court");
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.ComboServices", b =>
                 {
                     b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
@@ -1841,6 +1965,32 @@ namespace CourtManagementBE.Migrations
                         .IsRequired();
 
                     b.Navigation("Court");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.RecurringConfigs", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.BookingGroups", "BookingGroup")
+                        .WithOne("RecurringConfig")
+                        .HasForeignKey("CourtManagementBE.Domain.Entities.RecurringConfigs", "BookingGroupID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourtManagementBE.Domain.Entities.Courts", "Court")
+                        .WithMany()
+                        .HasForeignKey("CourtID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BookingGroup");
+
+                    b.Navigation("Court");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
+                {
+                    b.Navigation("Bookings");
+
+                    b.Navigation("RecurringConfig");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>

@@ -5,6 +5,7 @@ using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
+using CourtManagementBE.Domain.Enums;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -38,8 +39,12 @@ public class BookingService : BaseService, IBookingService
 
     public async Task<Result<List<BookingResponse>>> GetByStatus(string status)
     {
+        if (!Enum.TryParse<BookingStatus>(status, true, out var enumStatus))
+        {
+            return BadRequest<List<BookingResponse>>("Trạng thái đặt sân không hợp lệ.");
+        }
         var courtIds = await GetScopedCourtIds();
-        var list = await _unitOfWork.IBookingRepository.FindList(x => x.Status == status && courtIds.Contains(x.CourtID));
+        var list = await _unitOfWork.IBookingRepository.FindList(x => x.Status == enumStatus && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
@@ -152,7 +157,7 @@ public class BookingService : BaseService, IBookingService
         {
             var bookingIds = existingSlots.Select(x => x.BookingID).Distinct().ToList();
             var activeBookings = await _unitOfWork.IBookingRepository.FindList(x =>
-                bookingIds.Contains(x.BookingID) && x.Status != "cancelled");
+                bookingIds.Contains(x.BookingID) && x.Status != BookingStatus.Cancelled);
 
             if (activeBookings.Count > 0)
             {
@@ -225,7 +230,7 @@ public class BookingService : BaseService, IBookingService
             CustomerID = request.CustomerID,
             BookingDate = bookingDate,
             ComboID = request.ComboID,
-            Status = "pending",
+            Status = BookingStatus.Pending,
             Note = request.Note,
             TotalAmount = courtTotal + serviceTotal,
             CreatedDate = now,
@@ -283,9 +288,9 @@ public class BookingService : BaseService, IBookingService
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền hủy booking này.");
-        if (entity.Status == "cancelled") return BadRequest<BookingResponse>("Đơn đặt sân đã bị hủy trước đó.");
+        if (entity.Status == BookingStatus.Cancelled) return BadRequest<BookingResponse>("Đơn đặt sân đã bị hủy trước đó.");
 
-        entity.Status = "cancelled";
+        entity.Status = BookingStatus.Cancelled;
         entity.CancellationReason = request.CancellationReason;
         entity.CancelledAt = DateTimeOffset.UtcNow;
         entity.ModifiedDate = DateTimeOffset.UtcNow;

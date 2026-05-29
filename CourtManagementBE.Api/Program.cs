@@ -183,6 +183,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<ICourtPriceService, CourtPriceService>();
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IBookingService, BookingService>();
+            builder.Services.AddScoped<IBookingGroupService, BookingGroupService>();
             builder.Services.AddScoped<IServiceService, ServiceService>();
             builder.Services.AddScoped<IComboService, ComboService>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
@@ -193,7 +194,6 @@ namespace CourtManagementBE.Api
 
             builder.Services.AddScoped<ICourtPriceHistoryService, CourtPriceHistoryService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();
-            builder.Services.AddScoped<IBookingStatusService, BookingStatusService>();
             builder.Services.AddScoped<IPaymentStatusService, PaymentStatusService>();
             builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
             builder.Services.AddScoped<ICustomerTypeService, CustomerTypeService>();

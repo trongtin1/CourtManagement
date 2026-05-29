@@ -8,7 +8,6 @@ public class BookingRequest
     [Required] public int CustomerID { get; set; }
     [Required] public DateTime BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
-    public int? BookingStatusID { get; set; }
     public int? ComboID { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     [MaxLength(500)] public string Note { get; set; } = string.Empty;

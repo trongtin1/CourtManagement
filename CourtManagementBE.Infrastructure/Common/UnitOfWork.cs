@@ -53,12 +53,13 @@ public class UnitOfWork : IUnitOfWork
     public ICancellationReasonRepository ICancellationReasonRepository => new CancellationReasonRepository(_context);
     public IRefundReasonRepository IRefundReasonRepository => new RefundReasonRepository(_context);
     public IServiceTypeRepository IServiceTypeRepository => new ServiceTypeRepository(_context);
-    public IBookingStatusRepository IBookingStatusRepository => new BookingStatusRepository(_context);
     public IPaymentStatusRepository IPaymentStatusRepository => new PaymentStatusRepository(_context);
     public IPaymentMethodRepository IPaymentMethodRepository => new PaymentMethodRepository(_context);
     public ICustomerTypeRepository ICustomerTypeRepository => new CustomerTypeRepository(_context);
     public IComboRepository IComboRepository => new ComboRepository(_context);
     public IComboServiceRepository IComboServiceRepository => new ComboServiceRepository(_context);
+    public IBookingGroupRepository IBookingGroupRepository => new BookingGroupRepository(_context);
+    public IRecurringConfigRepository IRecurringConfigRepository => new RecurringConfigRepository(_context);
 
     public IGenericRepository<T> GetRepository<T>() where T : class
     {

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CourtManagementBE.Domain.Entities;
+using CourtManagementBE.Domain.Enums;
 
 namespace CourtManagementBE.Infrastructure.Data;
 
@@ -41,6 +42,8 @@ public class AppDbContext : DbContext
 
     // ── Đặt sân ───────────────────────────────────────────────────────────────
     public DbSet<Customers> Customers => Set<Customers>();
+    public DbSet<BookingGroups> BookingGroups => Set<BookingGroups>();
+    public DbSet<RecurringConfigs> RecurringConfigs => Set<RecurringConfigs>();
     public DbSet<Bookings> Bookings => Set<Bookings>();
     public DbSet<BookingSlots> BookingSlots => Set<BookingSlots>();
     public DbSet<BookingServices> BookingServices => Set<BookingServices>();
@@ -51,7 +54,6 @@ public class AppDbContext : DbContext
     public DbSet<Combos> Combos => Set<Combos>();
     public DbSet<ComboServices> ComboServices => Set<ComboServices>();
 
-    public DbSet<BookingStatuses> BookingStatuses => Set<BookingStatuses>();
     public DbSet<PaymentStatuses> PaymentStatuses => Set<PaymentStatuses>();
     public DbSet<PaymentMethods> PaymentMethods => Set<PaymentMethods>();
     public DbSet<CustomerTypes> CustomerTypes => Set<CustomerTypes>();
@@ -307,13 +309,106 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.BookingID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
+            e.Property(x => x.StartTime).HasColumnType("time(7)").IsRequired();
+            e.Property(x => x.EndTime).HasColumnType("time(7)").IsRequired();
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
-            e.Property(x => x.Status).HasColumnType("varchar(20)").IsRequired();
-            e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            e.Property(x => x.Status)
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (BookingStatus)Enum.Parse(typeof(BookingStatus), v, true)
+                )
+                .HasColumnType("varchar(20)")
+                .IsRequired();
             e.Property(x => x.CancellationReason).HasColumnType("nvarchar(500)");
+            e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            
             e.HasIndex(x => x.CustomerID);
             e.HasIndex(x => x.CourtID);
             e.HasIndex(x => x.BookingDate);
+            
+            e.HasOne(x => x.BookingGroup)
+                .WithMany(x => x.Bookings)
+                .HasForeignKey(x => x.BookingGroupID)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(x => x.CancellationReasonNavigation)
+                .WithMany()
+                .HasForeignKey(x => x.CancellationReasonID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Combo)
+                .WithMany()
+                .HasForeignKey(x => x.ComboID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Court)
+                .WithMany()
+                .HasForeignKey(x => x.CourtID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Customer)
+                .WithMany()
+                .HasForeignKey(x => x.CustomerID)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── BookingGroups ────────────────────────────────────────────────────
+        modelBuilder.Entity<BookingGroups>(e =>
+        {
+            e.HasKey(x => x.BookingGroupID);
+            e.Property(x => x.GroupType).HasColumnType("varchar(30)").IsRequired();
+            e.Property(x => x.GroupName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.Status)
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (BookingGroupStatus)Enum.Parse(typeof(BookingGroupStatus), v, true)
+                )
+                .HasColumnType("varchar(20)")
+                .IsRequired();
+            e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.ModifiedBy).HasColumnType("varchar(100)");
+            e.HasIndex(x => x.CustomerID);
+            e.HasIndex(x => x.FacilityID);
+
+            e.HasOne(x => x.Customer)
+                .WithMany()
+                .HasForeignKey(x => x.CustomerID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Facility)
+                .WithMany()
+                .HasForeignKey(x => x.FacilityID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Combo)
+                .WithMany()
+                .HasForeignKey(x => x.ComboID)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── RecurringConfigs ─────────────────────────────────────────────────
+        modelBuilder.Entity<RecurringConfigs>(e =>
+        {
+            e.HasKey(x => x.BookingGroupID);
+            e.Property(x => x.DaysOfWeek).HasColumnType("varchar(20)").IsRequired();
+            e.Property(x => x.StartTime).HasColumnType("time(7)");
+            e.Property(x => x.EndTime).HasColumnType("time(7)");
+            e.Property(x => x.StartDate).HasColumnType("date");
+            e.Property(x => x.EndDate).HasColumnType("date");
+            
+            // 1-to-1 Relationship with BookingGroups
+            e.HasOne(x => x.BookingGroup)
+                .WithOne(x => x.RecurringConfig)
+                .HasForeignKey<RecurringConfigs>(x => x.BookingGroupID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(x => x.Court)
+                .WithMany()
+                .HasForeignKey(x => x.CourtID)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting courts with active configurations
         });
 
         // ── BookingSlots ─────────────────────────────────────────────────────
@@ -387,7 +482,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        ConfigureMasterData<BookingStatuses>(modelBuilder, "BookingStatusID");
         ConfigureMasterData<PaymentStatuses>(modelBuilder, "PaymentStatusID");
         ConfigureMasterData<PaymentMethods>(modelBuilder, "PaymentMethodID");
         ConfigureMasterData<CustomerTypes>(modelBuilder, "CustomerTypeID");

@@ -25,7 +25,6 @@ public interface IServiceRepository : IGenericRepository<Services> { }
 public interface ICourtAreaMappingRepository : IGenericRepository<CourtAreaMapping> { }
 public interface ICourtUtilityRepository : IGenericRepository<CourtUtilities> { }
 public interface ICourtPriceRuleHistoryRepository : IGenericRepository<CourtPriceRuleHistory> { }
-public interface IBookingStatusRepository : IGenericRepository<BookingStatuses> { }
 public interface IPaymentStatusRepository : IGenericRepository<PaymentStatuses> { }
 public interface IPaymentMethodRepository : IGenericRepository<PaymentMethods> { }
 public interface ICustomerTypeRepository : IGenericRepository<CustomerTypes> { }
@@ -38,3 +37,5 @@ public interface ICancellationReasonRepository : IGenericRepository<Cancellation
 public interface IRefundReasonRepository : IGenericRepository<RefundReasons> { }
 public interface IComboRepository : IGenericRepository<Combos> { }
 public interface IComboServiceRepository : IGenericRepository<ComboServices> { }
+public interface IBookingGroupRepository : IGenericRepository<BookingGroups> { }
+public interface IRecurringConfigRepository : IGenericRepository<RecurringConfigs> { }

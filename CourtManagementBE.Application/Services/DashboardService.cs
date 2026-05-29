@@ -3,6 +3,7 @@ using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
+using CourtManagementBE.Domain.Enums;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -19,7 +20,7 @@ public class DashboardService : BaseService, IDashboardService
         var courtIds = await GetScopedCourtIds();
 
         var activeBookings = await _unitOfWork.IBookingRepository.Count(
-            x => x.Status != "cancelled" && courtIds.Contains(x.CourtID));
+            x => x.Status != BookingStatus.Cancelled && courtIds.Contains(x.CourtID));
         var bookingsToday = await _unitOfWork.IBookingRepository.Count(
             x => x.BookingDate.Date == today && courtIds.Contains(x.CourtID));
         var registeredUsers = _currentUser?.IsSuperAdmin == true

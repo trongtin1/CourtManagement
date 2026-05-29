@@ -29,7 +29,6 @@ public interface IUnitOfWork : IDisposable
     ICourtAreaMappingRepository ICourtAreaMappingRepository { get; }
     ICourtUtilityRepository ICourtUtilityRepository { get; }
     ICourtPriceRuleHistoryRepository ICourtPriceRuleHistoryRepository { get; }
-    IBookingStatusRepository IBookingStatusRepository { get; }
     IPaymentStatusRepository IPaymentStatusRepository { get; }
     IPaymentMethodRepository IPaymentMethodRepository { get; }
     ICustomerTypeRepository ICustomerTypeRepository { get; }
@@ -42,6 +41,8 @@ public interface IUnitOfWork : IDisposable
     IRefundReasonRepository IRefundReasonRepository { get; }
     IComboRepository IComboRepository { get; }
     IComboServiceRepository IComboServiceRepository { get; }
+    IBookingGroupRepository IBookingGroupRepository { get; }
+    IRecurringConfigRepository IRecurringConfigRepository { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

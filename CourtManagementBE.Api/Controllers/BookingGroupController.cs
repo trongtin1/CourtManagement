@@ -9,11 +9,11 @@ namespace CourtManagementBE.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class BookingStatusController : ControllerBase
+public class BookingGroupController : ControllerBase
 {
-    private readonly IBookingStatusService _service;
+    private readonly IBookingGroupService _service;
 
-    public BookingStatusController(IBookingStatusService service)
+    public BookingGroupController(IBookingGroupService service)
     {
         _service = service;
     }
@@ -25,6 +25,13 @@ public class BookingStatusController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("customer/{customerId}")]
+    public async Task<IActionResult> GetByCustomer(int customerId)
+    {
+        var r = await _service.GetByCustomer(customerId);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -33,16 +40,23 @@ public class BookingStatusController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] BookingStatusRequest req)
+    public async Task<IActionResult> Create([FromBody] BookingGroupRequest req)
     {
         var r = await _service.Create(req);
         return StatusCode((int)r.StatusCode, r);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] BookingStatusRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] BookingGroupRequest req)
     {
         var r = await _service.Update(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPatch("{id}/cancel")]
+    public async Task<IActionResult> Cancel(int id, [FromBody] string reason)
+    {
+        var r = await _service.Cancel(id, reason);
         return StatusCode((int)r.StatusCode, r);
     }
 

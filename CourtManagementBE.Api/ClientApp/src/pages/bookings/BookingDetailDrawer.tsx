@@ -70,7 +70,7 @@ export function BookingDetailDrawer({
     try {
       await updateBooking.mutateAsync({
         id: selectedBooking.bookingID,
-        data: { status: 'confirmed' },
+        data: { status: 'Confirmed' },
       })
       message.success('Đã xác nhận booking')
     } catch {
@@ -82,7 +82,7 @@ export function BookingDetailDrawer({
     try {
       await updateBooking.mutateAsync({
         id: selectedBooking.bookingID,
-        data: { status: 'completed' },
+        data: { status: 'Completed' },
       })
       message.success('Đã ghi nhận thanh toán và hoàn tất')
     } catch {
@@ -242,7 +242,7 @@ export function BookingDetailDrawer({
       {/* Action Buttons */}
       <Divider style={{ margin: '16px 0 12px' }} />
       <Space className="w-full" direction="vertical" size={8}>
-        {selectedBooking.status === 'pending' && (
+        {selectedBooking.status === 'Pending' && (
           <Button
             type="primary"
             block
@@ -252,7 +252,7 @@ export function BookingDetailDrawer({
             Xác nhận booking
           </Button>
         )}
-        {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'playing') && (
+        {selectedBooking.status === 'Confirmed' && (
           <Button
             block
             style={{ borderColor: '#10b981', color: '#10b981' }}
@@ -262,7 +262,7 @@ export function BookingDetailDrawer({
             Hoàn tất booking
           </Button>
         )}
-        {selectedBooking.status !== 'cancelled' && selectedBooking.status !== 'completed' && (
+        {selectedBooking.status !== 'Cancelled' && selectedBooking.status !== 'Completed' && (
           <Popconfirm
             title="Xác nhận hủy booking này?"
             onConfirm={handleCancel}
