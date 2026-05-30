@@ -460,12 +460,16 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.ServiceID);
             e.Property(x => x.ServiceCode).HasColumnType("varchar(20)").IsRequired();
             e.Property(x => x.ServiceName).HasColumnType("nvarchar(200)").IsRequired();
-            e.Property(x => x.ServiceType).HasColumnType("varchar(50)");
             e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
             e.Property(x => x.IsTrackStock).HasDefaultValue(false);
             e.Property(x => x.StockQuantity).HasDefaultValue(0);
             e.HasIndex(x => new { x.FacilityID, x.ServiceCode }).IsUnique();
+
+            e.HasOne(x => x.ServiceType)
+                .WithMany()
+                .HasForeignKey(x => x.ServiceTypeID)
+                .OnDelete(DeleteBehavior.SetNull);
 
             e.HasOne(x => x.BaseUnit)
                 .WithMany()

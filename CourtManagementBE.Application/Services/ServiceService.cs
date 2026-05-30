@@ -19,13 +19,16 @@ public class ServiceService : BaseService, IServiceService
         var workingFacilityId = WorkingFacilityId;
         var page = await _unitOfWork.IServiceRepository.FindAll(
             x => x.FacilityID == null || workingFacilityId == null || x.FacilityID == workingFacilityId,
+            include: q => q.Include(x => x.ServiceType),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Domain.Entities.Services, ServiceResponse>(page));
     }
 
     public async Task<Result<ServiceResponse>> GetById(int id)
     {
-        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == id,
+            include: q => q.Include(x => x.ServiceType));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy dịch vụ.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền truy cập dịch vụ này.");
         return Success(_mapper.Map<ServiceResponse>(entity));
@@ -46,7 +49,12 @@ public class ServiceService : BaseService, IServiceService
 
         await _unitOfWork.IServiceRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Created(_mapper.Map<ServiceResponse>(entity));
+
+        var created = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == entity.ServiceID,
+            include: q => q.Include(x => x.ServiceType));
+
+        return Created(_mapper.Map<ServiceResponse>(created!));
     }
 
     public async Task<Result<ServiceResponse>> Update(int id, ServiceRequest request)
@@ -70,7 +78,12 @@ public class ServiceService : BaseService, IServiceService
 
         _unitOfWork.IServiceRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(_mapper.Map<ServiceResponse>(entity));
+
+        var updated = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == entity.ServiceID,
+            include: q => q.Include(x => x.ServiceType));
+
+        return Success(_mapper.Map<ServiceResponse>(updated!));
     }
 
     public async Task<Result<bool>> Delete(int id)
@@ -117,10 +130,12 @@ public class ServiceService : BaseService, IServiceService
 
     public async Task<Result<ServiceResponse>> HandoutRental(int id, int quantity)
     {
-        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == id,
+            include: q => q.Include(x => x.ServiceType));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy thiết bị cho thuê.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác thiết bị này.");
-        if (entity.ServiceType != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
+        if (entity.ServiceType?.Code != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
 
         if (entity.StockQuantity < quantity)
         {
@@ -137,10 +152,12 @@ public class ServiceService : BaseService, IServiceService
 
     public async Task<Result<ServiceResponse>> ReturnRental(int id, int quantity)
     {
-        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == id,
+            include: q => q.Include(x => x.ServiceType));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy thiết bị cho thuê.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác thiết bị này.");
-        if (entity.ServiceType != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
+        if (entity.ServiceType?.Code != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
 
         entity.StockQuantity += quantity;
         entity.ModifiedDate = DateTimeOffset.UtcNow;

@@ -30,10 +30,12 @@ import {
   useToggleServiceMutation,
 } from '@/features/services/api/useServiceQueries'
 import { useUnitsQuery } from '@/features/units/api/useUnitQueries'
+import { useServiceTypesQuery } from '@/features/service-types/api/useServiceTypeQueries'
 import type { Service, CreateServiceRequest } from '@/features/services/model/types'
 import { UnitConversionDrawer } from './components/UnitConversionDrawer'
 import { toApiError } from '@/utils/errors'
 import { formatCompactCurrency } from '@/utils/format'
+import type { ServiceType } from '@/features/service-types/model/types'
 
 export function ServicesPage() {
   const { message } = App.useApp()
@@ -51,8 +53,11 @@ export function ServicesPage() {
       ? { page: tablePagination.current, pageSize: tablePagination.pageSize }
       : undefined,
   )
-  const unitsQuery = useUnitsQuery({ page: 1, pageSize: 100 })
+  const unitsQuery = useUnitsQuery()
   const unitsList = unitsQuery.data?.items ?? []
+
+  const serviceTypesQuery = useServiceTypesQuery()
+  const serviceTypesList = serviceTypesQuery.data?.items ?? []
 
   const createMut = useCreateServiceMutation()
   const updateMut = useUpdateServiceMutation()
@@ -124,7 +129,12 @@ export function ServicesPage() {
             { title: 'ID', dataIndex: 'serviceID', width: 70 },
             { title: 'Mã', dataIndex: 'serviceCode', width: 100 },
             { title: 'Tên DV', dataIndex: 'serviceName' },
-            { title: 'Loại', dataIndex: 'serviceType', width: 100 },
+            {
+              title: 'Loại',
+              dataIndex: 'serviceType',
+              width: 100,
+              render: (serviceType: ServiceType) => serviceType?.name || '',
+            },
             { title: 'Đơn vị', dataIndex: 'unit', width: 80 },
             {
               title: 'Kho hàng',
@@ -153,7 +163,7 @@ export function ServicesPage() {
               render: (v: number) => formatCompactCurrency(v),
             },
             {
-              title: 'Active',
+              title: 'Trạng thái',
               dataIndex: 'isActive',
               width: 80,
               render: (v: boolean, r: Service) => (
@@ -232,8 +242,18 @@ export function ServicesPage() {
           >
             <Input />
           </Form.Item>
-          <Form.Item label="Loại" name="serviceType">
-            <Input />
+          <Form.Item
+            label="Loại dịch vụ"
+            name="serviceTypeID"
+            rules={[{ required: true, message: 'Chọn loại dịch vụ!' }]}
+          >
+            <Select placeholder="Chọn loại dịch vụ" loading={serviceTypesQuery.isPending}>
+              {serviceTypesList.map((t) => (
+                <Select.Option key={t.serviceTypeID} value={t.serviceTypeID}>
+                  {t.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -251,10 +271,14 @@ export function ServicesPage() {
           </Form.Item>
 
           <Space className="w-full font-normal" size={16}>
-            <Form.Item label="Min SL" name="minQuantity" className="mb-0 flex-1">
+            <Form.Item
+              label="Số lượng tối thiểu"
+              name="minQuantity"
+              className="mb-0 flex-1"
+            >
               <InputNumber className="w-full" min={0} />
             </Form.Item>
-            <Form.Item label="Max SL" name="maxQuantity" className="mb-0 flex-1">
+            <Form.Item label="Số lượng tối đa" name="maxQuantity" className="mb-0 flex-1">
               <InputNumber className="w-full" min={0} />
             </Form.Item>
           </Space>

@@ -7,7 +7,7 @@ public class ServiceResponse
     public string ServiceCode { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
     public int? ServiceTypeID { get; set; }
-    public string ServiceType { get; set; } = string.Empty;
+    public ServiceTypeResponse? ServiceType { get; set; }
     public int? UnitID { get; set; }
     public string Unit { get; set; } = string.Empty;
     public int MinQuantity { get; set; }

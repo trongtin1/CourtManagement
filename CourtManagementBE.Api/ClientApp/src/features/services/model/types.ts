@@ -1,9 +1,12 @@
+import type { ServiceType } from '@/features/service-types/model/types'
+
 export type Service = {
   serviceID: number
   facilityID?: number | null
   serviceCode: string
   serviceName: string
-  serviceType: string
+  serviceTypeID?: number | null
+  serviceType?: ServiceType | null
   unitID?: number | null
   unit?: string
   minQuantity: number
@@ -19,7 +22,7 @@ export type CreateServiceRequest = {
   facilityID?: number | null
   serviceCode: string
   serviceName: string
-  serviceType?: string
+  serviceTypeID?: number | null
   unitID?: number | null
   unit?: string
   minQuantity?: number
@@ -53,7 +56,6 @@ export type UnitConversionRequest = {
   factor: number
   isActive?: boolean
 }
-
 
 export type Utility = {
   utilityID: number

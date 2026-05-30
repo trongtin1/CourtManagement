@@ -98,31 +98,31 @@ public static class AppDbSeeder
     {
 
         await SeedMasterAsync(db.PaymentStatuses, [
-            new PaymentStatuses { Code = "pending", Name = "Pending", ColorCode = "#f59e0b", IsFinal = false, SortOrder = 1 },
-            new PaymentStatuses { Code = "success", Name = "Success", ColorCode = "#16a34a", IsFinal = true, SortOrder = 2 },
-            new PaymentStatuses { Code = "paid", Name = "Paid", ColorCode = "#16a34a", IsFinal = true, SortOrder = 3 },
-            new PaymentStatuses { Code = "failed", Name = "Failed", ColorCode = "#dc2626", IsFinal = true, SortOrder = 4 },
-            new PaymentStatuses { Code = "refunded", Name = "Refunded", ColorCode = "#7c3aed", IsFinal = true, SortOrder = 5 },
+            new PaymentStatuses { Code = "pending", Name = "Chờ xử lý", ColorCode = "#f59e0b", IsFinal = false, SortOrder = 1 },
+            new PaymentStatuses { Code = "success", Name = "Thành công", ColorCode = "#16a34a", IsFinal = true, SortOrder = 2 },
+            new PaymentStatuses { Code = "paid", Name = "Đã thanh toán", ColorCode = "#16a34a", IsFinal = true, SortOrder = 3 },
+            new PaymentStatuses { Code = "failed", Name = "Thất bại", ColorCode = "#dc2626", IsFinal = true, SortOrder = 4 },
+            new PaymentStatuses { Code = "refunded", Name = "Đã hoàn tiền", ColorCode = "#7c3aed", IsFinal = true, SortOrder = 5 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.PaymentMethods, [
-            new PaymentMethods { Code = "cash", Name = "Cash", IsOnline = false, SortOrder = 1 },
-            new PaymentMethods { Code = "bank_transfer", Name = "Bank Transfer", IsOnline = true, SortOrder = 2 },
-            new PaymentMethods { Code = "qr", Name = "QR Payment", IsOnline = true, SortOrder = 3 },
-            new PaymentMethods { Code = "momo", Name = "MoMo", IsOnline = true, SortOrder = 4 },
-            new PaymentMethods { Code = "vnpay", Name = "VNPay", IsOnline = true, SortOrder = 5 },
+            new PaymentMethods { Code = "cash", Name = "Tiền mặt", IsOnline = false, SortOrder = 1 },
+            new PaymentMethods { Code = "bank_transfer", Name = "Chuyển khoản", IsOnline = true, SortOrder = 2 },
+            new PaymentMethods { Code = "qr", Name = "Quét mã QR", IsOnline = true, SortOrder = 3 },
+            new PaymentMethods { Code = "momo", Name = "Ví MoMo", IsOnline = true, SortOrder = 4 },
+            new PaymentMethods { Code = "vnpay", Name = "Cổng VNPay", IsOnline = true, SortOrder = 5 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.CustomerTypes, [
-            new CustomerTypes { Code = "normal", Name = "Normal", DiscountPercent = 0, SortOrder = 1 },
-            new CustomerTypes { Code = "member", Name = "Member", DiscountPercent = 5, SortOrder = 2 },
+            new CustomerTypes { Code = "normal", Name = "Thường", DiscountPercent = 0, SortOrder = 1 },
+            new CustomerTypes { Code = "member", Name = "Thành viên", DiscountPercent = 5, SortOrder = 2 },
             new CustomerTypes { Code = "vip", Name = "VIP", DiscountPercent = 10, SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.ServiceTypes, [
-            new ServiceTypes { Code = "drink", Name = "Drink", SortOrder = 1 },
-            new ServiceTypes { Code = "rental", Name = "Rental", SortOrder = 2 },
-            new ServiceTypes { Code = "equipment", Name = "Equipment", SortOrder = 3 },
+            new ServiceTypes { Code = "drink", Name = "Nước uống", SortOrder = 1 },
+            new ServiceTypes { Code = "rental", Name = "Cho thuê đồ", SortOrder = 2 },
+            new ServiceTypes { Code = "equipment", Name = "Thiết bị & dụng cụ", SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.PriceRuleTypes, [
@@ -134,43 +134,43 @@ public static class AppDbSeeder
         ], cancellationToken);
 
         await SeedMasterAsync(db.Units, [
-            new Units { Code = "bottle", Name = "Bottle", Symbol = "bottle", SortOrder = 1 },
-            new Units { Code = "racket", Name = "Racket", Symbol = "racket", SortOrder = 2 },
-            new Units { Code = "tube", Name = "Tube", Symbol = "tube", SortOrder = 3 },
-            new Units { Code = "piece", Name = "Piece", Symbol = "pc", SortOrder = 4 },
-            new Units { Code = "set", Name = "Set", Symbol = "set", SortOrder = 5 },
-            new Units { Code = "hour", Name = "Hour", Symbol = "h", SortOrder = 6 },
+            new Units { Code = "bottle", Name = "Chai", Symbol = "chai", SortOrder = 1 },
+            new Units { Code = "racket", Name = "Cái", Symbol = "cái", SortOrder = 2 },
+            new Units { Code = "tube", Name = "Ống", Symbol = "ống", SortOrder = 3 },
+            new Units { Code = "piece", Name = "Chiếc", Symbol = "chiếc", SortOrder = 4 },
+            new Units { Code = "set", Name = "Bộ", Symbol = "bộ", SortOrder = 5 },
+            new Units { Code = "hour", Name = "Giờ", Symbol = "giờ", SortOrder = 6 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.AssetCategories, [
-            new AssetCategories { Code = "Equipment", Name = "Equipment", SortOrder = 1 },
-            new AssetCategories { Code = "Lighting", Name = "Lighting", SortOrder = 2 },
-            new AssetCategories { Code = "Furniture", Name = "Furniture", SortOrder = 3 },
+            new AssetCategories { Code = "Equipment", Name = "Thiết bị", SortOrder = 1 },
+            new AssetCategories { Code = "Lighting", Name = "Hệ thống chiếu sáng", SortOrder = 2 },
+            new AssetCategories { Code = "Furniture", Name = "Nội thất", SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.AssetConditions, [
-            new AssetConditions { Code = "Good", Name = "Good", ColorCode = "#16a34a", IsUsable = true, SortOrder = 1 },
-            new AssetConditions { Code = "Maintenance", Name = "Maintenance", ColorCode = "#f59e0b", IsUsable = false, SortOrder = 2 },
-            new AssetConditions { Code = "Broken", Name = "Broken", ColorCode = "#dc2626", IsUsable = false, SortOrder = 3 },
+            new AssetConditions { Code = "Good", Name = "Tốt", ColorCode = "#16a34a", IsUsable = true, SortOrder = 1 },
+            new AssetConditions { Code = "Maintenance", Name = "Bảo trì", ColorCode = "#f59e0b", IsUsable = false, SortOrder = 2 },
+            new AssetConditions { Code = "Broken", Name = "Hỏng", ColorCode = "#dc2626", IsUsable = false, SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.CourtFeatureCategories, [
-            new CourtFeatureCategories { Code = "Environment", Name = "Environment", SortOrder = 1 },
-            new CourtFeatureCategories { Code = "Property", Name = "Property", SortOrder = 2 },
-            new CourtFeatureCategories { Code = "Surface", Name = "Surface", SortOrder = 3 },
+            new CourtFeatureCategories { Code = "Environment", Name = "Môi trường sân", SortOrder = 1 },
+            new CourtFeatureCategories { Code = "Property", Name = "Thuộc tính", SortOrder = 2 },
+            new CourtFeatureCategories { Code = "Surface", Name = "Bề mặt sân", SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.CancellationReasons, [
-            new CancellationReasons { Code = "customer_request", Name = "Customer request", SortOrder = 1 },
-            new CancellationReasons { Code = "court_maintenance", Name = "Court maintenance", SortOrder = 2 },
-            new CancellationReasons { Code = "weather", Name = "Weather issue", SortOrder = 3 },
-            new CancellationReasons { Code = "admin_cancelled", Name = "Admin cancelled", SortOrder = 4 },
+            new CancellationReasons { Code = "customer_request", Name = "Khách yêu cầu huỷ", SortOrder = 1 },
+            new CancellationReasons { Code = "court_maintenance", Name = "Sân bảo trì", SortOrder = 2 },
+            new CancellationReasons { Code = "weather", Name = "Thời tiết xấu", SortOrder = 3 },
+            new CancellationReasons { Code = "admin_cancelled", Name = "Quản trị viên huỷ", SortOrder = 4 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.RefundReasons, [
-            new RefundReasons { Code = "booking_cancelled", Name = "Booking cancelled", SortOrder = 1 },
-            new RefundReasons { Code = "duplicate_payment", Name = "Duplicate payment", SortOrder = 2 },
-            new RefundReasons { Code = "service_issue", Name = "Service issue", SortOrder = 3 },
+            new RefundReasons { Code = "booking_cancelled", Name = "Huỷ lịch đặt sân", SortOrder = 1 },
+            new RefundReasons { Code = "duplicate_payment", Name = "Thanh toán trùng lặp", SortOrder = 2 },
+            new RefundReasons { Code = "service_issue", Name = "Vấn đề về dịch vụ", SortOrder = 3 },
         ], cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
@@ -197,9 +197,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new CourtTypes { Code = "BADMINTON", Name = "Badminton", Description = "Indoor badminton court" },
-            new CourtTypes { Code = "TENNIS", Name = "Tennis", Description = "Standard tennis court" },
-            new CourtTypes { Code = "PICKLEBALL", Name = "Pickleball", Description = "Pickleball court" },
+            new CourtTypes { Code = "BADMINTON", Name = "Sân Cầu lông", Description = "Sân cầu lông tiêu chuẩn trong nhà" },
+            new CourtTypes { Code = "TENNIS", Name = "Sân Tennis", Description = "Sân tennis tiêu chuẩn ngoài trời" },
+            new CourtTypes { Code = "PICKLEBALL", Name = "Sân Pickleball", Description = "Sân pickleball tiêu chuẩn thi đấu" },
         };
 
         foreach (var item in seed)
@@ -222,9 +222,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new CourtStatus { StatusCode = "available", StatusName = "Available", ColorCode = "#22c55e", Description = "Ready to book", CreatedBy = AdminLogin },
-            new CourtStatus { StatusCode = "maintenance", StatusName = "Maintenance", ColorCode = "#f97316", Description = "Temporarily unavailable", CreatedBy = AdminLogin },
-            new CourtStatus { StatusCode = "closed", StatusName = "Closed", ColorCode = "#64748b", Description = "Closed for operation", CreatedBy = AdminLogin },
+            new CourtStatus { StatusCode = "available", StatusName = "Sẵn sàng", ColorCode = "#22c55e", Description = "Có thể đặt sân hoạt động bình thường", CreatedBy = AdminLogin },
+            new CourtStatus { StatusCode = "maintenance", StatusName = "Bảo trì", ColorCode = "#f97316", Description = "Tạm dừng hoạt động để bảo trì nâng cấp", CreatedBy = AdminLogin },
+            new CourtStatus { StatusCode = "closed", StatusName = "Đóng cửa", ColorCode = "#64748b", Description = "Sân đóng cửa dừng hoạt động", CreatedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -250,11 +250,11 @@ public static class AppDbSeeder
 
         var seed = new[]
         {
-            new { Feature = new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Indoor", Description = "Indoor court", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
-            new { Feature = new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Outdoor", Description = "Outdoor court", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
-            new { Feature = new CourtFeatures { FeatureCode = "VIP", FeatureName = "VIP", Description = "VIP court", CreatedBy = AdminLogin }, CategoryCode = "Property" },
-            new { Feature = new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Wooden Floor", Description = "Wooden floor surface", CreatedBy = AdminLogin }, CategoryCode = "Surface" },
-            new { Feature = new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Air Conditioned", Description = "Court has air conditioning", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Trong nhà", Description = "Khu vực sân có mái che trong nhà", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Ngoài trời", Description = "Khu vực sân ngoài trời thoáng mát", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "VIP", FeatureName = "Sân VIP", Description = "Sân tiêu chuẩn chất lượng cao dịch vụ VIP", CreatedBy = AdminLogin }, CategoryCode = "Property" },
+            new { Feature = new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Sàn gỗ", Description = "Bề mặt sàn bằng gỗ tự nhiên cao cấp", CreatedBy = AdminLogin }, CategoryCode = "Surface" },
+            new { Feature = new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Có máy lạnh", Description = "Sân được trang bị hệ thống điều hòa mát mẻ", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
         };
 
         foreach (var seedItem in seed)
@@ -291,10 +291,10 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Utilities { UtilityCode = "LIGHT", UtilityName = "Lighting", Description = "Night lighting", Icon = "bulb", CreatedBy = AdminLogin },
-            new Utilities { UtilityCode = "PARKING", UtilityName = "Parking", Description = "Vehicle parking", Icon = "car", CreatedBy = AdminLogin },
-            new Utilities { UtilityCode = "SHOWER", UtilityName = "Shower", Description = "Changing room and shower", Icon = "shower", CreatedBy = AdminLogin },
-            new Utilities { UtilityCode = "WIFI", UtilityName = "Wi-Fi", Description = "Guest Wi-Fi", Icon = "wifi", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "LIGHT", UtilityName = "Hệ thống đèn chiếu sáng", Description = "Hệ thống đèn cao áp ban đêm", Icon = "bulb", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "PARKING", UtilityName = "Bãi giữ xe", Description = "Bãi giữ xe rộng rãi an toàn", Icon = "car", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "SHOWER", UtilityName = "Phòng tắm & thay đồ", Description = "Phòng tắm có nóng lạnh hiện đại", Icon = "shower", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "WIFI", UtilityName = "Wi-Fi miễn phí", Description = "Wi-Fi tốc độ cao cho khách hàng", Icon = "wifi", CreatedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -318,8 +318,8 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Areas { FacilityID = facilityId, AreaCode = "A", AreaName = "Zone A", TotalLength = 40, TotalWidth = 25, Description = "Main indoor zone" },
-            new Areas { FacilityID = facilityId, AreaCode = "B", AreaName = "Zone B", TotalLength = 36, TotalWidth = 22, Description = "Secondary zone" },
+            new Areas { FacilityID = facilityId, AreaCode = "A", AreaName = "Khu A", TotalLength = 40, TotalWidth = 25, Description = "Khu vực sân trong nhà chính" },
+            new Areas { FacilityID = facilityId, AreaCode = "B", AreaName = "Khu B", TotalLength = 36, TotalWidth = 22, Description = "Khu vực sân ngoài trời" },
         };
 
         foreach (var item in seed)
@@ -347,9 +347,9 @@ public static class AppDbSeeder
 
         var seed = new[]
         {
-            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A01", CourtName = "Badminton A01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 1, Description = "Indoor badminton court A01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A02", CourtName = "Badminton A02", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 2, Description = "Indoor badminton court A02", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Courts { FacilityID = facilityId, CourtTypeID = pickleball.CourtTypeID, CourtCode = "B01", CourtName = "Pickleball B01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 3, Description = "Pickleball court B01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A01", CourtName = "Sân Cầu lông A01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 1, Description = "Sân cầu lông trong nhà Khu A01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A02", CourtName = "Sân Cầu lông A02", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 2, Description = "Sân cầu lông trong nhà Khu A02", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = pickleball.CourtTypeID, CourtCode = "B01", CourtName = "Sân Pickleball B01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 3, Description = "Sân pickleball Khu B01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -368,11 +368,15 @@ public static class AppDbSeeder
         AppDbContext db,
         CancellationToken cancellationToken)
     {
+        var drinkType = await db.ServiceTypes.FirstOrDefaultAsync(x => x.Code == "drink", cancellationToken);
+        var rentalType = await db.ServiceTypes.FirstOrDefaultAsync(x => x.Code == "rental", cancellationToken);
+        var equipType = await db.ServiceTypes.FirstOrDefaultAsync(x => x.Code == "equipment", cancellationToken);
+
         var seed = new[]
         {
-            new Services { ServiceCode = "WATER", ServiceName = "Bottled Water", ServiceType = "drink", Unit = "bottle", MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "RACKET", ServiceName = "Racket Rental", ServiceType = "rental", Unit = "racket", MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "SHUTTLE", ServiceName = "Shuttlecock Tube", ServiceType = "equipment", Unit = "tube", MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "WATER", ServiceName = "Nước suối đóng chai", ServiceTypeID = drinkType?.ServiceTypeID, Unit = "chai", MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "RACKET", ServiceName = "Thuê vợt cầu lông", ServiceTypeID = rentalType?.ServiceTypeID, Unit = "cái", MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "SHUTTLE", ServiceName = "Ống cầu lông (12 quả)", ServiceTypeID = equipType?.ServiceTypeID, Unit = "ống", MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -393,9 +397,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Customers { CustomerName = "Nguyen Van An", Phone = "0901111111", Email = "an@example.com", CustomerType = "member", Note = "Seed member customer" },
-            new Customers { CustomerName = "Tran Thi Binh", Phone = "0902222222", Email = "binh@example.com", CustomerType = "vip", Note = "Seed VIP customer" },
-            new Customers { CustomerName = "Le Minh Chau", Phone = "0903333333", Email = "chau@example.com", CustomerType = "normal", Note = "Seed normal customer" },
+            new Customers { CustomerName = "Nguyễn Văn An", Phone = "0901111111", Email = "an@example.com", CustomerType = "member", Note = "Khách hàng Thành viên mẫu" },
+            new Customers { CustomerName = "Trần Thị Bình", Phone = "0902222222", Email = "binh@example.com", CustomerType = "vip", Note = "Khách hàng VIP mẫu" },
+            new Customers { CustomerName = "Lê Minh Châu", Phone = "0903333333", Email = "chau@example.com", CustomerType = "normal", Note = "Khách hàng Thường mẫu" },
         };
 
         foreach (var item in seed)
@@ -537,9 +541,9 @@ public static class AppDbSeeder
         {
             var seed = new[]
             {
-                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-NET", AssetName = "Net", Category = "Equipment", Quantity = 1, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-LIGHT", AssetName = "Lighting Set", Category = "Lighting", Quantity = 1, Unit = "set", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-BENCH", AssetName = "Player Bench", Category = "Furniture", Quantity = 2, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-NET", AssetName = "Lưới thi đấu", Category = "Equipment", Quantity = 1, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-LIGHT", AssetName = "Bộ đèn chiếu sáng", Category = "Lighting", Quantity = 1, Unit = "set", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-BENCH", AssetName = "Ghế ngồi vận động viên", Category = "Furniture", Quantity = 2, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
             };
 
             foreach (var item in seed)
@@ -594,7 +598,7 @@ public static class AppDbSeeder
             BookingDate = bookingDate,
             TotalAmount = courtPrice + serviceTotal,
             Status = BookingStatus.Confirmed,
-            Note = "Seed booking",
+            Note = "Đặt lịch mẫu",
             CreatedBy = AdminLogin,
             ModifiedBy = AdminLogin,
         });
@@ -631,7 +635,7 @@ public static class AppDbSeeder
             PaymentGateway = "Cash",
             TransactionID = $"SEED-{bookingDate:yyyyMMdd}-001",
             Status = "success",
-            Note = "Seed payment",
+            Note = "Thanh toán mẫu",
             PaymentDate = DateTime.Today,
         });
 

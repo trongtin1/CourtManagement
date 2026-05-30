@@ -1702,10 +1702,6 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("ServiceType")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
                     b.Property<int?>("ServiceTypeID")
                         .HasColumnType("int");
 
@@ -1722,6 +1718,8 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("ServiceID");
+
+                    b.HasIndex("ServiceTypeID");
 
                     b.HasIndex("UnitID");
 
@@ -2108,12 +2106,19 @@ namespace CourtManagementBE.Migrations
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Services", b =>
                 {
+                    b.HasOne("CourtManagementBE.Domain.Entities.ServiceTypes", "ServiceType")
+                        .WithMany()
+                        .HasForeignKey("ServiceTypeID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("CourtManagementBE.Domain.Entities.Units", "BaseUnit")
                         .WithMany()
                         .HasForeignKey("UnitID")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("BaseUnit");
+
+                    b.Navigation("ServiceType");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.UnitConversions", b =>
