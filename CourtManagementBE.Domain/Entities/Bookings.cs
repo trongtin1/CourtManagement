@@ -17,6 +17,7 @@ public class Bookings
     public TimeSpan EndTime { get; set; }
 
     public decimal TotalAmount { get; set; }
+    public decimal PaidAmount { get; set; } = 0;
 
     // 🛠️ Trạng thái (Sử dụng Enum strongly-typed để đảm bảo an toàn nghiệp vụ)
     public BookingStatus Status { get; set; } = BookingStatus.Pending;

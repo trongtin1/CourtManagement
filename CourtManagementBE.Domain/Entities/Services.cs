@@ -17,7 +17,7 @@ public class Services
 
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }
-
+    
     public bool IsTrackStock { get; set; } = false;
     public int StockQuantity { get; set; } = 0;
 

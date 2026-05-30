@@ -6,6 +6,9 @@ import type {
   CreateFullBookingRequest,
   UpdateBookingRequest,
   CancelBookingRequest,
+  PayBookingRequest,
+  RescheduleBookingRequest,
+  BookingHistoryResponse,
 } from '../model/types'
 
 
@@ -21,4 +24,8 @@ export const bookingApi = {
   update: (id: string, data: UpdateBookingRequest) => apiPut<Booking>(`/booking/${id}`, data),
   cancel: (id: string, data: CancelBookingRequest) => apiPatch<Booking>(`/booking/${id}/cancel`, data),
   delete: (id: string) => apiDelete(`/booking/${id}`),
+  updateStatus: (id: string, status: string) => apiPatch<Booking>(`/booking/${id}/status`, status),
+  pay: (id: string, data: PayBookingRequest) => apiPost<Booking>(`/booking/${id}/pay`, data),
+  reschedule: (id: string, data: RescheduleBookingRequest) => apiPost<Booking>(`/booking/${id}/reschedule`, data),
+  getHistory: (bookingId?: string) => apiGet<BookingHistoryResponse[]>('/booking/history', { bookingId }),
 }

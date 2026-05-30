@@ -87,6 +87,34 @@ public class BookingController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] string status)
+    {
+        var r = await _service.UpdateStatus(id, status);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPost("{id}/pay")]
+    public async Task<IActionResult> Pay(Guid id, [FromBody] BookingPaymentRequest req)
+    {
+        var r = await _service.Pay(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPost("{id}/reschedule")]
+    public async Task<IActionResult> Reschedule(Guid id, [FromBody] RescheduleBookingRequest req)
+    {
+        var r = await _service.Reschedule(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory([FromQuery] Guid? bookingId)
+    {
+        var r = await _service.GetHistory(bookingId);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {

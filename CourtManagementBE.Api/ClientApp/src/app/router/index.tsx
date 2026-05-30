@@ -39,6 +39,7 @@ import {
   TimeSlotsPage,
   UnitsPage,
   UtilitiesPage,
+  BookingHistoriesPage,
 } from '@/app/router/lazyPages'
 
 const withSuspense = (element: ReactNode) => (
@@ -166,6 +167,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.refundReasons.replace('/', ''),
         element: withSuspense(<RefundReasonsPage />),
+      },
+      {
+        path: ROUTES.bookingHistories.replace('/', ''),
+        element: withSuspense(<BookingHistoriesPage />),
       },
     ],
   },

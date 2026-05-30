@@ -40,4 +40,6 @@ public interface IComboServiceRepository : IGenericRepository<ComboServices> { }
 public interface IBookingGroupRepository : IGenericRepository<BookingGroups> { }
 public interface IRecurringConfigRepository : IGenericRepository<RecurringConfigs> { }
 public interface IUnitConversionRepository : IGenericRepository<UnitConversions> { }
+public interface IAuditLogRepository : IGenericRepository<AuditLog> { }
+public interface IBookingHistoryRepository : IGenericRepository<BookingHistories> { }
 

@@ -10,6 +10,7 @@ import {
   UserOutlined,
   GiftOutlined,
   ShopOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons'
 import type { ReactNode } from 'react'
 
@@ -99,6 +100,10 @@ export const pageMeta: Record<string, { title: string; description: string }> = 
     description:
       'Theo d\u00f5i giao d\u1ecbch, tr\u1ea1ng th\u00e1i v\u00e0 ho\u00e0n ti\u1ec1n.',
   },
+  bookingHistories: {
+    title: 'Lịch sử thay đổi Booking',
+    description: 'Theo dõi nhật ký cập nhật trạng thái, thanh toán cọc và dời lịch.',
+  },
 }
 
 export const getMenuItems = (): MenuItem[] => {
@@ -139,6 +144,11 @@ export const getMenuItems = (): MenuItem[] => {
       key: 'bookings',
       icon: <CalendarOutlined />,
       label: <Link to="/bookings">{'\u0110\u1eb7t s\u00e2n'}</Link>,
+    },
+    {
+      key: 'booking-histories',
+      icon: <HistoryOutlined />,
+      label: <Link to="/booking-histories">Nhật ký Booking</Link>,
     },
     {
       key: 'services-combos',

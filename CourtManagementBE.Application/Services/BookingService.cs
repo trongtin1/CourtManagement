@@ -6,6 +6,7 @@ using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Domain.Enums;
+using CourtManagementBE.Application.DTOs.Response;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -195,6 +196,16 @@ public class BookingService : BaseService, IBookingService
                 return BadRequest<BookingResponse>($"Số lượng dịch vụ {service.ServiceName} thấp hơn giới hạn tối thiểu.");
             }
 
+            if (service.IsTrackStock)
+            {
+                if (service.StockQuantity < requestedService.Quantity)
+                {
+                    return BadRequest<BookingResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).");
+                }
+                service.StockQuantity -= requestedService.Quantity;
+                _unitOfWork.IServiceRepository.Update(service);
+            }
+
             var price = await GetCurrentServicePrice(requestedService.ServiceID);
             if (price is null)
             {
@@ -295,14 +306,330 @@ public class BookingService : BaseService, IBookingService
         entity.CancelledAt = DateTimeOffset.UtcNow;
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
+
         await _unitOfWork.BeginTransactionAsync();
-        _unitOfWork.IBookingRepository.Update(entity);
-        if (slots.Count > 0)
+        try
         {
-            _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+            _unitOfWork.IBookingRepository.Update(entity);
+            if (slots.Count > 0)
+            {
+                _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+            }
+
+            // Logic hoàn trả kho
+            var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
+            foreach (var bs in bookingServices)
+            {
+                var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == bs.ServiceID);
+                if (service is not null && service.IsTrackStock)
+                {
+                    service.StockQuantity += bs.Quantity;
+                    _unitOfWork.IServiceRepository.Update(service);
+                }
+            }
+
+            await _unitOfWork.CommitTransactionAsync();
+            return Success(_mapper.Map<BookingResponse>(entity), "Hủy đơn đặt sân thành công.");
         }
-        await _unitOfWork.CommitTransactionAsync();
-        return Success(_mapper.Map<BookingResponse>(entity), "Hủy đơn đặt sân thành công.");
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            return Conflict<BookingResponse>("Đã xảy ra lỗi khi hủy booking.");
+        }
+    }
+
+    public async Task<Result<BookingResponse>> UpdateStatus(Guid id, string status)
+    {
+        if (!Enum.TryParse<BookingStatus>(status, true, out var newStatus))
+        {
+            return BadRequest<BookingResponse>("Trạng thái không hợp lệ.");
+        }
+
+        var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
+        if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền cập nhật booking này.");
+
+        if (entity.Status == newStatus) return Success(_mapper.Map<BookingResponse>(entity));
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var oldStatus = entity.Status;
+            entity.Status = newStatus;
+            entity.ModifiedDate = DateTimeOffset.UtcNow;
+            _unitOfWork.IBookingRepository.Update(entity);
+
+            // Nếu chuyển sang Cancelled, dọn dẹp slots và hoàn trả kho
+            if (newStatus == BookingStatus.Cancelled)
+            {
+                entity.CancelledAt = DateTimeOffset.UtcNow;
+                var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
+                if (slots.Count > 0)
+                {
+                    _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+                }
+
+                // Logic hoàn trả kho
+                var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
+                foreach (var bs in bookingServices)
+                {
+                    var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == bs.ServiceID);
+                    if (service is not null && service.IsTrackStock)
+                    {
+                        service.StockQuantity += bs.Quantity;
+                        _unitOfWork.IServiceRepository.Update(service);
+                    }
+                }
+            }
+
+            // Ghi BookingHistory
+            await WriteBookingHistory(
+                bookingId: id,
+                action: "STATUS_UPDATE",
+                oldValue: oldStatus.ToString(),
+                newValue: newStatus.ToString(),
+                note: $"Cập nhật trạng thái đơn đặt sân từ {oldStatus} sang {newStatus}"
+            );
+
+            await _unitOfWork.CommitTransactionAsync();
+            return Success(_mapper.Map<BookingResponse>(entity), "Cập nhật trạng thái thành công.");
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            return Conflict<BookingResponse>("Đã xảy ra lỗi khi cập nhật trạng thái.");
+        }
+    }
+
+    public async Task<Result<BookingResponse>> Pay(Guid id, BookingPaymentRequest request)
+    {
+        if (request.Amount <= 0)
+        {
+            return BadRequest<BookingResponse>("Số tiền thanh toán phải lớn hơn 0.");
+        }
+
+        var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
+        if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền thực hiện thanh toán cho booking này.");
+
+        if (entity.Status == BookingStatus.Cancelled)
+        {
+            return BadRequest<BookingResponse>("Không thể thanh toán cho booking đã bị hủy.");
+        }
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var oldPaidAmount = entity.PaidAmount;
+            var oldStatus = entity.Status;
+
+            // 1. Tạo Payment record
+            var payment = new Payments
+            {
+                BookingID = id,
+                Amount = request.Amount,
+                PaymentMethod = request.PaymentMethod,
+                PaymentDate = DateTime.UtcNow,
+                Status = "success",
+                Note = request.Note,
+                CreatedDate = DateTimeOffset.UtcNow
+            };
+            await _unitOfWork.IPaymentRepository.Add(payment);
+
+            // 2. Cập nhật PaidAmount
+            entity.PaidAmount += request.Amount;
+
+            // 3. Nếu PaidAmount >= TotalAmount và status đang là Pending, tự động chuyển sang Confirmed
+            if (entity.PaidAmount >= entity.TotalAmount && entity.Status == BookingStatus.Pending)
+            {
+                entity.Status = BookingStatus.Confirmed;
+            }
+
+            entity.ModifiedDate = DateTimeOffset.UtcNow;
+            _unitOfWork.IBookingRepository.Update(entity);
+
+            // Ghi BookingHistory
+            await WriteBookingHistory(
+                bookingId: id,
+                action: "PAYMENT",
+                oldValue: $"PaidAmount: {oldPaidAmount}, Status: {oldStatus}",
+                newValue: $"PaidAmount: {entity.PaidAmount}, Status: {entity.Status}",
+                note: $"Thanh toán số tiền {request.Amount:N0} bằng {request.PaymentMethod}. Ghi chú: {request.Note}"
+            );
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+
+            return Success(_mapper.Map<BookingResponse>(entity), "Thanh toán thành công.");
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            return Conflict<BookingResponse>("Đã xảy ra lỗi khi thực hiện thanh toán.");
+        }
+    }
+
+    public async Task<Result<BookingResponse>> Reschedule(Guid id, RescheduleBookingRequest request)
+    {
+        if (request.Slots.Count == 0)
+        {
+            return BadRequest<BookingResponse>("Vui lòng chọn ít nhất một khung giờ.");
+        }
+
+        if (!await CanAccessCourt(request.CourtID))
+        {
+            return Unauthorized<BookingResponse>("Bạn không có quyền dời booking sang sân này.");
+        }
+
+        var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
+        if (booking is null)
+        {
+            return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        }
+
+        if (booking.Status == BookingStatus.Cancelled)
+        {
+            return BadRequest<BookingResponse>("Không thể dời lịch đơn đặt sân đã bị hủy.");
+        }
+
+        var court = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == request.CourtID);
+        if (court is null || !court.IsActive)
+        {
+            return BadRequest<BookingResponse>("Sân không tồn tại hoặc đang ngừng hoạt động.");
+        }
+
+        var bookingDate = request.BookingDate.Date;
+        var normalizedSlots = request.Slots
+            .Select(x => new CreateFullBookingSlotRequest
+            {
+                StartTime = TrimToSecond(x.StartTime),
+                EndTime = TrimToSecond(x.EndTime)
+            })
+            .DistinctBy(x => new { x.StartTime, x.EndTime })
+            .OrderBy(x => x.StartTime)
+            .ToList();
+
+        if (normalizedSlots.Any(x => x.StartTime >= x.EndTime))
+        {
+            return BadRequest<BookingResponse>("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
+        }
+
+        var overlapInRequest = normalizedSlots
+            .SelectMany((slot, index) => normalizedSlots.Skip(index + 1), (slot, next) => new { slot, next })
+            .Any(x => x.slot.StartTime < x.next.EndTime && x.slot.EndTime > x.next.StartTime);
+        if (overlapInRequest)
+        {
+            return BadRequest<BookingResponse>("Các khung giờ được chọn bị trùng nhau.");
+        }
+
+        var myOldSlots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
+
+        var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
+            x.CourtID == request.CourtID && x.BookingDate.Date == bookingDate && x.BookingID != id);
+        var existingSlots = sameDaySlots
+            .Where(x => normalizedSlots.Any(slot => slot.StartTime < x.EndTime && slot.EndTime > x.StartTime))
+            .ToList();
+
+        if (existingSlots.Count > 0)
+        {
+            return Conflict<BookingResponse>("Một hoặc nhiều khung giờ mới đã được đặt bởi booking khác.");
+        }
+
+        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate);
+        decimal courtTotal = 0;
+        foreach (var requestedSlot in normalizedSlots)
+        {
+            var matchedSlot = availability.FirstOrDefault(x =>
+                TimeSpan.TryParse(x.StartTime, out var startTime) &&
+                TimeSpan.TryParse(x.EndTime, out var endTime) &&
+                TrimToSecond(startTime) == requestedSlot.StartTime &&
+                TrimToSecond(endTime) == requestedSlot.EndTime);
+
+            if (matchedSlot is null)
+            {
+                return BadRequest<BookingResponse>("Khung giờ mới được chọn không thuộc lịch đặt sân hợp lệ.");
+            }
+
+            bool isLocked = matchedSlot.IsLocked;
+            bool isBookedByOther = matchedSlot.IsBooked && !myOldSlots.Any(x =>
+                x.CourtID == request.CourtID &&
+                x.BookingDate.Date == bookingDate &&
+                TrimToSecond(x.StartTime) == requestedSlot.StartTime &&
+                TrimToSecond(x.EndTime) == requestedSlot.EndTime);
+
+            if (isLocked || isBookedByOther)
+            {
+                return Conflict<BookingResponse>("Một hoặc nhiều khung giờ mới đã bị khóa hoặc đã được đặt.");
+            }
+
+            courtTotal += matchedSlot.Price;
+        }
+
+        var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
+        decimal serviceTotal = bookingServices.Sum(x => x.TotalAmount);
+
+        if (booking.ComboID is not null)
+        {
+            var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == booking.ComboID.Value);
+            if (combo is not null && combo.IsActive)
+            {
+                courtTotal = CalculateComboCourtTotal(combo, normalizedSlots.Count, availability, normalizedSlots);
+            }
+        }
+
+        var newBookingSlots = normalizedSlots.Select(x => new BookingSlots
+        {
+            BookingID = id,
+            CourtID = request.CourtID,
+            BookingDate = bookingDate,
+            StartTime = x.StartTime,
+            EndTime = x.EndTime
+        }).ToList();
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var oldCourtId = booking.CourtID;
+            var oldBookingDate = booking.BookingDate;
+            var oldStartTime = booking.StartTime;
+            var oldEndTime = booking.EndTime;
+            var oldTotalAmount = booking.TotalAmount;
+
+            if (myOldSlots.Count > 0)
+            {
+                _unitOfWork.IBookingSlotRepository.RemoveRange(myOldSlots);
+            }
+
+            await _unitOfWork.IBookingSlotRepository.AddRange(newBookingSlots);
+
+            booking.CourtID = request.CourtID;
+            booking.BookingDate = bookingDate;
+            booking.StartTime = normalizedSlots.First().StartTime;
+            booking.EndTime = normalizedSlots.Last().EndTime;
+            booking.TotalAmount = courtTotal + serviceTotal;
+            booking.ModifiedDate = DateTimeOffset.UtcNow;
+
+            _unitOfWork.IBookingRepository.Update(booking);
+
+            // Ghi BookingHistory
+            await WriteBookingHistory(
+                bookingId: id,
+                action: "RESCHEDULE",
+                oldValue: $"CourtID: {oldCourtId}, Date: {oldBookingDate:yyyy-MM-dd}, Time: {oldStartTime}-{oldEndTime}, Price: {oldTotalAmount}",
+                newValue: $"CourtID: {booking.CourtID}, Date: {booking.BookingDate:yyyy-MM-dd}, Time: {booking.StartTime}-{booking.EndTime}, Price: {booking.TotalAmount}",
+                note: $"Dời lịch đặt sân sang sân {booking.CourtID} ngày {booking.BookingDate:yyyy-MM-dd} từ {booking.StartTime} đến {booking.EndTime}"
+            );
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+
+            return Success(_mapper.Map<BookingResponse>(booking), "Dời lịch đặt sân thành công.");
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            return Conflict<BookingResponse>("Không thể dời lịch đặt sân. Vui lòng tải lại trang và thử lại.");
+        }
     }
 
     public async Task<Result<bool>> Delete(Guid id)
@@ -312,18 +639,40 @@ public class BookingService : BaseService, IBookingService
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<bool>("Bạn không có quyền xóa booking này.");
         var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
         var services = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
+
         await _unitOfWork.BeginTransactionAsync();
-        if (slots.Count > 0)
+        try
         {
-            _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+            if (slots.Count > 0)
+            {
+                _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+            }
+            if (services.Count > 0)
+            {
+                // Nếu xóa trực tiếp booking, hoàn lại kho cho các dịch vụ (chỉ khi booking chưa cancelled vì nếu cancelled đã hoàn kho rồi)
+                if (entity.Status != BookingStatus.Cancelled)
+                {
+                    foreach (var bs in services)
+                    {
+                        var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == bs.ServiceID);
+                        if (service is not null && service.IsTrackStock)
+                        {
+                            service.StockQuantity += bs.Quantity;
+                            _unitOfWork.IServiceRepository.Update(service);
+                        }
+                    }
+                }
+                _unitOfWork.IBookingServiceRepository.RemoveRange(services);
+            }
+            _unitOfWork.IBookingRepository.Remove(entity);
+            await _unitOfWork.CommitTransactionAsync();
+            return Success(true, "Xóa đơn đặt sân thành công.");
         }
-        if (services.Count > 0)
+        catch (Exception)
         {
-            _unitOfWork.IBookingServiceRepository.RemoveRange(services);
+            await _unitOfWork.RollbackTransactionAsync();
+            return Conflict<bool>("Đã xảy ra lỗi khi xóa booking.");
         }
-        _unitOfWork.IBookingRepository.Remove(entity);
-        await _unitOfWork.CommitTransactionAsync();
-        return Success(true, "Xóa đơn đặt sân thành công.");
     }
 
     private static TimeSpan TrimToSecond(TimeSpan value)
@@ -361,5 +710,33 @@ public class BookingService : BaseService, IBookingService
             .Take(extraCount);
 
         return total + selectedPrices.Sum();
+    }
+
+    public async Task<Result<List<BookingHistoryResponse>>> GetHistory(Guid? bookingId)
+    {
+        System.Linq.Expressions.Expression<Func<BookingHistories, bool>> filter = x => true;
+        if (bookingId.HasValue)
+        {
+            filter = x => x.BookingID == bookingId.Value;
+        }
+
+        var list = await _unitOfWork.IBookingHistoryRepository.FindList(filter);
+        var ordered = list.OrderByDescending(x => x.CreatedAt).ToList();
+        return Success(_mapper.Map<List<BookingHistoryResponse>>(ordered));
+    }
+
+    private async Task WriteBookingHistory(Guid bookingId, string action, string oldValue, string newValue, string note = "")
+    {
+        var log = new BookingHistories
+        {
+            BookingID = bookingId,
+            Action = action,
+            OldValue = oldValue,
+            NewValue = newValue,
+            Note = note,
+            PerformedBy = _currentUser?.UserId?.ToString() ?? "system",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        await _unitOfWork.IBookingHistoryRepository.Add(log);
     }
 }

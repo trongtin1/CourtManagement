@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
     public DbSet<BookingSlots> BookingSlots => Set<BookingSlots>();
     public DbSet<BookingServices> BookingServices => Set<BookingServices>();
     public DbSet<Payments> Payments => Set<Payments>();
+    public DbSet<BookingHistories> BookingHistories => Set<BookingHistories>();
 
     // ── Dịch vụ ───────────────────────────────────────────────────────────────
     public DbSet<Services> Services => Set<Services>();
@@ -318,6 +319,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.StartTime).HasColumnType("time(7)").IsRequired();
             e.Property(x => x.EndTime).HasColumnType("time(7)").IsRequired();
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
             e.Property(x => x.Status)
                 .HasConversion(
                     v => v.ToString().ToLower(),
@@ -526,6 +528,25 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.TableName);
             e.HasIndex(x => x.PerformedBy);
             e.HasIndex(x => x.CreatedAt);
+        });
+
+        // ── BookingHistories ──────────────────────────────────────────────────
+        modelBuilder.Entity<BookingHistories>(e =>
+        {
+            e.HasKey(x => x.BookingHistoryID);
+            e.Property(x => x.Action).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.OldValue).HasColumnType("nvarchar(max)");
+            e.Property(x => x.NewValue).HasColumnType("nvarchar(max)");
+            e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            e.Property(x => x.PerformedBy).HasColumnType("varchar(100)");
+
+            e.HasIndex(x => x.BookingID);
+            e.HasIndex(x => x.CreatedAt);
+
+            e.HasOne(x => x.Booking)
+                .WithMany()
+                .HasForeignKey(x => x.BookingID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── UnitConversions ──────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 using AutoMapper;
 using CourtManagementBE.Application.DTOs;
+using CourtManagementBE.Application.DTOs.Response;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 
@@ -65,6 +66,7 @@ public class MappingProfile : Profile
         CreateMap<BookingGroupRequest, BookingGroups>();
         CreateMap<RecurringConfigs, RecurringConfigResponse>();
         CreateMap<RecurringConfigRequest, RecurringConfigs>();
+        CreateMap<BookingHistories, BookingHistoryResponse>();
 
         // ── Service ──────────────────────────────────────────────────────
         CreateMap<Domain.Entities.Services, ServiceResponse>();

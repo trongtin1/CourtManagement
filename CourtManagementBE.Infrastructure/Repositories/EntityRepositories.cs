@@ -103,3 +103,9 @@ public class RecurringConfigRepository : GenericRepository<RecurringConfigs>, IR
 
 public class UnitConversionRepository : GenericRepository<UnitConversions>, IUnitConversionRepository
 { public UnitConversionRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class AuditLogRepository : GenericRepository<AuditLog>, IAuditLogRepository
+{ public AuditLogRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class BookingHistoryRepository : GenericRepository<BookingHistories>, IBookingHistoryRepository
+{ public BookingHistoryRepository(AppDbContext ctx) : base(ctx) { } }

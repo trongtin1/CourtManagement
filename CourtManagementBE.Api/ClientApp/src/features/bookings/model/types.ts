@@ -17,6 +17,7 @@ export type Booking = {
   createdDate: string
   startTime?: string
   endTime?: string
+  paidAmount?: number
 }
 
 export type BookingGroup = {
@@ -82,6 +83,19 @@ export type CancelBookingRequest = {
   cancellationReason: string
 }
 
+export type PayBookingRequest = {
+  amount: number
+  paymentMethod: string
+  note?: string
+}
+
+export type RescheduleBookingRequest = {
+  courtId: number
+  bookingDate: string
+  startTime: string
+  endTime: string
+}
+
 export type CreateBookingGroupRequest = {
   groupType: BookingGroupType
   customerID?: number | null
@@ -125,4 +139,15 @@ export type BookingSlot = {
   bookingDate: string
   startTime: string
   endTime: string
+}
+
+export type BookingHistoryResponse = {
+  bookingHistoryID: number
+  bookingID: string
+  action: string
+  oldValue: string
+  newValue: string
+  note: string
+  performedBy: string
+  createdAt: string
 }

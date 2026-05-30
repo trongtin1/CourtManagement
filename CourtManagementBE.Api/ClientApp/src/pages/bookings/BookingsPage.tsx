@@ -59,8 +59,11 @@ export function BookingsPage() {
     return courtsData?.items[0]?.facilityID ?? 1
   }, [storedFacilityId, courtsData])
 
-  const { data: timelineData, isLoading: isTimelineLoading } =
-    useCourtTimelineAvailabilityQuery(facilityId, selectedDate)
+  const {
+    data: timelineData,
+    isLoading: isTimelineLoading,
+    refetch: refetchTimeline,
+  } = useCourtTimelineAvailabilityQuery(facilityId, selectedDate)
 
   const courtList = useMemo(() => timelineData ?? [], [timelineData])
 
@@ -174,7 +177,7 @@ export function BookingsPage() {
                             value={filterCourtType}
                             onChange={setFilterCourtType}
                             className="w-32.5 text-xs"
-                            variant="borderless"
+                            variant="outlined"
                             size="small"
                           >
                             <Select.Option value="All">Tất cả</Select.Option>
@@ -251,6 +254,7 @@ export function BookingsPage() {
         open={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         courts={courtList}
+        onRefresh={refetchTimeline}
       />
 
       {/* Full Page Create Booking Drawer */}

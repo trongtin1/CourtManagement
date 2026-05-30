@@ -23,7 +23,6 @@ import {
   PlusOutlined,
   ReloadOutlined,
   MinusCircleOutlined,
-  GiftOutlined,
 } from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 import { LoadingSpin } from '@/components/common/LoadingSpin'

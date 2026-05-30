@@ -37,3 +37,10 @@ public class CreateFullBookingServiceRequest
     [Required] public int ServiceID { get; set; }
     [Required, Range(1, int.MaxValue)] public int Quantity { get; set; }
 }
+
+public class RescheduleBookingRequest
+{
+    [Required] public int CourtID { get; set; }
+    [Required] public DateTime BookingDate { get; set; }
+    public List<CreateFullBookingSlotRequest> Slots { get; set; } = [];
+}

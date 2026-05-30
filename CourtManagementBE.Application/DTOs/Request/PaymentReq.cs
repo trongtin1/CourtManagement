@@ -17,3 +17,10 @@ public class PaymentRequest
     [MaxLength(300)] public string Note { get; set; } = string.Empty;
     [Required] public DateTime PaymentDate { get; set; }
 }
+
+public class BookingPaymentRequest
+{
+    [Required] public decimal Amount { get; set; }
+    [Required, MaxLength(30)] public string PaymentMethod { get; set; } = "cash";
+    [MaxLength(300)] public string Note { get; set; } = string.Empty;
+}

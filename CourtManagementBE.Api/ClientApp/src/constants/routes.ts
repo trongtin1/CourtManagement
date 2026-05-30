@@ -34,4 +34,5 @@ export const ROUTES = {
   courtFeatureCategories: '/court-feature-categories',
   cancellationReasons: '/cancellation-reasons',
   refundReasons: '/refund-reasons',
+  bookingHistories: '/booking-histories',
 } as const

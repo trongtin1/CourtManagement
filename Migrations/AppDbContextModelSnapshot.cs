@@ -260,6 +260,49 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("BookingGroups");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingHistories", b =>
+                {
+                    b.Property<long>("BookingHistoryID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("BookingHistoryID"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<Guid>("BookingID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NewValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("OldValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("BookingHistoryID");
+
+                    b.HasIndex("BookingID");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("BookingHistories");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingServices", b =>
                 {
                     b.Property<int>("BookingServiceID")
@@ -391,6 +434,11 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Note")
                         .IsRequired()
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time(7)");
@@ -1908,6 +1956,17 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Facility");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingHistories", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Bookings", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>

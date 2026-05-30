@@ -3,7 +3,7 @@ import { bookingApi } from '@/features/bookings/api/bookingApi'
 import { bookingSlotApi } from '@/features/bookings/api/bookingSlotApi'
 import { bookingServiceApi } from '@/features/bookings/api/bookingServiceApi'
 import type { PaginationQuery } from '@/types/api'
-import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest } from '../model/types'
+import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest } from '../model/types'
 
 export const bookingKeys = {
   all: ['bookings'] as const,
@@ -99,6 +99,30 @@ export const useDeleteBookingMutation = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => bookingApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
+  })
+}
+
+export const useUpdateBookingStatusMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => bookingApi.updateStatus(id, status),
+    onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
+  })
+}
+
+export const usePayBookingMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: PayBookingRequest }) => bookingApi.pay(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
+  })
+}
+
+export const useRescheduleBookingMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: RescheduleBookingRequest }) => bookingApi.reschedule(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
   })
 }

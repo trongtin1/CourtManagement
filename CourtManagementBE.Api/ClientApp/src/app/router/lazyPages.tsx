@@ -174,3 +174,9 @@ export const RefundReasonsPage = lazy(() =>
     default: m.RefundReasonsPage,
   })),
 )
+
+export const BookingHistoriesPage = lazy(() =>
+  import('@/pages/booking-histories/BookingHistoriesPage').then((m) => ({
+    default: m.BookingHistoriesPage,
+  })),
+)
