@@ -127,7 +127,9 @@ export function BookingGroupCreateDrawer({
     } catch (err) {
       console.error(err)
       const errMsg =
-        err?.message || 'Không thể tạo nhóm đặt sân. Vui lòng kiểm tra lại xung đột lịch.'
+        err instanceof Error
+          ? err.message
+          : 'Không thể tạo nhóm đặt sân. Vui lòng kiểm tra lại xung đột lịch.'
       message.error(errMsg)
     }
   }

@@ -42,4 +42,4 @@ public interface IRecurringConfigRepository : IGenericRepository<RecurringConfig
 public interface IUnitConversionRepository : IGenericRepository<UnitConversions> { }
 public interface IAuditLogRepository : IGenericRepository<AuditLog> { }
 public interface IBookingHistoryRepository : IGenericRepository<BookingHistories> { }
-
+public interface IBookingStatusRepository : IGenericRepository<BookingStatuses> { }

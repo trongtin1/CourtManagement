@@ -20,6 +20,7 @@ public interface IBookingService
     Task<Result<BookingResponse>> UpdateStatus(Guid id, string status);
     Task<Result<BookingResponse>> Pay(Guid id, BookingPaymentRequest request);
     Task<Result<BookingResponse>> Reschedule(Guid id, RescheduleBookingRequest request);
+    Task<Result<List<BookingStatusOption>>> GetStatuses();
     Task<Result<bool>> Delete(Guid id);
     Task<Result<List<BookingHistoryResponse>>> GetHistory(Guid? bookingId);
 }

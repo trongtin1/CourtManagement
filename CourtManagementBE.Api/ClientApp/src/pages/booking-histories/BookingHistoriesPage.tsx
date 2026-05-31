@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Table,
   Tag,
@@ -30,7 +30,7 @@ export function BookingHistoriesPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchHistory = async (idToSearch?: string) => {
+  const fetchHistory = useCallback(async (idToSearch?: string) => {
     setIsLoading(true)
     setError(null)
     try {
@@ -46,7 +46,15 @@ export function BookingHistoriesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchHistory()
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [fetchHistory])
 
   const handleSearch = () => {
     setSearchBookingId(bookingIdInput)

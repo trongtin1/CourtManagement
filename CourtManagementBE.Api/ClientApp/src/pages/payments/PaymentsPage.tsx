@@ -11,6 +11,7 @@ import { formatCompactCurrency as formatCurrency } from '@/utils/format'
 const statusColors: Record<string, string> = {
   failed: 'volcano',
   paid: 'green',
+  success: 'green',
   pending: 'orange',
   refunded: 'red',
 }
@@ -41,7 +42,7 @@ export function PaymentsPage() {
     return matchesSearch && matchesStatus
   })
   const paidAmount = payments
-    .filter((payment) => payment.status === 'paid')
+    .filter((payment) => payment.status === 'paid' || payment.status === 'success')
     .reduce((sum, payment) => sum + (payment.amount ?? 0), 0)
   const refundedAmount = payments.reduce(
     (sum, payment) => sum + (payment.refundedAmount ?? 0),
@@ -64,7 +65,7 @@ export function PaymentsPage() {
             onChange={setStatusFilter}
             options={[
               { label: 'Chờ thanh toán', value: 'pending' },
-              { label: 'Đã thanh toán', value: 'paid' },
+              { label: 'Đã thanh toán', value: 'success' },
               { label: 'Đã hoàn tiền', value: 'refunded' },
               { label: 'Thất bại', value: 'failed' },
             ]}
@@ -125,7 +126,9 @@ export function PaymentsPage() {
               dataIndex: 'status',
               width: 120,
               render: (value: string) => (
-                <Tag color={statusColors[value] || 'default'}>{value}</Tag>
+                <Tag color={statusColors[value] || 'default'}>
+                  {value === 'success' ? 'Thành công' : value}
+                </Tag>
               ),
             },
             {

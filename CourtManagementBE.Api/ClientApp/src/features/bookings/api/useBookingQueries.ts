@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
 import { bookingSlotApi } from '@/features/bookings/api/bookingSlotApi'
 import { bookingServiceApi } from '@/features/bookings/api/bookingServiceApi'
+import { paymentKeys } from '@/features/payments/api/usePaymentQueries'
 import type { PaginationQuery } from '@/types/api'
 import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest } from '../model/types'
 
@@ -14,6 +15,7 @@ export const bookingKeys = {
   slotsByBooking: (bookingId: string) => [...bookingKeys.all, 'slots', bookingId] as const,
   servicesByBooking: (bookingId: string) => [...bookingKeys.all, 'services', bookingId] as const,
   slotsByDate: (date: string) => [...bookingKeys.all, 'slotsByDate', date] as const,
+  statuses: () => [...bookingKeys.all, 'statuses'] as const,
 }
 
 export const useBookingsQuery = (params?: PaginationQuery) => {
@@ -115,7 +117,11 @@ export const usePayBookingMutation = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: PayBookingRequest }) => bookingApi.pay(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: paymentKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.id) })
+    },
   })
 }
 
@@ -124,6 +130,13 @@ export const useRescheduleBookingMutation = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: RescheduleBookingRequest }) => bookingApi.reschedule(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
+  })
+}
+
+export const useBookingStatusesQuery = () => {
+  return useQuery({
+    queryKey: bookingKeys.statuses(),
+    queryFn: () => bookingApi.getStatuses(),
   })
 }
 

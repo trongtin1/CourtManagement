@@ -1,23 +1,18 @@
 export type BookingStatus = {
   bookingStatusID: number
   code: string
-  name: string
-  description: string
-  sortOrder: number
-  isActive: boolean
-  createdDate: string
+  statusName: string
+  labelName: string
+  isTerminal: boolean
+  canReschedule: boolean
   colorCode: string
-  canCancel: boolean
-  isFinal: boolean
 }
 
 export type BookingStatusRequest = {
   code: string
-  name: string
-  description?: string
-  sortOrder?: number
-  isActive?: boolean
-  colorCode?: string
-  canCancel?: boolean
-  isFinal?: boolean
+  statusName: string
+  labelName: string
+  isTerminal: boolean
+  canReschedule: boolean
+  colorCode: string
 }

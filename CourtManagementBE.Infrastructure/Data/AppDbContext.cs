@@ -49,6 +49,7 @@ public class AppDbContext : DbContext
     public DbSet<BookingServices> BookingServices => Set<BookingServices>();
     public DbSet<Payments> Payments => Set<Payments>();
     public DbSet<BookingHistories> BookingHistories => Set<BookingHistories>();
+    public DbSet<BookingStatuses> BookingStatuses => Set<BookingStatuses>();
 
     // ── Dịch vụ ───────────────────────────────────────────────────────────────
     public DbSet<Services> Services => Set<Services>();
@@ -321,11 +322,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
             e.Property(x => x.Status)
-                .HasConversion(
-                    v => v.ToString().ToLower(),
-                    v => (BookingStatus)Enum.Parse(typeof(BookingStatus), v, true)
-                )
-                .HasColumnType("varchar(20)")
+                .HasColumnType("varchar(50)")
                 .IsRequired();
             e.Property(x => x.CancellationReason).HasColumnType("nvarchar(500)");
             e.Property(x => x.Note).HasColumnType("nvarchar(500)");
@@ -573,6 +570,17 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.TargetUnitID)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── BookingStatuses ──────────────────────────────────────────────────
+        modelBuilder.Entity<BookingStatuses>(e =>
+        {
+            e.HasKey(x => x.BookingStatusID);
+            e.Property(x => x.Code).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.StatusName).HasColumnType("varchar(100)").IsRequired();
+            e.Property(x => x.LabelName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.ColorCode).HasColumnType("varchar(20)");
+            e.HasIndex(x => x.Code).IsUnique();
         });
     }
 

@@ -42,5 +42,6 @@ public class RescheduleBookingRequest
 {
     [Required] public int CourtID { get; set; }
     [Required] public DateTime BookingDate { get; set; }
-    public List<CreateFullBookingSlotRequest> Slots { get; set; } = [];
+    [Required] public TimeSpan StartTime { get; set; }
+    [Required] public TimeSpan EndTime { get; set; }
 }

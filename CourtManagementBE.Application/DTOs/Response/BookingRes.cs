@@ -16,3 +16,14 @@ public class BookingResponse
     public DateTimeOffset? CancelledAt { get; set; }
     public DateTimeOffset CreatedDate { get; set; }
 }
+
+public class BookingStatusOption
+{
+    public string Value { get; set; } = string.Empty; // Keep as StatusName (e.g. "Pending") to maintain compatibility
+    public string Code { get; set; } = string.Empty;  // "001"
+    public string Label { get; set; } = string.Empty; // LabelName
+    public bool IsTerminal { get; set; }
+    public bool CanReschedule { get; set; }
+    public string ColorCode { get; set; } = string.Empty;
+}
+

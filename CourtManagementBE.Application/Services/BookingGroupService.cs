@@ -6,6 +6,7 @@ using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Enums;
 using CourtManagementBE.Domain.Models;
+using CourtManagementBE.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourtManagementBE.Application.Services;
@@ -126,8 +127,8 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 var existingBookings = await _unitOfWork.IBookingRepository.FindList(x =>
                     x.BookingGroupID == entity.BookingGroupID &&
                     x.BookingDate >= today &&
-                    x.Status != BookingStatus.Cancelled &&
-                    x.Status != BookingStatus.Completed);
+                    x.Status != BookingStatusConstants.Cancelled &&
+                    x.Status != BookingStatusConstants.Completed);
 
                 foreach (var b in existingBookings)
                 {
@@ -207,10 +208,10 @@ public class BookingGroupService : BaseService, IBookingGroupService
             _unitOfWork.IBookingGroupRepository.Update(entity);
 
             // Tự động hủy tất cả các buổi đặt sân lẻ thuộc nhóm chưa diễn ra
-            var bookings = await _unitOfWork.IBookingRepository.FindList(x => x.BookingGroupID == id && x.Status != BookingStatus.Cancelled);
+            var bookings = await _unitOfWork.IBookingRepository.FindList(x => x.BookingGroupID == id && x.Status != BookingStatusConstants.Cancelled);
             foreach (var booking in bookings)
             {
-                booking.Status = BookingStatus.Cancelled;
+                booking.Status = BookingStatusConstants.Cancelled;
                 booking.CancellationReason = $"Hủy theo nhóm đặt sân: {reason}";
                 booking.CancelledAt = DateTimeOffset.UtcNow;
                 booking.ModifiedDate = DateTimeOffset.UtcNow;
@@ -331,7 +332,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
             {
                 var bookingIds = overlappingSlots.Select(s => s.BookingID).Distinct().ToList();
                 var activeBookings = await _unitOfWork.IBookingRepository.FindList(b =>
-                    bookingIds.Contains(b.BookingID) && b.Status != BookingStatus.Cancelled);
+                    bookingIds.Contains(b.BookingID) && b.Status != BookingStatusConstants.Cancelled);
 
                 if (activeBookings.Count > 0)
                 {
@@ -350,7 +351,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 StartTime = config.StartTime,
                 EndTime = config.EndTime,
                 ComboID = group.ComboID,
-                Status = BookingStatus.Confirmed,
+                Status = BookingStatusConstants.Confirmed,
                 Note = $"[Đặt định kỳ] Nhóm: {group.GroupName}",
                 TotalAmount = 0,
                 CreatedDate = DateTimeOffset.UtcNow,

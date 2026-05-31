@@ -1,4 +1,4 @@
-export type BookingStatus = 'Pending' | 'Confirmed' | 'Cancelled' | 'Completed'
+export type BookingStatus = string;
 export type BookingGroupStatus = 'Active' | 'Paused' | 'Cancelled' | 'Completed'
 export type BookingGroupType = 'recurring' | 'tournament' | 'corporate'
 
@@ -90,7 +90,7 @@ export type PayBookingRequest = {
 }
 
 export type RescheduleBookingRequest = {
-  courtId: number
+  courtID: number
   bookingDate: string
   startTime: string
   endTime: string
@@ -132,8 +132,32 @@ export type BookingService = {
   createdDate: string
 }
 
+export type CreateBookingServiceRequest = {
+  bookingID: string
+  serviceID: number
+  quantity: number
+  unitPrice?: number
+  discountAmount?: number
+  status?: string
+}
+
+export type UpdateBookingServiceRequest = {
+  quantity?: number
+  unitPrice?: number
+  discountAmount?: number
+  status?: string
+}
+
 export type BookingSlot = {
   id: number
+  bookingID: string
+  courtID: number
+  bookingDate: string
+  startTime: string
+  endTime: string
+}
+
+export type CreateBookingSlotRequest = {
   bookingID: string
   courtID: number
   bookingDate: string
@@ -150,4 +174,13 @@ export type BookingHistoryResponse = {
   note: string
   performedBy: string
   createdAt: string
+}
+
+export type BookingStatusOption = {
+  value: string
+  code: string
+  label: string
+  isTerminal: boolean
+  canReschedule: boolean
+  colorCode: string
 }

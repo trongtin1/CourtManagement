@@ -11,8 +11,8 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { BookingTimeline } from './BookingTimeline'
-import { BookingDetailDrawer } from './BookingDetailDrawer'
+import { BookingTimeline } from './timeline/BookingTimeline'
+import { BookingDetailDrawer } from './details/BookingDetailDrawer'
 import { CreateBookingPage } from './create/CreateBookingPage'
 
 import type { TimelineBookingResponse } from '@/features/courts/model/types'
@@ -25,7 +25,7 @@ import {
 
 import { storage } from '@/utils/storage'
 import { AUTH_STORAGE_KEYS } from '@/constants/auth'
-import { BookingGroupsTab } from './BookingGroupsTab'
+import { BookingGroupsTab } from './groups/BookingGroupsTab'
 
 type ActiveTab = 'timeline' | 'groups'
 

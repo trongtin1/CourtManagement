@@ -19,8 +19,8 @@ public class Bookings
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; } = 0;
 
-    // 🛠️ Trạng thái (Sử dụng Enum strongly-typed để đảm bảo an toàn nghiệp vụ)
-    public BookingStatus Status { get; set; } = BookingStatus.Pending;
+    // 🛠️ Trạng thái (Sử dụng Code string hằng số động từ BookingStatusConstants)
+    public string Status { get; set; } = string.Empty;
 
     // 🛠️ Lý do hủy (Master Data phân loại + Ghi chú chi tiết cho buổi hủy đó)
     public int? CancellationReasonID { get; set; }

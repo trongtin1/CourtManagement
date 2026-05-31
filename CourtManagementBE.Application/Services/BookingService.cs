@@ -7,6 +7,7 @@ using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Domain.Enums;
 using CourtManagementBE.Application.DTOs.Response;
+using CourtManagementBE.Domain.Constants;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -40,12 +41,14 @@ public class BookingService : BaseService, IBookingService
 
     public async Task<Result<List<BookingResponse>>> GetByStatus(string status)
     {
-        if (!Enum.TryParse<BookingStatus>(status, true, out var enumStatus))
+        var statusEntity = await _unitOfWork.IBookingStatusRepository.FindFirst(
+            x => x.Code == status || x.StatusName.ToLower() == status.ToLower());
+        if (statusEntity is null)
         {
             return BadRequest<List<BookingResponse>>("Trạng thái đặt sân không hợp lệ.");
         }
         var courtIds = await GetScopedCourtIds();
-        var list = await _unitOfWork.IBookingRepository.FindList(x => x.Status == enumStatus && courtIds.Contains(x.CourtID));
+        var list = await _unitOfWork.IBookingRepository.FindList(x => x.Status == statusEntity.Code && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
@@ -158,7 +161,7 @@ public class BookingService : BaseService, IBookingService
         {
             var bookingIds = existingSlots.Select(x => x.BookingID).Distinct().ToList();
             var activeBookings = await _unitOfWork.IBookingRepository.FindList(x =>
-                bookingIds.Contains(x.BookingID) && x.Status != BookingStatus.Cancelled);
+                bookingIds.Contains(x.BookingID) && x.Status != BookingStatusConstants.Cancelled);
 
             if (activeBookings.Count > 0)
             {
@@ -241,7 +244,7 @@ public class BookingService : BaseService, IBookingService
             CustomerID = request.CustomerID,
             BookingDate = bookingDate,
             ComboID = request.ComboID,
-            Status = BookingStatus.Pending,
+            Status = BookingStatusConstants.Pending,
             Note = request.Note,
             TotalAmount = courtTotal + serviceTotal,
             CreatedDate = now,
@@ -299,9 +302,9 @@ public class BookingService : BaseService, IBookingService
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền hủy booking này.");
-        if (entity.Status == BookingStatus.Cancelled) return BadRequest<BookingResponse>("Đơn đặt sân đã bị hủy trước đó.");
+        if (entity.Status == BookingStatusConstants.Cancelled) return BadRequest<BookingResponse>("Đơn đặt sân đã bị hủy trước đó.");
 
-        entity.Status = BookingStatus.Cancelled;
+        entity.Status = BookingStatusConstants.Cancelled;
         entity.CancellationReason = request.CancellationReason;
         entity.CancelledAt = DateTimeOffset.UtcNow;
         entity.ModifiedDate = DateTimeOffset.UtcNow;
@@ -340,10 +343,13 @@ public class BookingService : BaseService, IBookingService
 
     public async Task<Result<BookingResponse>> UpdateStatus(Guid id, string status)
     {
-        if (!Enum.TryParse<BookingStatus>(status, true, out var newStatus))
+        var statusEntity = await _unitOfWork.IBookingStatusRepository.FindFirst(
+            x => x.Code == status || x.StatusName.ToLower() == status.ToLower());
+        if (statusEntity is null)
         {
             return BadRequest<BookingResponse>("Trạng thái không hợp lệ.");
         }
+        var newStatus = statusEntity.Code;
 
         var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
@@ -360,7 +366,7 @@ public class BookingService : BaseService, IBookingService
             _unitOfWork.IBookingRepository.Update(entity);
 
             // Nếu chuyển sang Cancelled, dọn dẹp slots và hoàn trả kho
-            if (newStatus == BookingStatus.Cancelled)
+            if (newStatus == BookingStatusConstants.Cancelled)
             {
                 entity.CancelledAt = DateTimeOffset.UtcNow;
                 var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
@@ -412,9 +418,20 @@ public class BookingService : BaseService, IBookingService
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền thực hiện thanh toán cho booking này.");
 
-        if (entity.Status == BookingStatus.Cancelled)
+        if (entity.Status == BookingStatusConstants.Cancelled)
         {
             return BadRequest<BookingResponse>("Không thể thanh toán cho booking đã bị hủy.");
+        }
+
+        if (entity.PaidAmount >= entity.TotalAmount)
+        {
+            return BadRequest<BookingResponse>("Booking đã thanh toán đủ.");
+        }
+
+        var remainingAmount = entity.TotalAmount - entity.PaidAmount;
+        if (request.Amount > remainingAmount)
+        {
+            return BadRequest<BookingResponse>($"Số tiền thanh toán vượt quá số còn lại ({remainingAmount:N0}).");
         }
 
         await _unitOfWork.BeginTransactionAsync();
@@ -440,9 +457,9 @@ public class BookingService : BaseService, IBookingService
             entity.PaidAmount += request.Amount;
 
             // 3. Nếu PaidAmount >= TotalAmount và status đang là Pending, tự động chuyển sang Confirmed
-            if (entity.PaidAmount >= entity.TotalAmount && entity.Status == BookingStatus.Pending)
+            if (entity.PaidAmount >= entity.TotalAmount && entity.Status == BookingStatusConstants.Pending)
             {
-                entity.Status = BookingStatus.Confirmed;
+                entity.Status = BookingStatusConstants.Confirmed;
             }
 
             entity.ModifiedDate = DateTimeOffset.UtcNow;
@@ -471,11 +488,6 @@ public class BookingService : BaseService, IBookingService
 
     public async Task<Result<BookingResponse>> Reschedule(Guid id, RescheduleBookingRequest request)
     {
-        if (request.Slots.Count == 0)
-        {
-            return BadRequest<BookingResponse>("Vui lòng chọn ít nhất một khung giờ.");
-        }
-
         if (!await CanAccessCourt(request.CourtID))
         {
             return Unauthorized<BookingResponse>("Bạn không có quyền dời booking sang sân này.");
@@ -487,9 +499,10 @@ public class BookingService : BaseService, IBookingService
             return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
         }
 
-        if (booking.Status == BookingStatus.Cancelled)
+        var statusEntity = await _unitOfWork.IBookingStatusRepository.FindFirst(x => x.Code == booking.Status);
+        if (statusEntity is null || !statusEntity.CanReschedule)
         {
-            return BadRequest<BookingResponse>("Không thể dời lịch đơn đặt sân đã bị hủy.");
+            return BadRequest<BookingResponse>("Trạng thái hiện tại của đơn đặt sân không cho phép dời lịch.");
         }
 
         var court = await _unitOfWork.ICourtRepository.FindFirst(x => x.CourtID == request.CourtID);
@@ -499,27 +512,15 @@ public class BookingService : BaseService, IBookingService
         }
 
         var bookingDate = request.BookingDate.Date;
-        var normalizedSlots = request.Slots
-            .Select(x => new CreateFullBookingSlotRequest
-            {
-                StartTime = TrimToSecond(x.StartTime),
-                EndTime = TrimToSecond(x.EndTime)
-            })
-            .DistinctBy(x => new { x.StartTime, x.EndTime })
-            .OrderBy(x => x.StartTime)
-            .ToList();
+        var requestedSlot = new CreateFullBookingSlotRequest
+        {
+            StartTime = TrimToSecond(request.StartTime),
+            EndTime = TrimToSecond(request.EndTime)
+        };
 
-        if (normalizedSlots.Any(x => x.StartTime >= x.EndTime))
+        if (requestedSlot.StartTime >= requestedSlot.EndTime)
         {
             return BadRequest<BookingResponse>("Giờ kết thúc phải lớn hơn giờ bắt đầu.");
-        }
-
-        var overlapInRequest = normalizedSlots
-            .SelectMany((slot, index) => normalizedSlots.Skip(index + 1), (slot, next) => new { slot, next })
-            .Any(x => x.slot.StartTime < x.next.EndTime && x.slot.EndTime > x.next.StartTime);
-        if (overlapInRequest)
-        {
-            return BadRequest<BookingResponse>("Các khung giờ được chọn bị trùng nhau.");
         }
 
         var myOldSlots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
@@ -527,7 +528,7 @@ public class BookingService : BaseService, IBookingService
         var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
             x.CourtID == request.CourtID && x.BookingDate.Date == bookingDate && x.BookingID != id);
         var existingSlots = sameDaySlots
-            .Where(x => normalizedSlots.Any(slot => slot.StartTime < x.EndTime && slot.EndTime > x.StartTime))
+            .Where(x => requestedSlot.StartTime < x.EndTime && requestedSlot.EndTime > x.StartTime)
             .ToList();
 
         if (existingSlots.Count > 0)
@@ -537,25 +538,40 @@ public class BookingService : BaseService, IBookingService
 
         var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate);
         decimal courtTotal = 0;
-        foreach (var requestedSlot in normalizedSlots)
-        {
-            var matchedSlot = availability.FirstOrDefault(x =>
+        var matchedSlots = availability
+            .Where(x =>
                 TimeSpan.TryParse(x.StartTime, out var startTime) &&
                 TimeSpan.TryParse(x.EndTime, out var endTime) &&
-                TrimToSecond(startTime) == requestedSlot.StartTime &&
-                TrimToSecond(endTime) == requestedSlot.EndTime);
+                TrimToSecond(startTime) >= requestedSlot.StartTime &&
+                TrimToSecond(endTime) <= requestedSlot.EndTime)
+            .OrderBy(x => TimeSpan.Parse(x.StartTime))
+            .ToList();
 
-            if (matchedSlot is null)
+        if (matchedSlots.Count == 0 ||
+            TrimToSecond(TimeSpan.Parse(matchedSlots.First().StartTime)) != requestedSlot.StartTime ||
+            TrimToSecond(TimeSpan.Parse(matchedSlots.Last().EndTime)) != requestedSlot.EndTime)
+        {
+            return BadRequest<BookingResponse>("Khung giờ mới được chọn không thuộc lịch đặt sân hợp lệ.");
+        }
+
+        for (var i = 1; i < matchedSlots.Count; i++)
+        {
+            if (TrimToSecond(TimeSpan.Parse(matchedSlots[i - 1].EndTime)) != TrimToSecond(TimeSpan.Parse(matchedSlots[i].StartTime)))
             {
                 return BadRequest<BookingResponse>("Khung giờ mới được chọn không thuộc lịch đặt sân hợp lệ.");
             }
+        }
 
+        foreach (var matchedSlot in matchedSlots)
+        {
+            var slotStart = TrimToSecond(TimeSpan.Parse(matchedSlot.StartTime));
+            var slotEnd = TrimToSecond(TimeSpan.Parse(matchedSlot.EndTime));
             bool isLocked = matchedSlot.IsLocked;
             bool isBookedByOther = matchedSlot.IsBooked && !myOldSlots.Any(x =>
                 x.CourtID == request.CourtID &&
                 x.BookingDate.Date == bookingDate &&
-                TrimToSecond(x.StartTime) == requestedSlot.StartTime &&
-                TrimToSecond(x.EndTime) == requestedSlot.EndTime);
+                TrimToSecond(x.StartTime) == slotStart &&
+                TrimToSecond(x.EndTime) == slotEnd);
 
             if (isLocked || isBookedByOther)
             {
@@ -573,18 +589,25 @@ public class BookingService : BaseService, IBookingService
             var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == booking.ComboID.Value);
             if (combo is not null && combo.IsActive)
             {
-                courtTotal = CalculateComboCourtTotal(combo, normalizedSlots.Count, availability, normalizedSlots);
+                courtTotal = CalculateComboCourtTotal(combo, matchedSlots.Count, availability, matchedSlots.Select(x => new CreateFullBookingSlotRequest
+                {
+                    StartTime = TrimToSecond(TimeSpan.Parse(x.StartTime)),
+                    EndTime = TrimToSecond(TimeSpan.Parse(x.EndTime))
+                }).ToList());
             }
         }
 
-        var newBookingSlots = normalizedSlots.Select(x => new BookingSlots
+        var newBookingSlots = new List<BookingSlots>
         {
-            BookingID = id,
-            CourtID = request.CourtID,
-            BookingDate = bookingDate,
-            StartTime = x.StartTime,
-            EndTime = x.EndTime
-        }).ToList();
+            new()
+            {
+                BookingID = id,
+                CourtID = request.CourtID,
+                BookingDate = bookingDate,
+                StartTime = requestedSlot.StartTime,
+                EndTime = requestedSlot.EndTime
+            }
+        };
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -604,8 +627,8 @@ public class BookingService : BaseService, IBookingService
 
             booking.CourtID = request.CourtID;
             booking.BookingDate = bookingDate;
-            booking.StartTime = normalizedSlots.First().StartTime;
-            booking.EndTime = normalizedSlots.Last().EndTime;
+            booking.StartTime = requestedSlot.StartTime;
+            booking.EndTime = requestedSlot.EndTime;
             booking.TotalAmount = courtTotal + serviceTotal;
             booking.ModifiedDate = DateTimeOffset.UtcNow;
 
@@ -650,7 +673,7 @@ public class BookingService : BaseService, IBookingService
             if (services.Count > 0)
             {
                 // Nếu xóa trực tiếp booking, hoàn lại kho cho các dịch vụ (chỉ khi booking chưa cancelled vì nếu cancelled đã hoàn kho rồi)
-                if (entity.Status != BookingStatus.Cancelled)
+                if (entity.Status != BookingStatusConstants.Cancelled)
                 {
                     foreach (var bs in services)
                     {
@@ -723,6 +746,24 @@ public class BookingService : BaseService, IBookingService
         var list = await _unitOfWork.IBookingHistoryRepository.FindList(filter);
         var ordered = list.OrderByDescending(x => x.CreatedAt).ToList();
         return Success(_mapper.Map<List<BookingHistoryResponse>>(ordered));
+    }
+
+    public async Task<Result<List<BookingStatusOption>>> GetStatuses()
+    {
+        var list = await _unitOfWork.IBookingStatusRepository.FindList(x => true);
+        var options = list
+            .OrderBy(x => x.Code)
+            .Select(x => new BookingStatusOption
+            {
+                Value = x.StatusName,
+                Code = x.Code,
+                Label = x.LabelName,
+                IsTerminal = x.IsTerminal,
+                CanReschedule = x.CanReschedule,
+                ColorCode = x.ColorCode
+            })
+            .ToList();
+        return Success(options);
     }
 
     private async Task WriteBookingHistory(Guid bookingId, string action, string oldValue, string newValue, string note = "")

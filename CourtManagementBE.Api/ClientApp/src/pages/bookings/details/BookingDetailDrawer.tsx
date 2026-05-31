@@ -3,27 +3,25 @@ import {
   Divider,
   Drawer,
   Button,
-  Space,
   App,
   Spin,
   Select,
-  DatePicker,
+  Tooltip,
   Input,
   Modal,
   Form,
   InputNumber,
   Tag,
-  Badge,
   Alert,
 } from 'antd'
 import {
   CalendarOutlined,
-  ClockCircleOutlined,
   CloseOutlined,
   SyncOutlined,
   WalletOutlined,
   FieldTimeOutlined,
   EditOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -34,14 +32,29 @@ import {
   useUpdateBookingStatusMutation,
   usePayBookingMutation,
   useRescheduleBookingMutation,
+  useBookingStatusesQuery,
 } from '@/features/bookings/api/useBookingQueries'
 import { useServicesQuery } from '@/features/services/api/useServiceQueries'
+import { useCourtSlotsAvailabilityQuery } from '@/features/courts/api/useCourtQueries'
 
 import type { Booking } from '@/features/bookings/model/types'
 import type {
+  CourtSlotAvailability,
   CourtTimelineAvailability,
   TimelineBookingResponse,
 } from '@/features/courts/model/types'
+import { BookingStatusConstants } from '@/features/bookings/constants/bookingStatusConstants'
+
+const formatTimeSpan = (timeStr: string) => {
+  const parts = timeStr.split(':')
+  if (parts.length >= 2) {
+    const hh = parts[0].padStart(2, '0')
+    const mm = parts[1].padStart(2, '0')
+    const ss = parts[2] ? parts[2].substring(0, 2).padStart(2, '0') : '00'
+    return `${hh}:${mm}:${ss}`
+  }
+  return timeStr
+}
 
 type AnyBooking = Booking | TimelineBookingResponse
 
@@ -50,7 +63,7 @@ interface BookingDetailDrawerProps {
   open: boolean
   onClose: () => void
   courts: CourtTimelineAvailability[]
-  onRefresh?: () => void // Để load lại lịch sau khi thay đổi thành công
+  onRefresh?: () => void
 }
 
 export function BookingDetailDrawer({
@@ -81,6 +94,14 @@ export function BookingDetailDrawer({
   // Reschedule Modal State
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
   const [rescheduleForm] = Form.useForm()
+  const [selectedRescheduleSlots, setSelectedRescheduleSlots] = useState<number[]>([])
+  const [optimisticStatus, setOptimisticStatus] = useState<{
+    bookingId: string | number | null
+    status: string | null
+  }>({ bookingId: null, status: null })
+  const selectedBookingDate = selectedBooking
+    ? dayjs(selectedBooking.bookingDate).format('YYYY-MM-DD')
+    : ''
 
   // ─── Data Queries ───────────────────────────────────────────────────────────
   const { data: slotsData, isLoading: isSlotsLoading } = useBookingSlotsQuery(
@@ -88,7 +109,12 @@ export function BookingDetailDrawer({
   )
   const { data: bookingServicesData, isLoading: isServicesLoading } =
     useBookingServicesQuery(selectedBooking?.bookingID ?? null)
-  const { data: availableServicesData } = useServicesQuery({ page: 1, pageSize: 100 })
+  const { data: availableServicesData } = useServicesQuery()
+  const { data: statusesData, isLoading: isStatusesLoading } = useBookingStatusesQuery()
+  const rescheduleSlotsQuery = useCourtSlotsAvailabilityQuery(
+    selectedBooking?.courtID ?? null,
+    selectedBookingDate,
+  )
 
   if (!selectedBooking) return null
 
@@ -96,10 +122,35 @@ export function BookingDetailDrawer({
     (court) => court.courtID === selectedBooking.courtID,
   )
   const bookingSlots = slotsData ?? []
+  const rescheduleSlots = rescheduleSlotsQuery.data ?? []
   const bookingServices = bookingServicesData ?? []
   const availableServices = availableServicesData?.items ?? []
+  const displayStatus =
+    optimisticStatus.bookingId === selectedBooking.bookingID && optimisticStatus.status
+      ? optimisticStatus.status
+      : selectedBooking.status
 
-  // ─── Price & Payment Info ────────────────────────────────────────────────────
+  const matchedStatusOption = (statusesData ?? []).find(
+    (opt) =>
+      opt.code === displayStatus ||
+      opt.value.toLowerCase() === displayStatus.toLowerCase(),
+  )
+  const selectValue = matchedStatusOption ? matchedStatusOption.code : displayStatus
+  const isTerminalStatus = matchedStatusOption ? matchedStatusOption.isTerminal : false
+  const isRescheduleAllowed = matchedStatusOption ? matchedStatusOption.canReschedule : false
+
+  const statusOptions = (statusesData ?? []).map((option) => {
+    const currentCode = matchedStatusOption ? matchedStatusOption.code : BookingStatusConstants.Pending
+    const isFinishedWorkflowStatus =
+      option.code <= currentCode && option.code !== currentCode
+
+    return {
+      label: option.label,
+      value: option.code,
+      disabled: isTerminalStatus || isFinishedWorkflowStatus,
+    }
+  })
+
   const totalServicesAmount = bookingServices.reduce(
     (sum, service) => sum + service.quantity * service.unitPrice,
     0,
@@ -107,33 +158,19 @@ export function BookingDetailDrawer({
   const totalCourtAmount = Math.max(0, selectedBooking.totalAmount - totalServicesAmount)
   const paidAmount = (selectedBooking as Booking).paidAmount ?? 0
   const remainingAmount = Math.max(0, selectedBooking.totalAmount - paidAmount)
+  const isPaymentAllowed =
+    (!matchedStatusOption || !matchedStatusOption.isTerminal) &&
+    remainingAmount > 0
 
-  // Get dynamic state color
-  const getStatusBadgeStatus = (status: string) => {
-    switch (status) {
-      case 'Pending':
-        return 'warning'
-      case 'Confirmed':
-        return 'processing'
-      case 'CheckedIn':
-        return 'success'
-      case 'Completed':
-        return 'success'
-      case 'Cancelled':
-        return 'error'
-      case 'NoShow':
-        return 'default'
-      default:
-        return 'default'
-    }
-  }
-
-  // Update Status directly
   const handleStatusChange = (newStatus: string) => {
     updateStatusMutation.mutate(
       { id: selectedBooking.bookingID, status: newStatus },
       {
         onSuccess: () => {
+          setOptimisticStatus({
+            bookingId: selectedBooking.bookingID,
+            status: newStatus,
+          })
           message.success('Cập nhật trạng thái thành công!')
           onRefresh?.()
         },
@@ -146,13 +183,35 @@ export function BookingDetailDrawer({
     amount?: number
     paymentMethod?: string
     note?: string
-    courtId?: number
-    bookingDate?: dayjs.Dayjs
-    timeRange?: [dayjs.Dayjs, dayjs.Dayjs]
+  }
+
+  const isCurrentBookingSlot = (slot: CourtSlotAvailability) =>
+    bookingSlots.some(
+      (bookingSlot) =>
+        formatTimeSpan(bookingSlot.startTime) === formatTimeSpan(slot.startTime) &&
+        formatTimeSpan(bookingSlot.endTime) === formatTimeSpan(slot.endTime),
+    )
+
+  const isRescheduleSlotLocked = (slot: CourtSlotAvailability) => {
+    if (isCurrentBookingSlot(slot)) return false
+    return slot.isLocked || slot.isBooked
+  }
+
+  const toggleRescheduleSlot = (slotIndex: number) => {
+    setSelectedRescheduleSlots((current) =>
+      current.includes(slotIndex)
+        ? current.filter((id) => id !== slotIndex)
+        : [...current, slotIndex],
+    )
   }
 
   // Partial Payment
   const handlePaymentSubmit = (values: FormValues) => {
+    if (!isPaymentAllowed) {
+      message.warning('Đơn này không thể ghi nhận thêm thanh toán.')
+      return
+    }
+
     payMutation.mutate(
       {
         id: selectedBooking.bookingID,
@@ -169,21 +228,52 @@ export function BookingDetailDrawer({
           payForm.resetFields()
           onRefresh?.()
         },
-        onError: () => message.error('Thanh toán thất bại!'),
+        onError: (error) => {
+          const fallbackMessage = 'Thanh toán thất bại!'
+          const serverMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data
+              ?.message ?? fallbackMessage
+          message.error(serverMessage)
+        },
       },
     )
   }
 
   // Reschedule Booking
-  const handleRescheduleSubmit = (values: FormValues) => {
+  const handleRescheduleSubmit = () => {
+    if (selectedRescheduleSlots.length === 0) {
+      message.warning('Vui lòng chọn khung giờ mới!')
+      return
+    }
+
+    const selectedSlots = selectedRescheduleSlots
+      .map((slotIndex) => rescheduleSlots.find((slot) => slot.slotIndex === slotIndex))
+      .filter((slot): slot is CourtSlotAvailability => !!slot)
+      .sort((a, b) => a.slotIndex - b.slotIndex)
+
+    if (selectedSlots.length === 0) {
+      message.warning('Không tìm thấy dữ liệu khung giờ đã chọn!')
+      return
+    }
+
+    for (let i = 1; i < selectedSlots.length; i++) {
+      if (selectedSlots[i].slotIndex !== selectedSlots[i - 1].slotIndex + 1) {
+        message.warning('Vui lòng chọn các khung giờ liền nhau.')
+        return
+      }
+    }
+
+    const startSlot = selectedSlots[0]
+    const endSlot = selectedSlots[selectedSlots.length - 1]
+
     rescheduleMutation.mutate(
       {
         id: selectedBooking.bookingID,
         data: {
-          courtId: values.courtId!,
-          bookingDate: values.bookingDate!.format('YYYY-MM-DD'),
-          startTime: values.timeRange![0].format('HH:00:00'),
-          endTime: values.timeRange![1].format('HH:00:00'),
+          courtID: selectedBooking.courtID,
+          bookingDate: selectedBookingDate,
+          startTime: formatTimeSpan(startSlot.startTime),
+          endTime: formatTimeSpan(endSlot.endTime),
         },
       },
       {
@@ -191,6 +281,7 @@ export function BookingDetailDrawer({
           message.success('Dời lịch chơi thành công!')
           setIsRescheduleModalOpen(false)
           rescheduleForm.resetFields()
+          setSelectedRescheduleSlots([])
           onRefresh?.()
         },
         onError: () => message.error('Dời lịch chơi thất bại!'),
@@ -208,13 +299,7 @@ export function BookingDetailDrawer({
       styles={{ body: { padding: '0 20px 20px' }, header: { display: 'none' } }}
     >
       {/* Header bar */}
-      <div className="flex justify-between items-center pt-4 pb-2">
-        <Space>
-          <Badge status={getStatusBadgeStatus(selectedBooking.status)} />
-          <span className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-            {selectedBooking.status}
-          </span>
-        </Space>
+      <div className="flex justify-end items-center pt-4 pb-2">
         <Button type="text" icon={<CloseOutlined />} onClick={onClose} size="small" />
       </div>
 
@@ -255,17 +340,11 @@ export function BookingDetailDrawer({
         <Select
           className="w-full"
           placeholder="Chọn trạng thái mới..."
-          value={selectedBooking.status}
-          loading={isActionLoading}
+          value={selectValue}
+          loading={isActionLoading || isStatusesLoading}
+          disabled={isTerminalStatus || isStatusesLoading}
           onChange={handleStatusChange}
-          options={[
-            { label: 'Chờ duyệt / Chờ cọc (Pending)', value: 'Pending' },
-            { label: 'Đã xác nhận (Confirmed)', value: 'Confirmed' },
-            { label: 'Đã nhận sân (CheckedIn)', value: 'CheckedIn' },
-            { label: 'Hoàn tất buổi chơi (Completed)', value: 'Completed' },
-            { label: 'Khách không đến (NoShow)', value: 'NoShow' },
-            { label: 'Hủy đơn hàng (Cancelled)', value: 'Cancelled' },
-          ]}
+          options={statusOptions}
         />
       </div>
 
@@ -273,26 +352,23 @@ export function BookingDetailDrawer({
 
       {/* Booking Slots */}
       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex justify-between items-center">
-        <span>
-          <ClockCircleOutlined /> Khung giờ chơi
-        </span>
-        {selectedBooking.status !== 'Completed' &&
-          selectedBooking.status !== 'Cancelled' && (
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => {
-                rescheduleForm.setFieldsValue({
-                  courtId: selectedBooking.courtID,
-                  bookingDate: dayjs(selectedBooking.bookingDate),
-                })
-                setIsRescheduleModalOpen(true)
-              }}
-            >
-              Dời lịch chơi
-            </Button>
-          )}
+        <span>Khung giờ chơi</span>
+        {isRescheduleAllowed && (
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              const defaultSelectedSlotIndexes = rescheduleSlots
+                .filter((slot) => isCurrentBookingSlot(slot))
+                .map((slot) => slot.slotIndex)
+              setSelectedRescheduleSlots(defaultSelectedSlotIndexes)
+              setIsRescheduleModalOpen(true)
+            }}
+          >
+            Dời lịch chơi
+          </Button>
+        )}
       </p>
       {isSlotsLoading ? (
         <div className="flex justify-center p-3">
@@ -309,7 +385,7 @@ export function BookingDetailDrawer({
               className="flex justify-between items-center px-3 py-2 rounded-lg bg-teal-50/50 border border-teal-100 text-xs font-bold text-teal-800"
             >
               <span>
-                ⏱️ {slot.startTime.substring(0, 5)} – {slot.endTime.substring(0, 5)}
+                {slot.startTime.substring(0, 5)} – {slot.endTime.substring(0, 5)}
               </span>
             </div>
           ))}
@@ -319,7 +395,7 @@ export function BookingDetailDrawer({
       {/* Services */}
       <Divider style={{ margin: '14px 0' }} />
       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-        📦 Dịch vụ đi kèm & Quản lý kho
+        Dịch vụ đi kèm & Quản lý kho
       </p>
       {isServicesLoading ? (
         <div className="flex justify-center p-3">
@@ -404,19 +480,31 @@ export function BookingDetailDrawer({
           <span className="text-rose-600">{formatCompactCurrency(remainingAmount)}</span>
         </div>
 
-        {remainingAmount > 0 && selectedBooking.status !== 'Cancelled' && (
+        {isPaymentAllowed && (
           <Button
             type="primary"
-            size="small"
+            size="medium"
             icon={<WalletOutlined />}
             className="mt-2 bg-emerald-600 hover:bg-emerald-700"
             onClick={() => {
-              payForm.setFieldsValue({ amount: remainingAmount, paymentMethod: 'Cash' })
+              payForm.setFieldsValue({ amount: remainingAmount, paymentMethod: 'cash' })
               setIsPayModalOpen(true)
             }}
           >
             Ghi nhận thanh toán
           </Button>
+        )}
+        {!isPaymentAllowed && (
+          <Alert
+            type="info"
+            showIcon
+            className="mt-2"
+            message={
+              isTerminalStatus
+                ? `Đơn ở trạng thái ${matchedStatusOption?.label || 'kết thúc'}, không thể ghi nhận thanh toán.`
+                : 'Đơn đã thanh toán đủ.'
+            }
+          />
         )}
       </div>
 
@@ -441,7 +529,22 @@ export function BookingDetailDrawer({
                 Số tiền thanh toán (VNĐ)
               </span>
             }
-            rules={[{ required: true, message: 'Vui lòng nhập số tiền!' }]}
+            rules={[
+              { required: true, message: 'Vui lòng nhập số tiền!' },
+              {
+                validator: (_, value) => {
+                  if (value === undefined || value === null) return Promise.resolve()
+                  if (value <= 0)
+                    return Promise.reject(new Error('Số tiền phải lớn hơn 0.'))
+                  if (value > remainingAmount) {
+                    return Promise.reject(
+                      new Error('Số tiền thanh toán không được vượt quá số còn lại.'),
+                    )
+                  }
+                  return Promise.resolve()
+                },
+              },
+            ]}
           >
             <InputNumber
               className="w-full"
@@ -463,12 +566,12 @@ export function BookingDetailDrawer({
             rules={[{ required: true }]}
           >
             <Select size="large">
-              <Select.Option value="Cash">💵 Tiền mặt (Cash)</Select.Option>
-              <Select.Option value="BankTransfer">
+              <Select.Option value="cash">💵 Tiền mặt (cash)</Select.Option>
+              <Select.Option value="bank_transfer">
                 🏦 Chuyển khoản (Bank Transfer)
               </Select.Option>
-              <Select.Option value="CreditCard">
-                💳 Thẻ tín dụng (Credit Card)
+              <Select.Option value="qr_manual">
+                📱 Quét QR nội bộ (không gateway)
               </Select.Option>
             </Select>
           </Form.Item>
@@ -510,59 +613,94 @@ export function BookingDetailDrawer({
         onCancel={() => setIsRescheduleModalOpen(false)}
         footer={null}
         destroyOnClose
+        width={760}
       >
         <Form form={rescheduleForm} layout="vertical" onFinish={handleRescheduleSubmit}>
-          <Form.Item
-            name="courtId"
-            label={
-              <span className="text-xs font-bold text-slate-600">Chọn sân chơi mới</span>
-            }
-            rules={[{ required: true }]}
-          >
-            <Select size="large">
-              {courtList.map((c) => (
-                <Select.Option key={c.courtID} value={c.courtID}>
-                  🏟️ {c.courtName}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div>
+                <p className="m-0 text-slate-400 font-semibold">Sân chơi</p>
+                <p className="m-0 text-slate-700 font-bold">
+                  {matchedCourt?.courtName || `Sân #${selectedBooking.courtID}`}
+                </p>
+              </div>
+              <div>
+                <p className="m-0 text-slate-400 font-semibold">Ngày chơi</p>
+                <p className="m-0 text-slate-700 font-bold">
+                  {dayjs(selectedBooking.bookingDate).format('DD/MM/YYYY')}
+                </p>
+              </div>
+            </div>
+          </div>
 
           <Form.Item
-            name="bookingDate"
             label={
-              <span className="text-xs font-bold text-slate-600">Ngày chơi mới</span>
-            }
-            rules={[{ required: true }]}
-          >
-            <DatePicker className="w-full" size="large" format="DD/MM/YYYY" />
-          </Form.Item>
-
-          <Form.Item
-            name="timeRange"
-            label={
-              <span className="text-xs font-bold text-slate-600">
-                Khung giờ mới (Mỗi slot 1 tiếng)
+              <span className="text-xs font-bold text-slate-600 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5">
+                  Chọn giờ chơi mới
+                  <Tooltip title="Chỉ thay đổi giờ chơi. Sân và ngày được giữ nguyên. Hệ thống tự tính lại tiền sân theo giờ mới; các dịch vụ và số tiền đã thanh toán vẫn giữ nguyên.">
+                    <InfoCircleOutlined className="text-slate-400 cursor-help" />
+                  </Tooltip>
+                </span>
+                <span className="font-semibold text-slate-400 normal-case">
+                  {selectedRescheduleSlots.length} khung giờ đã chọn
+                </span>
               </span>
             }
-            rules={[{ required: true, message: 'Vui lòng chọn khung giờ mới!' }]}
           >
-            <DatePicker.RangePicker
-              className="w-full"
-              size="large"
-              picker="time"
-              format="HH:00"
-              placeholder={['Giờ bắt đầu', 'Giờ kết thúc']}
-            />
-          </Form.Item>
+            {rescheduleSlotsQuery.isPending ? (
+              <div className="flex justify-center py-6">
+                <Spin size="small" />
+              </div>
+            ) : rescheduleSlots.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-xs text-slate-400">
+                Không có dữ liệu khung giờ cho sân/ngày đã chọn.
+              </div>
+            ) : (
+              <div className="max-h-[42vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {rescheduleSlots.map((slot) => {
+                    const locked = isRescheduleSlotLocked(slot)
+                    const selected = selectedRescheduleSlots.includes(slot.slotIndex)
 
-          <Alert
-            message="Lưu ý quan trọng"
-            description="Hệ thống sẽ tự động tính toán lại tiền sân dựa trên bảng giá tại thời điểm mới. Các dịch vụ đi kèm và số tiền đã thanh toán trước đó sẽ được giữ nguyên."
-            type="info"
-            showIcon
-            className="mb-4 text-xs"
-          />
+                    let cardClass =
+                      'relative border border-slate-200 rounded-xl p-3 text-center cursor-pointer bg-white transition duration-150 hover:border-slate-300 hover:shadow-sm'
+                    let priceClass = 'text-[10px] mt-0.5 font-semibold text-slate-400'
+
+                    if (selected) {
+                      cardClass =
+                        'relative border border-slate-900 bg-slate-900 text-white rounded-xl p-3 text-center cursor-pointer transition duration-150 shadow-sm'
+                      priceClass = 'text-[10px] mt-0.5 font-semibold text-slate-300'
+                    } else if (locked) {
+                      cardClass =
+                        'relative border border-slate-200 bg-slate-50 opacity-40 rounded-xl p-3 text-center cursor-not-allowed select-none'
+                    }
+
+                    return (
+                      <div
+                        key={slot.slotIndex}
+                        className={cardClass}
+                        onClick={() => !locked && toggleRescheduleSlot(slot.slotIndex)}
+                        title={slot.lockReason ?? undefined}
+                      >
+                        {locked && (
+                          <span className="text-[10px] text-red-500 font-bold block absolute top-1 right-2">
+                            [Bận]
+                          </span>
+                        )}
+                        <div className="text-sm font-bold">
+                          {slot.startTime.substring(0, 5)}–{slot.endTime.substring(0, 5)}
+                        </div>
+                        <div className={priceClass}>
+                          {formatCompactCurrency(slot.price ?? 0)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </Form.Item>
 
           <div className="flex justify-end gap-2 mt-4">
             <Button onClick={() => setIsRescheduleModalOpen(false)}>Hủy</Button>

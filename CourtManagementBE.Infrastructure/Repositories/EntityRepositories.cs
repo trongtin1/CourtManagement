@@ -109,3 +109,6 @@ public class AuditLogRepository : GenericRepository<AuditLog>, IAuditLogReposito
 
 public class BookingHistoryRepository : GenericRepository<BookingHistories>, IBookingHistoryRepository
 { public BookingHistoryRepository(AppDbContext ctx) : base(ctx) { } }
+
+public class BookingStatusRepository : GenericRepository<BookingStatuses>, IBookingStatusRepository
+{ public BookingStatusRepository(AppDbContext ctx) : base(ctx) { } }

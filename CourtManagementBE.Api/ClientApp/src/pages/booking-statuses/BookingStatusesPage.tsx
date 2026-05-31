@@ -3,12 +3,13 @@ import {
   App,
   Button,
   Card,
+  Checkbox,
+  ColorPicker,
   Form,
   Input,
   Modal,
   Popconfirm,
   Space,
-  Switch,
   Table,
   Tag,
 } from 'antd'
@@ -24,7 +25,6 @@ import {
   useBookingStatusesQuery,
   useCreateBookingStatusMutation,
   useDeleteBookingStatusMutation,
-  useToggleBookingStatusMutation,
   useUpdateBookingStatusMutation,
 } from '@/features/booking-statuses/api/useBookingStatusQueries'
 import type {
@@ -39,20 +39,28 @@ export function BookingStatusesPage() {
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [tablePagination, setTablePagination] = useState<TablePaginationConfig>({})
+
   const query = useBookingStatusesQuery(
     tablePagination.current && tablePagination.pageSize
       ? { page: tablePagination.current, pageSize: tablePagination.pageSize }
       : undefined,
   )
+
   const createMut = useCreateBookingStatusMutation()
   const updateMut = useUpdateBookingStatusMutation()
   const deleteMut = useDeleteBookingStatusMutation()
-  const toggleMut = useToggleBookingStatusMutation()
 
   const openCreate = () => {
     setEditingId(null)
     form.resetFields()
-    form.setFieldsValue({ isActive: true, colorCode: '#22c55e' })
+    form.setFieldsValue({
+      code: '',
+      statusName: '',
+      labelName: '',
+      isTerminal: false,
+      canReschedule: false,
+      colorCode: '#22c55e',
+    })
     setOpen(true)
   }
 
@@ -65,35 +73,25 @@ export function BookingStatusesPage() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
+      const data: BookingStatusRequest = {
+        code: values.code,
+        statusName: values.statusName,
+        labelName: values.labelName,
+        colorCode: values.colorCode || '#22c55e',
+        isTerminal: !!values.isTerminal,
+        canReschedule: !!values.canReschedule,
+      }
+
       if (editingId) {
-        const data: BookingStatusRequest = {
-          code: values.code,
-          name: values.name,
-          colorCode: values.colorCode,
-          description: values.description,
-          isActive: values.isActive,
-          sortOrder: values.sortOrder,
-          canCancel: values.canCancel,
-          isFinal: values.isFinal,
-        }
         await updateMut.mutateAsync({ id: editingId, data })
         message.success('Cập nhật trạng thái đặt lịch thành công')
       } else {
-        await createMut.mutateAsync(values as BookingStatusRequest)
+        await createMut.mutateAsync(data)
         message.success('Tạo trạng thái đặt lịch thành công')
       }
       setOpen(false)
     } catch (error) {
       if (error && typeof error === 'object' && 'errorFields' in error) return
-      message.error(toApiError(error).message)
-    }
-  }
-
-  const handleToggle = async (record: BookingStatus) => {
-    try {
-      await toggleMut.mutateAsync(record)
-      message.success('Cập nhật trạng thái thành công')
-    } catch (error) {
       message.error(toApiError(error).message)
     }
   }
@@ -107,11 +105,20 @@ export function BookingStatusesPage() {
     }
   }
 
-  if (query.isPending) return <LoadingSpin tip="Đang tải trạng thái đặt lịch..." />
+  if (query.isPending) return <LoadingSpin tip="Đang tải danh sách trạng thái..." />
 
   return (
     <Space className="w-full" direction="vertical" size={24}>
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800 m-0">
+            Quản lý cấu hình Trạng thái Đặt sân
+          </h1>
+          <p className="text-xs text-slate-500 mt-1 mb-0">
+            Thiết lập các trạng thái đặt sân, quyền hạn dời lịch chơi và trạng thái kết
+            thúc luồng.
+          </p>
+        </div>
         <Space>
           <Button
             icon={<ReloadOutlined />}
@@ -120,85 +127,111 @@ export function BookingStatusesPage() {
           >
             Làm mới
           </Button>
-          <Button icon={<PlusOutlined />} onClick={openCreate} type="primary">
+          <Button
+            icon={<PlusOutlined />}
+            onClick={openCreate}
+            type="primary"
+            className="bg-purple-600 hover:bg-purple-700"
+          >
             Thêm trạng thái
           </Button>
         </Space>
       </div>
-      <Card>
+
+      <Card className="rounded-xl border border-slate-100 shadow-sm overflow-hidden">
         <Table
           columns={[
-            { title: 'ID', dataIndex: 'bookingStatusID', width: 80 },
             {
-              title: 'Mã',
+              title: 'Mã Code',
               dataIndex: 'code',
-              width: 140,
-              render: (v: string) => <Tag>{v}</Tag>,
-            },
-            { title: 'Tên', dataIndex: 'name', width: 200 },
-            {
-              title: 'Màu',
-              dataIndex: 'colorCode',
               width: 120,
+              render: (v: string) => (
+                <span className="font-mono font-bold text-slate-700">{v}</span>
+              ),
+            },
+            {
+              title: 'Tên Technical (BE)',
+              dataIndex: 'statusName',
+              width: 180,
+              render: (v: string) => <Tag color="blue">{v}</Tag>,
+            },
+            {
+              title: 'Nhãn hiển thị (FE)',
+              dataIndex: 'labelName',
+              width: 220,
+              render: (v: string, record: BookingStatus) => {
+                // Determine Tag color if we have matchers
+                return (
+                  <Tag
+                    style={{
+                      backgroundColor: `${record.colorCode}15`,
+                      color: record.colorCode,
+                      borderColor: record.colorCode,
+                    }}
+                    className="font-semibold px-2 py-0.5"
+                  >
+                    {v}
+                  </Tag>
+                )
+              },
+            },
+            {
+              title: 'Màu hiển thị',
+              dataIndex: 'colorCode',
+              width: 140,
               render: (v: string) => (
                 <Space>
                   <span
-                    className="inline-block size-4 rounded"
+                    className="inline-block size-4 rounded-full border border-slate-200"
                     style={{ backgroundColor: v || '#d9d9d9' }}
                   />
-                  {v}
+                  <span className="font-mono text-xs">{v}</span>
                 </Space>
               ),
             },
             {
-              title: 'Cho hủy',
-              dataIndex: 'canCancel',
-              width: 90,
-              render: (v: boolean) => (
-                <Tag color={v ? 'green' : 'default'}>{v ? 'Có' : 'Không'}</Tag>
-              ),
-            },
-            {
-              title: 'Kết thúc',
-              dataIndex: 'isFinal',
-              width: 90,
-              render: (v: boolean) => (
-                <Tag color={v ? 'red' : 'default'}>{v ? 'Có' : 'Không'}</Tag>
-              ),
-            },
-            { title: 'Mô tả', dataIndex: 'description' },
-            {
-              title: 'Active',
-              dataIndex: 'isActive',
-              width: 100,
-              render: (v: boolean, record: BookingStatus) => (
-                <Switch
-                  checked={v}
-                  loading={toggleMut.isPending}
-                  onChange={() => handleToggle(record)}
-                  size="small"
-                />
-              ),
-            },
-            {
-              title: '',
+              title: 'Thao tác',
               width: 110,
-              render: (_: unknown, record: BookingStatus) => (
-                <Space>
-                  <Button
-                    icon={<EditOutlined />}
-                    onClick={() => openEdit(record)}
-                    size="small"
-                    type="link"
-                  />
-                  <Popconfirm
-                    title="Xóa trạng thái này?"
-                    onConfirm={() => handleDelete(record.bookingStatusID)}
-                  >
-                    <Button danger icon={<DeleteOutlined />} size="small" type="link" />
-                  </Popconfirm>
-                </Space>
-              ),
+              fixed: 'right',
+              render: (_: unknown, record: BookingStatus) => {
+                const isSystemStatus = [
+                  '001',
+                  '002',
+                  '003',
+                  '004',
+                  '005',
+                  '006',
+                ].includes(record.code)
+                return (
+                  <Space>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => openEdit(record)}
+                      size="small"
+                      type="link"
+                      className="text-purple-600 hover:text-purple-700"
+                    />
+                    <Popconfirm
+                      title="Xóa trạng thái này?"
+                      description={
+                        isSystemStatus
+                          ? 'Đây là trạng thái hệ thống cốt lõi và không được phép xóa.'
+                          : 'Hành động này không thể hoàn tác.'
+                      }
+                      disabled={isSystemStatus}
+                      onConfirm={() => handleDelete(record.bookingStatusID)}
+                    >
+                      <Button
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        type="link"
+                        disabled={isSystemStatus}
+                      />
+                    </Popconfirm>
+                  </Space>
+                )
+              },
             },
           ]}
           dataSource={query.data?.items ?? []}
@@ -208,53 +241,95 @@ export function BookingStatusesPage() {
             current: tablePagination.current ?? 1,
             pageSize: tablePagination.pageSize ?? 10,
             total: query.data?.totalCount ?? 0,
-            showTotal: (total) => `Tổng ${total}`,
+            showTotal: (total) => `Tổng số ${total} trạng thái`,
           }}
           rowKey="bookingStatusID"
-          scroll={{ x: 900 }}
+          scroll={{ x: 1000 }}
           size="middle"
         />
       </Card>
+
       <Modal
         confirmLoading={createMut.isPending || updateMut.isPending}
         destroyOnClose
         okText={editingId ? 'Cập nhật' : 'Tạo'}
+        okButtonProps={{ className: 'bg-purple-600 hover:bg-purple-700' }}
         onCancel={() => setOpen(false)}
         onOk={handleSubmit}
         open={open}
         title={editingId ? 'Sửa trạng thái đặt lịch' : 'Thêm trạng thái đặt lịch'}
-        width={540}
+        width={500}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" className="mt-4">
           <Form.Item
-            label="Mã"
+            label={
+              <span className="text-xs font-bold text-slate-600">
+                Mã Code (Không trùng lặp, ví dụ: 001)
+              </span>
+            }
             name="code"
-            rules={[{ required: true, message: 'Nhập mã' }]}
+            rules={[{ required: true, message: 'Vui lòng nhập mã code!' }]}
           >
-            <Input maxLength={50} placeholder="pending" />
+            <Input maxLength={50} placeholder="007" disabled={!!editingId} />
           </Form.Item>
+
           <Form.Item
-            label="Tên"
-            name="name"
-            rules={[{ required: true, message: 'Nhập tên' }]}
+            label={
+              <span className="text-xs font-bold text-slate-600">
+                Tên Technical (Dùng cho logic BE, ví dụ: Pending)
+              </span>
+            }
+            name="statusName"
+            rules={[{ required: true, message: 'Vui lòng nhập tên technical!' }]}
           >
-            <Input maxLength={200} placeholder="Chờ xác nhận" />
+            <Input maxLength={200} placeholder="Rescheduled" />
           </Form.Item>
-          <Form.Item label="Màu hiển thị" name="colorCode">
-            <Input maxLength={10} type="color" />
+
+          <Form.Item
+            label={
+              <span className="text-xs font-bold text-slate-600">
+                Nhãn hiển thị (Tiếng Việt trên FE, ví dụ: Chờ xác nhận)
+              </span>
+            }
+            name="labelName"
+            rules={[{ required: true, message: 'Vui lòng nhập nhãn hiển thị!' }]}
+          >
+            <Input maxLength={200} placeholder="Đã dời lịch" />
           </Form.Item>
-          <Form.Item label="Cho phép hủy" name="canCancel" valuePropName="checked">
-            <Switch />
+
+          <Form.Item
+            label={<span className="text-xs font-bold text-slate-600">Màu hiển thị</span>}
+            name="colorCode"
+            rules={[{ required: true, message: 'Vui lòng chọn màu hiển thị!' }]}
+            getValueFromEvent={(color) =>
+              typeof color === 'string' ? color : color.toHexString()
+            }
+            trigger="onChange"
+          >
+            <ColorPicker showText />
           </Form.Item>
-          <Form.Item label="Trạng thái kết thúc" name="isFinal" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <Form.Item label="Mô tả" name="description">
-            <Input.TextArea maxLength={500} rows={3} />
-          </Form.Item>
-          <Form.Item label="Active" name="isActive" valuePropName="checked">
-            <Switch />
-          </Form.Item>
+
+          <div className="flex gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+            <Form.Item
+              name="canReschedule"
+              valuePropName="checked"
+              className="mb-0 flex-1"
+            >
+              <Checkbox>
+                <span className="text-xs font-bold text-slate-700">
+                  Cho phép dời lịch chơi
+                </span>
+              </Checkbox>
+            </Form.Item>
+
+            <Form.Item name="isTerminal" valuePropName="checked" className="mb-0 flex-1">
+              <Checkbox>
+                <span className="text-xs font-bold text-slate-700">
+                  Trạng thái kết thúc (Terminal)
+                </span>
+              </Checkbox>
+            </Form.Item>
+          </div>
         </Form>
       </Modal>
     </Space>

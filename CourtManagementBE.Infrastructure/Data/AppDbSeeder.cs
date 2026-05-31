@@ -1,5 +1,6 @@
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Enums;
+using CourtManagementBE.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourtManagementBE.Infrastructure.Data;
@@ -13,6 +14,7 @@ public static class AppDbSeeder
     {
         await SeedAdminAsync(db, cancellationToken);
         await SeedMasterDataAsync(db, cancellationToken);
+        await SeedBookingStatusesAsync(db, cancellationToken);
 
         var facility = await GetOrCreateFacilityAsync(db, cancellationToken);
         var courtTypes = await GetOrCreateCourtTypesAsync(db, cancellationToken);
@@ -597,7 +599,7 @@ public static class AppDbSeeder
             CustomerID = customer.CustomerID,
             BookingDate = bookingDate,
             TotalAmount = courtPrice + serviceTotal,
-            Status = BookingStatus.Confirmed,
+            Status = BookingStatusConstants.Confirmed,
             Note = "Đặt lịch mẫu",
             CreatedBy = AdminLogin,
             ModifiedBy = AdminLogin,
@@ -638,6 +640,29 @@ public static class AppDbSeeder
             Note = "Thanh toán mẫu",
             PaymentDate = DateTime.Today,
         });
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedBookingStatusesAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        var seed = new[]
+        {
+            new BookingStatuses { Code = "001", StatusName = "Pending", LabelName = "Chờ duyệt / Chờ cọc (Pending)", IsTerminal = false, CanReschedule = true, ColorCode = "warning" },
+            new BookingStatuses { Code = "002", StatusName = "Confirmed", LabelName = "Đã xác nhận (Confirmed)", IsTerminal = false, CanReschedule = true, ColorCode = "processing" },
+            new BookingStatuses { Code = "003", StatusName = "CheckedIn", LabelName = "Đã nhận sân (CheckedIn)", IsTerminal = false, CanReschedule = false, ColorCode = "success" },
+            new BookingStatuses { Code = "004", StatusName = "Completed", LabelName = "Hoàn tất buổi chơi (Completed)", IsTerminal = true, CanReschedule = false, ColorCode = "success" },
+            new BookingStatuses { Code = "005", StatusName = "Cancelled", LabelName = "Hủy đơn hàng (Cancelled)", IsTerminal = true, CanReschedule = false, ColorCode = "error" },
+            new BookingStatuses { Code = "006", StatusName = "NoShow", LabelName = "Khách không đến (NoShow)", IsTerminal = true, CanReschedule = false, ColorCode = "default" }
+        };
+
+        foreach (var item in seed)
+        {
+            if (!await db.BookingStatuses.AnyAsync(x => x.Code == item.Code, cancellationToken))
+            {
+                db.BookingStatuses.Add(item);
+            }
+        }
 
         await db.SaveChangesAsync(cancellationToken);
     }

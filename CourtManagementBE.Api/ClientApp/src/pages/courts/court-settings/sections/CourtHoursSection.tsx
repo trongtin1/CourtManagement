@@ -600,7 +600,7 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
                     </span>
                     <span className="text-xs font-bold text-slate-750">
                       {editingLock.isWeekly
-                        ? `Thứ ${editingLock.dayOfWeek === 0 ? 'Chủ Nhật' : editingLock.dayOfWeek + 1}`
+                        ? `Thứ ${editingLock.dayOfWeek === 0 ? 'Chủ Nhật' : (editingLock.dayOfWeek ?? 1) + 1}`
                         : `Ngày ${dayjs(editingLock.specificDate).format('DD/MM/YYYY')}`}
                     </span>
                   </div>

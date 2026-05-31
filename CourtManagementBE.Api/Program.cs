@@ -205,6 +205,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<ICourtFeatureCategoryService, CourtFeatureCategoryService>();
             builder.Services.AddScoped<ICancellationReasonService, CancellationReasonService>();
             builder.Services.AddScoped<IRefundReasonService, RefundReasonService>();
+            builder.Services.AddScoped<IBookingStatusService, BookingStatusService>();
 
             builder.Services.AddControllers();
 

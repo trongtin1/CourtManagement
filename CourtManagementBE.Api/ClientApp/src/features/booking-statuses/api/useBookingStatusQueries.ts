@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { bookingStatusApi } from './bookingStatusApi'
 import type { PaginationQuery } from '@/types/api'
-import type { BookingStatus, BookingStatusRequest } from '../model/types'
+import type { BookingStatusRequest } from '../model/types'
 
 export const bookingStatusKeys = {
   all: ['bookingStatuses'] as const,
@@ -28,24 +28,6 @@ export const useUpdateBookingStatusMutation = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: BookingStatusRequest }) =>
       bookingStatusApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: bookingStatusKeys.all }),
-  })
-}
-
-export const useToggleBookingStatusMutation = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (record: BookingStatus) =>
-      bookingStatusApi.update(record.bookingStatusID, {
-        code: record.code,
-        name: record.name,
-        description: record.description,
-        sortOrder: record.sortOrder,
-        isActive: !record.isActive,
-        colorCode: record.colorCode,
-        canCancel: record.canCancel,
-        isFinal: record.isFinal,
-      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingStatusKeys.all }),
   })
 }

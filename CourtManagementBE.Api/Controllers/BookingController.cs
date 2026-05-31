@@ -108,6 +108,13 @@ public class BookingController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetStatuses()
+    {
+        var r = await _service.GetStatuses();
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpGet("history")]
     public async Task<IActionResult> GetHistory([FromQuery] Guid? bookingId)
     {

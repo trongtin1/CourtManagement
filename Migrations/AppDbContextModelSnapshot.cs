@@ -383,6 +383,44 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("BookingSlots");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingStatuses", b =>
+                {
+                    b.Property<int>("BookingStatusID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingStatusID"));
+
+                    b.Property<bool>("CanReschedule")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ColorCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<bool>("IsTerminal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LabelName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("StatusName")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("BookingStatusID");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("BookingStatuses");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
                 {
                     b.Property<Guid>("BookingID")
@@ -445,7 +483,7 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");

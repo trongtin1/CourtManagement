@@ -140,5 +140,8 @@ public class MappingProfile : Profile
 
         CreateMap<RefundReasons, RefundReasonResponse>();
         CreateMap<RefundReasonRequest, RefundReasons>();
+
+        CreateMap<BookingStatuses, BookingStatusResponse>();
+        CreateMap<BookingStatusRequest, BookingStatuses>();
     }
 }

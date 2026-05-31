@@ -45,6 +45,7 @@ public interface IUnitOfWork : IDisposable
     IRecurringConfigRepository IRecurringConfigRepository { get; }
     IUnitConversionRepository IUnitConversionRepository { get; }
     IBookingHistoryRepository IBookingHistoryRepository { get; }
+    IBookingStatusRepository IBookingStatusRepository { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
