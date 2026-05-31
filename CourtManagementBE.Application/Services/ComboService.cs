@@ -27,14 +27,14 @@ public class ComboService : BaseService, IComboService
             var res = _mapper.Map<ComboResponse>(item);
             var services = await _unitOfWork.IComboServiceRepository.FindList(
                 x => x.ComboID == item.ComboID,
-                include: q => q.Include(cs => cs.Service)
+                include: q => q.Include(cs => cs.Service).ThenInclude(s => s.BaseUnit)
             );
             res.Services = services.Select(x => new ComboServiceResponse
             {
                 ServiceID = x.ServiceID,
                 ServiceName = x.Service?.ServiceName ?? string.Empty,
                 ServiceCode = x.Service?.ServiceCode ?? string.Empty,
-                Unit = x.Service?.Unit ?? string.Empty,
+                Unit = x.Service?.BaseUnit?.Symbol ?? x.Service?.BaseUnit?.Name ?? string.Empty,
                 Quantity = x.Quantity
             }).ToList();
             responses.Add(res);
@@ -51,7 +51,7 @@ public class ComboService : BaseService, IComboService
 
         var services = await _unitOfWork.IComboServiceRepository.FindList(
             x => x.ComboID == combo.ComboID,
-            include: q => q.Include(cs => cs.Service)
+            include: q => q.Include(cs => cs.Service).ThenInclude(s => s.BaseUnit)
         );
 
         var res = _mapper.Map<ComboResponse>(combo);
@@ -60,7 +60,7 @@ public class ComboService : BaseService, IComboService
             ServiceID = x.ServiceID,
             ServiceName = x.Service?.ServiceName ?? string.Empty,
             ServiceCode = x.Service?.ServiceCode ?? string.Empty,
-            Unit = x.Service?.Unit ?? string.Empty,
+            Unit = x.Service?.BaseUnit?.Symbol ?? x.Service?.BaseUnit?.Name ?? string.Empty,
             Quantity = x.Quantity
         }).ToList();
 

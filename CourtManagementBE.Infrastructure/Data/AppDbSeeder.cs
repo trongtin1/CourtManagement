@@ -373,12 +373,15 @@ public static class AppDbSeeder
         var drinkType = await db.ServiceTypes.FirstOrDefaultAsync(x => x.Code == "drink", cancellationToken);
         var rentalType = await db.ServiceTypes.FirstOrDefaultAsync(x => x.Code == "rental", cancellationToken);
         var equipType = await db.ServiceTypes.FirstOrDefaultAsync(x => x.Code == "equipment", cancellationToken);
+        var bottleUnit = await db.Units.FirstOrDefaultAsync(x => x.Code == "bottle", cancellationToken);
+        var racketUnit = await db.Units.FirstOrDefaultAsync(x => x.Code == "racket", cancellationToken);
+        var tubeUnit = await db.Units.FirstOrDefaultAsync(x => x.Code == "tube", cancellationToken);
 
         var seed = new[]
         {
-            new Services { ServiceCode = "WATER", ServiceName = "Nước suối đóng chai", ServiceTypeID = drinkType?.ServiceTypeID, Unit = "chai", MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "RACKET", ServiceName = "Thuê vợt cầu lông", ServiceTypeID = rentalType?.ServiceTypeID, Unit = "cái", MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "SHUTTLE", ServiceName = "Ống cầu lông (12 quả)", ServiceTypeID = equipType?.ServiceTypeID, Unit = "ống", MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "WATER", ServiceName = "Nước suối đóng chai", ServiceTypeID = drinkType?.ServiceTypeID, UnitID = bottleUnit?.UnitID, MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "RACKET", ServiceName = "Thuê vợt cầu lông", ServiceTypeID = rentalType?.ServiceTypeID, UnitID = racketUnit?.UnitID, MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "SHUTTLE", ServiceName = "Ống cầu lông (12 quả)", ServiceTypeID = equipType?.ServiceTypeID, UnitID = tubeUnit?.UnitID, MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)

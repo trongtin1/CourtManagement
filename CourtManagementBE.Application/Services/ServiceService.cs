@@ -19,7 +19,7 @@ public class ServiceService : BaseService, IServiceService
         var workingFacilityId = WorkingFacilityId;
         var page = await _unitOfWork.IServiceRepository.FindAll(
             x => x.FacilityID == null || workingFacilityId == null || x.FacilityID == workingFacilityId,
-            include: q => q.Include(x => x.ServiceType),
+            include: q => q.Include(x => x.ServiceType).Include(x => x.BaseUnit),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Domain.Entities.Services, ServiceResponse>(page));
     }
@@ -28,7 +28,7 @@ public class ServiceService : BaseService, IServiceService
     {
         var entity = await _unitOfWork.IServiceRepository.FindFirst(
             x => x.ServiceID == id,
-            include: q => q.Include(x => x.ServiceType));
+            include: q => q.Include(x => x.ServiceType).Include(x => x.BaseUnit));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy dịch vụ.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền truy cập dịch vụ này.");
         return Success(_mapper.Map<ServiceResponse>(entity));
@@ -52,7 +52,7 @@ public class ServiceService : BaseService, IServiceService
 
         var created = await _unitOfWork.IServiceRepository.FindFirst(
             x => x.ServiceID == entity.ServiceID,
-            include: q => q.Include(x => x.ServiceType));
+            include: q => q.Include(x => x.ServiceType).Include(x => x.BaseUnit));
 
         return Created(_mapper.Map<ServiceResponse>(created!));
     }
@@ -81,14 +81,16 @@ public class ServiceService : BaseService, IServiceService
 
         var updated = await _unitOfWork.IServiceRepository.FindFirst(
             x => x.ServiceID == entity.ServiceID,
-            include: q => q.Include(x => x.ServiceType));
+            include: q => q.Include(x => x.ServiceType).Include(x => x.BaseUnit));
 
         return Success(_mapper.Map<ServiceResponse>(updated!));
     }
 
     public async Task<Result<bool>> Delete(int id)
     {
-        var entity = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == id);
+        var entity = await _unitOfWork.IServiceRepository.FindFirst(
+            x => x.ServiceID == id,
+            include: q => q.Include(x => x.BaseUnit));
         if (entity is null) return NotFound<bool>("Không tìm thấy dịch vụ.");
         if (!CanAccessService(entity)) return Unauthorized<bool>("Bạn không có quyền xóa dịch vụ này.");
         _unitOfWork.IServiceRepository.Remove(entity);
@@ -132,7 +134,7 @@ public class ServiceService : BaseService, IServiceService
     {
         var entity = await _unitOfWork.IServiceRepository.FindFirst(
             x => x.ServiceID == id,
-            include: q => q.Include(x => x.ServiceType));
+            include: q => q.Include(x => x.ServiceType).Include(x => x.BaseUnit));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy thiết bị cho thuê.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác thiết bị này.");
         if (entity.ServiceType?.Code != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");
@@ -154,7 +156,7 @@ public class ServiceService : BaseService, IServiceService
     {
         var entity = await _unitOfWork.IServiceRepository.FindFirst(
             x => x.ServiceID == id,
-            include: q => q.Include(x => x.ServiceType));
+            include: q => q.Include(x => x.ServiceType).Include(x => x.BaseUnit));
         if (entity is null) return NotFound<ServiceResponse>("Không tìm thấy thiết bị cho thuê.");
         if (!CanAccessService(entity)) return Unauthorized<ServiceResponse>("Bạn không có quyền thao tác thiết bị này.");
         if (entity.ServiceType?.Code != "rental") return BadRequest<ServiceResponse>("Dịch vụ này không phải là loại cho thuê thiết bị.");

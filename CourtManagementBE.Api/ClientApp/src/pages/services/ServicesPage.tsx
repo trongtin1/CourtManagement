@@ -62,7 +62,7 @@ export function ServicesPage() {
   const createMut = useCreateServiceMutation()
   const updateMut = useUpdateServiceMutation()
   const deleteMut = useDeleteServiceMutation()
-  const toggleMut = useToggleServiceMutation()
+
 
   const openCreate = () => {
     setEditingId(null)
@@ -135,7 +135,13 @@ export function ServicesPage() {
               width: 100,
               render: (serviceType: ServiceType) => serviceType?.name || '',
             },
-            { title: 'Đơn vị', dataIndex: 'unit', width: 80 },
+            {
+              title: 'Đơn vị',
+              key: 'unit',
+              width: 120,
+              render: (_: unknown, r: Service) =>
+                r.baseUnit ? `${r.baseUnit.name}` : '-',
+            },
             {
               title: 'Kho hàng',
               key: 'stock',
@@ -151,7 +157,7 @@ export function ServicesPage() {
                         : 'text-green-600 font-medium'
                     }
                   >
-                    {r.stockQuantity} {r.unit}
+                    {r.stockQuantity} {r.baseUnit?.symbol || r.baseUnit?.name || ''}
                   </span>
                 )
               },
@@ -166,12 +172,8 @@ export function ServicesPage() {
               title: 'Trạng thái',
               dataIndex: 'isActive',
               width: 80,
-              render: (v: boolean, r: Service) => (
-                <Switch
-                  checked={v}
-                  size="small"
-                  onChange={() => toggleMut.mutate(r.serviceID)}
-                />
+              render: (v: boolean) => (
+                <span className={v ? 'text-green-600' : 'text-red-500'}>{v ? 'Active' : 'Inactive'}</span>
               ),
             },
             {
@@ -324,6 +326,7 @@ export function ServicesPage() {
           setConversionOpen(false)
           setActiveService(null)
         }}
+        units={unitsList}
         service={activeService}
       />
     </Space>

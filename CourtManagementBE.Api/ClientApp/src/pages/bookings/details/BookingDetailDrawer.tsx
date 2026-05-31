@@ -129,41 +129,59 @@ export function BookingDetailDrawer({
     if (!selectedBooking) return
     const serviceDetail = availableServices.find((s) => s.serviceID === serviceID)
     if (!serviceDetail) return
-    createServiceMutation.mutate({
-      bookingID: selectedBooking.bookingID as string,
-      serviceID,
-      quantity,
-      unitPrice: serviceDetail.price,
-      discountAmount: 0,
-      status: 'active',
-    }, {
-      onSuccess: () => { message.success('Thêm dịch vụ thành công!'); onRefresh?.() },
-      onError: () => message.error('Thêm dịch vụ thất bại!'),
-    })
+    createServiceMutation.mutate(
+      {
+        bookingID: selectedBooking.bookingID as string,
+        serviceID,
+        quantity,
+        unitPrice: serviceDetail.price,
+        discountAmount: 0,
+        status: 'active',
+      },
+      {
+        onSuccess: () => {
+          message.success('Thêm dịch vụ thành công!')
+          onRefresh?.()
+        },
+        onError: () => message.error('Thêm dịch vụ thất bại!'),
+      },
+    )
   }
 
   const handleUpdateServiceQty = (bookingServiceID: number, newQty: number) => {
     if (!selectedBooking) return
     if (newQty <= 0) return handleDeleteService(bookingServiceID)
-    updateServiceMutation.mutate({
-      id: bookingServiceID,
-      bookingID: selectedBooking.bookingID as string,
-      data: { quantity: newQty },
-    }, {
-      onSuccess: () => { message.success('Cập nhật số lượng thành công!'); onRefresh?.() },
-      onError: () => message.error('Cập nhật số lượng thất bại!'),
-    })
+    updateServiceMutation.mutate(
+      {
+        id: bookingServiceID,
+        bookingID: selectedBooking.bookingID as string,
+        data: { quantity: newQty },
+      },
+      {
+        onSuccess: () => {
+          message.success('Cập nhật số lượng thành công!')
+          onRefresh?.()
+        },
+        onError: () => message.error('Cập nhật số lượng thất bại!'),
+      },
+    )
   }
 
   const handleDeleteService = (bookingServiceID: number) => {
     if (!selectedBooking) return
-    deleteServiceMutation.mutate({
-      id: bookingServiceID,
-      bookingID: selectedBooking.bookingID as string,
-    }, {
-      onSuccess: () => { message.success('Xóa dịch vụ thành công!'); onRefresh?.() },
-      onError: () => message.error('Xóa dịch vụ thất bại!'),
-    })
+    deleteServiceMutation.mutate(
+      {
+        id: bookingServiceID,
+        bookingID: selectedBooking.bookingID as string,
+      },
+      {
+        onSuccess: () => {
+          message.success('Xóa dịch vụ thành công!')
+          onRefresh?.()
+        },
+        onError: () => message.error('Xóa dịch vụ thất bại!'),
+      },
+    )
   }
 
   // ─── Data Queries ───────────────────────────────────────────────────────────
@@ -176,7 +194,9 @@ export function BookingDetailDrawer({
   )
   if (!selectedBooking) return null
 
-  const matchedCourt = courtList.find(court => court.courtID === selectedBooking.courtID)
+  const matchedCourt = courtList.find(
+    (court) => court.courtID === selectedBooking.courtID,
+  )
   const bookingSlots = (selectedBooking as Booking).bookingSlots || []
   const rescheduleSlots = rescheduleSlotsQuery.data || []
   const bookingServices = (selectedBooking as Booking).bookingServices || []
@@ -186,7 +206,7 @@ export function BookingDetailDrawer({
   const displayStatus =
     optimisticStatus.bookingId === selectedBooking.bookingID && optimisticStatus.status
       ? optimisticStatus.status
-      : selectedBooking.status ?? ''
+      : (selectedBooking.status ?? '')
 
   const bookingStatuses = (statusesData ?? []) as BookingStatusResponse[]
 
@@ -497,8 +517,7 @@ export function BookingDetailDrawer({
                 className="flex justify-between text-xs items-center"
               >
                 <span className="text-slate-700 font-medium">
-                  {serviceDetail?.serviceName || `Dịch vụ #${bookingService.serviceID}`} ×{' '}
-                  {bookingService.quantity}
+                  {serviceDetail?.serviceName} × {bookingService.quantity}
                   {serviceDetail?.isTrackStock && (
                     <Tag color="cyan" className="ml-2 scale-90">
                       Theo dõi Kho ({serviceDetail.stockQuantity})

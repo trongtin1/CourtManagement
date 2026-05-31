@@ -478,7 +478,6 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.ServiceID);
             e.Property(x => x.ServiceCode).HasColumnType("varchar(20)").IsRequired();
             e.Property(x => x.ServiceName).HasColumnType("nvarchar(200)").IsRequired();
-            e.Property(x => x.Unit).HasColumnType("nvarchar(50)");
             e.Property(x => x.Price).HasColumnType("decimal(18,2)");
             e.Property(x => x.IsTrackStock).HasDefaultValue(false);
             e.Property(x => x.StockQuantity).HasDefaultValue(0);

@@ -9,7 +9,6 @@ public class ServiceRequest
     [Required, MaxLength(200)] public string ServiceName { get; set; } = string.Empty;
     public int? ServiceTypeID { get; set; }
     public int? UnitID { get; set; }
-    [MaxLength(50)] public string Unit { get; set; } = string.Empty;
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }
     public bool IsTrackStock { get; set; }

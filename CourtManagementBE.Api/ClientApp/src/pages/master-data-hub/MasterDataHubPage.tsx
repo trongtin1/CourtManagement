@@ -7,6 +7,7 @@ import {
   DashboardOutlined,
   DollarOutlined,
   ShopOutlined,
+  SwapOutlined,
   TagsOutlined,
   ToolOutlined,
   UsergroupAddOutlined,
@@ -43,8 +44,8 @@ const masterDataGroups = [
         icon: <ToolOutlined />,
       },
       {
-        name: 'Loai quy tac gia',
-        desc: 'Cao diem, thap diem, ngay le...',
+        name: 'Loại đặc điểm sân',
+        desc: 'Cao điểm, thấp điểm, ngày lễ...',
         path: ROUTES.priceRuleTypes,
         icon: <DollarOutlined />,
       },
@@ -82,6 +83,12 @@ const masterDataGroups = [
         desc: 'Cái, chiếc, giờ...',
         path: ROUTES.units,
         icon: <DashboardOutlined />,
+      },
+      {
+        name: 'Quy đổi đơn vị',
+        desc: 'Thiết lập quy đổi giữa các đơn vị',
+        path: ROUTES.units,
+        icon: <SwapOutlined />,
       },
       {
         name: 'Loại dịch vụ',

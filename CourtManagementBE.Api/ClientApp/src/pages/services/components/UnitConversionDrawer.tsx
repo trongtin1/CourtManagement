@@ -12,7 +12,6 @@ import {
   Typography,
 } from 'antd'
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { useUnitsQuery } from '@/features/units/api/useUnitQueries'
 import {
   useCreateUnitConversionMutation,
   useDeleteUnitConversionMutation,
@@ -20,6 +19,7 @@ import {
 } from '@/features/services/api/useUnitConversionQueries'
 import type { Service } from '@/features/services/model/types'
 import { toApiError } from '@/utils/errors'
+import type { Unit } from '@/features/units/model/types'
 
 const { Text } = Typography
 
@@ -27,30 +27,28 @@ interface UnitConversionDrawerProps {
   open: boolean
   onClose: () => void
   service: Service | null
+  units: Unit[]
 }
 
 export function UnitConversionDrawer({
   open,
   onClose,
   service,
+  units,
 }: UnitConversionDrawerProps) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
   const serviceId = service?.serviceID ?? 0
-  const baseUnitId = service?.unitID ?? 0
+  const baseUnitId = service?.baseUnit?.unitID ?? service?.unitID ?? 0
 
   const { data: conversions, isPending: loadingConversions } =
     useUnitConversionsQuery(serviceId)
-  const { data: unitsData, isPending: loadingUnits } = useUnitsQuery({
-    page: 1,
-    pageSize: 100,
-  })
   const createMut = useCreateUnitConversionMutation()
   const deleteMut = useDeleteUnitConversionMutation(serviceId)
 
-  const units = unitsData?.items ?? []
   const baseUnit = units.find((u) => u.unitID === baseUnitId)
+  const loadingUnits = false
 
   const handleSubmit = async () => {
     try {

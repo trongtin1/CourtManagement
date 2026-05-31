@@ -449,10 +449,10 @@ namespace CourtManagementBE.Migrations
                     b.Property<bool>("CanCombo")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("CanService")
+                    b.Property<bool>("CanReschedule")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("CanReschedule")
+                    b.Property<bool>("CanService")
                         .HasColumnType("bit");
 
                     b.Property<string>("Code")
@@ -1803,10 +1803,6 @@ namespace CourtManagementBE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0);
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int?>("UnitID")
                         .HasColumnType("int");

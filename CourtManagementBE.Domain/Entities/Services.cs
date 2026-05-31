@@ -12,8 +12,7 @@ public class Services
     public int? ServiceTypeID { get; set; }
     public ServiceTypes ServiceType { get; set; } = null!;
     public int? UnitID { get; set; }
-    public string Unit { get; set; } = string.Empty;
-    public Units? BaseUnit { get; set; }
+    public Units BaseUnit { get; set; } = null!;
 
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }

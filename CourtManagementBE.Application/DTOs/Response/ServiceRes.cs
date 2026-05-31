@@ -9,7 +9,7 @@ public class ServiceResponse
     public int? ServiceTypeID { get; set; }
     public ServiceTypeResponse? ServiceType { get; set; }
     public int? UnitID { get; set; }
-    public string Unit { get; set; } = string.Empty;
+    public UnitResponse? BaseUnit { get; set; }
     public int MinQuantity { get; set; }
     public int MaxQuantity { get; set; }
     public bool IsTrackStock { get; set; }
