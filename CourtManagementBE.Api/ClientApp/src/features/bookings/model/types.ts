@@ -1,4 +1,4 @@
-export type BookingStatus = string
+export type BookingStatusValue = string
 export type BookingGroupStatus = 'Active' | 'Paused' | 'Cancelled' | 'Completed'
 export type BookingGroupType = 'recurring' | 'tournament' | 'corporate'
 
@@ -9,7 +9,7 @@ export type Booking = {
   bookingGroupID?: number | null
   bookingDate: string
   totalAmount: number
-  status: BookingStatus
+  status: BookingStatusValue
   note: string
   cancellationReason: string
   cancelledAt: string | null
@@ -193,10 +193,11 @@ export type BookingHistoryResponse = {
   createdAt: string
 }
 
-export type BookingStatusOption = {
-  value: string
+export type BookingStatusResponse = {
+  bookingStatusID: number
   code: string
-  label: string
+  statusName: string
+  labelName: string
   isTerminal: boolean
   canReschedule: boolean
   canCombo: boolean

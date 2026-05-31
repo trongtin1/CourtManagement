@@ -9,7 +9,7 @@ import type {
   PayBookingRequest,
   RescheduleBookingRequest,
   BookingHistoryResponse,
-  BookingStatusOption,
+  BookingStatusResponse,
 } from '../model/types'
 
 
@@ -29,5 +29,5 @@ export const bookingApi = {
   pay: (id: string, data: PayBookingRequest) => apiPost<Booking>(`/booking/${id}/pay`, data),
   reschedule: (id: string, data: RescheduleBookingRequest) => apiPost<Booking>(`/booking/${id}/reschedule`, data),
   getHistory: (bookingId?: string) => apiGet<BookingHistoryResponse[]>('/booking/history', { bookingId }),
-  getStatuses: () => apiGet<BookingStatusOption[]>('/booking/statuses'),
+  getStatuses: () => apiGet<BookingStatusResponse[]>('/booking/statuses'),
 }

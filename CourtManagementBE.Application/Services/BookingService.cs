@@ -789,22 +789,13 @@ public class BookingService : BaseService, IBookingService
         return Success(_mapper.Map<List<BookingHistoryResponse>>(ordered));
     }
 
-    public async Task<Result<List<BookingStatusOption>>> GetStatuses()
+    public async Task<Result<List<BookingStatusResponse>>> GetStatuses()
     {
-        var list = await _unitOfWork.IBookingStatusRepository.FindList(x => true);
-        var options = list
-            .OrderBy(x => x.Code)
-            .Select(x => new BookingStatusOption
-            {
-                Value = x.StatusName,
-                Code = x.Code,
-                Label = x.LabelName,
-                IsTerminal = x.IsTerminal,
-                CanReschedule = x.CanReschedule,
-                ColorCode = x.ColorCode
-            })
-            .ToList();
-        return Success(options);
+        var list = await _unitOfWork.IBookingStatusRepository.FindList(
+            x => true,
+            orderBy: q => q.OrderBy(x => x.Code));
+
+        return Success(_mapper.Map<List<BookingStatusResponse>>(list));
     }
 
     private async Task WriteBookingHistory(Guid bookingId, string action, string oldValue, string newValue, string note = "")

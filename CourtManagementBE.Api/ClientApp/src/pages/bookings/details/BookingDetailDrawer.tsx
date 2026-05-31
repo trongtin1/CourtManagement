@@ -43,7 +43,7 @@ import { useServicesQuery } from '@/features/services/api/useServiceQueries'
 import { useCombosQuery } from '@/features/combos/api/useComboQueries'
 import { useCourtSlotsAvailabilityQuery } from '@/features/courts/api/useCourtQueries'
 
-import type { Booking } from '@/features/bookings/model/types'
+import type { Booking, BookingStatusResponse } from '@/features/bookings/model/types'
 import type {
   CourtSlotAvailability,
   CourtTimelineAvailability,
@@ -127,89 +127,43 @@ export function BookingDetailDrawer({
 
   const handleAddService = (serviceID: number, quantity: number) => {
     if (!selectedBooking) return
-
     const serviceDetail = availableServices.find((s) => s.serviceID === serviceID)
     if (!serviceDetail) return
-
-    createServiceMutation.mutate(
-      {
-        bookingID: selectedBooking.bookingID as string,
-        serviceID,
-        quantity,
-        unitPrice: serviceDetail.price,
-        discountAmount: 0,
-        status: 'active',
-      },
-      {
-        onSuccess: () => {
-          message.success('Thêm dịch vụ thành công!')
-          onRefresh?.()
-        },
-        onError: (error) => {
-          const fallback = 'Thêm dịch vụ thất bại!'
-          const serverMessage =
-            (error as { response?: { data?: { message?: string } } })?.response?.data
-              ?.message || fallback
-          message.error(serverMessage)
-        },
-      },
-    )
+    createServiceMutation.mutate({
+      bookingID: selectedBooking.bookingID as string,
+      serviceID,
+      quantity,
+      unitPrice: serviceDetail.price,
+      discountAmount: 0,
+      status: 'active',
+    }, {
+      onSuccess: () => { message.success('Thêm dịch vụ thành công!'); onRefresh?.() },
+      onError: () => message.error('Thêm dịch vụ thất bại!'),
+    })
   }
 
   const handleUpdateServiceQty = (bookingServiceID: number, newQty: number) => {
     if (!selectedBooking) return
-
-    if (newQty <= 0) {
-      handleDeleteService(bookingServiceID)
-      return
-    }
-
-    updateServiceMutation.mutate(
-      {
-        id: bookingServiceID,
-        bookingID: selectedBooking.bookingID as string,
-        data: {
-          quantity: newQty,
-        },
-      },
-      {
-        onSuccess: () => {
-          message.success('Cập nhật số lượng thành công!')
-          onRefresh?.()
-        },
-        onError: (error) => {
-          const fallback = 'Cập nhật số lượng thất bại!'
-          const serverMessage =
-            (error as { response?: { data?: { message?: string } } })?.response?.data
-              ?.message || fallback
-          message.error(serverMessage)
-        },
-      },
-    )
+    if (newQty <= 0) return handleDeleteService(bookingServiceID)
+    updateServiceMutation.mutate({
+      id: bookingServiceID,
+      bookingID: selectedBooking.bookingID as string,
+      data: { quantity: newQty },
+    }, {
+      onSuccess: () => { message.success('Cập nhật số lượng thành công!'); onRefresh?.() },
+      onError: () => message.error('Cập nhật số lượng thất bại!'),
+    })
   }
 
   const handleDeleteService = (bookingServiceID: number) => {
     if (!selectedBooking) return
-
-    deleteServiceMutation.mutate(
-      {
-        id: bookingServiceID,
-        bookingID: selectedBooking.bookingID as string,
-      },
-      {
-        onSuccess: () => {
-          message.success('Xóa dịch vụ thành công!')
-          onRefresh?.()
-        },
-        onError: (error) => {
-          const fallback = 'Xóa dịch vụ thất bại!'
-          const serverMessage =
-            (error as { response?: { data?: { message?: string } } })?.response?.data
-              ?.message || fallback
-          message.error(serverMessage)
-        },
-      },
-    )
+    deleteServiceMutation.mutate({
+      id: bookingServiceID,
+      bookingID: selectedBooking.bookingID as string,
+    }, {
+      onSuccess: () => { message.success('Xóa dịch vụ thành công!'); onRefresh?.() },
+      onError: () => message.error('Xóa dịch vụ thất bại!'),
+    })
   }
 
   // ─── Data Queries ───────────────────────────────────────────────────────────
@@ -220,49 +174,39 @@ export function BookingDetailDrawer({
     selectedBooking?.courtID ?? null,
     selectedBookingDate,
   )
-
-  const isSlotsLoading = isBookingLoading
-  const isServicesLoading = isBookingLoading
-
   if (!selectedBooking) return null
 
-  const matchedCourt = courtList.find(
-    (court) => court.courtID === selectedBooking.courtID,
-  )
-  const bookingSlots = (selectedBooking as Booking).bookingSlots ?? []
-  const rescheduleSlots = rescheduleSlotsQuery.data ?? []
-  const bookingServices = (selectedBooking as Booking).bookingServices ?? []
-  const availableServices = availableServicesData?.items ?? []
-  const bookingCombos = (selectedBooking as Booking).bookingCombos ?? []
-  const availableCombos = availableCombosData?.items ?? []
+  const matchedCourt = courtList.find(court => court.courtID === selectedBooking.courtID)
+  const bookingSlots = (selectedBooking as Booking).bookingSlots || []
+  const rescheduleSlots = rescheduleSlotsQuery.data || []
+  const bookingServices = (selectedBooking as Booking).bookingServices || []
+  const availableServices = availableServicesData?.items || []
+  const bookingCombos = (selectedBooking as Booking).bookingCombos || []
+  const availableCombos = availableCombosData?.items || []
   const displayStatus =
     optimisticStatus.bookingId === selectedBooking.bookingID && optimisticStatus.status
       ? optimisticStatus.status
-      : selectedBooking.status
+      : selectedBooking.status ?? ''
 
-  const matchedStatusOption = (statusesData ?? []).find(
+  const bookingStatuses = (statusesData ?? []) as BookingStatusResponse[]
+
+  const matchedStatusOption = bookingStatuses.find(
     (opt) =>
       opt.code === displayStatus ||
-      opt.value.toLowerCase() === displayStatus.toLowerCase(),
+      (opt.statusName ?? '').toLowerCase() === displayStatus.toLowerCase(),
   )
-  const selectValue = matchedStatusOption ? matchedStatusOption.code : displayStatus
-  const isTerminalStatus = matchedStatusOption ? matchedStatusOption.isTerminal : false
-  const isRescheduleAllowed = matchedStatusOption
-    ? matchedStatusOption.canReschedule
-    : false
-  const isAddServiceAllowed = matchedStatusOption
-    ? matchedStatusOption.canService
-    : false
+  const selectValue = matchedStatusOption?.code || displayStatus
+  const isTerminalStatus = matchedStatusOption?.isTerminal ?? false
+  const isRescheduleAllowed = matchedStatusOption?.canReschedule ?? false
+  const isAddServiceAllowed = matchedStatusOption?.canService ?? false
 
-  const statusOptions = (statusesData ?? []).map((option) => {
-    const currentCode = matchedStatusOption
-      ? matchedStatusOption.code
-      : BookingStatusConstants.Pending
+  const statusOptions = bookingStatuses.map((option) => {
+    const currentCode = matchedStatusOption?.code ?? BookingStatusConstants.Pending
     const isFinishedWorkflowStatus =
       option.code <= currentCode && option.code !== currentCode
 
     return {
-      label: option.label,
+      label: option.labelName,
       value: option.code,
       disabled: isTerminalStatus || isFinishedWorkflowStatus,
     }
@@ -493,7 +437,7 @@ export function BookingDetailDrawer({
           </Button>
         )}
       </p>
-      {isSlotsLoading ? (
+      {isBookingLoading ? (
         <div className="flex justify-center p-3">
           <Spin size="small" />
         </div>
@@ -532,7 +476,7 @@ export function BookingDetailDrawer({
           </Button>
         )}
       </p>
-      {isServicesLoading ? (
+      {isBookingLoading ? (
         <div className="flex justify-center p-3">
           <Spin size="small" />
         </div>
@@ -674,7 +618,7 @@ export function BookingDetailDrawer({
             className="mt-2"
             message={
               isTerminalStatus
-                ? `Đơn ở trạng thái ${matchedStatusOption?.label || 'kết thúc'}, không thể ghi nhận thanh toán.`
+                ? `Đơn ở trạng thái ${matchedStatusOption?.labelName || 'kết thúc'}, không thể ghi nhận thanh toán.`
                 : 'Đơn đã thanh toán đủ.'
             }
           />
