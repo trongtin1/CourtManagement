@@ -4,7 +4,7 @@ import { bookingSlotApi } from '@/features/bookings/api/bookingSlotApi'
 import { bookingServiceApi } from '@/features/bookings/api/bookingServiceApi'
 import { paymentKeys } from '@/features/payments/api/usePaymentQueries'
 import type { PaginationQuery } from '@/types/api'
-import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest } from '../model/types'
+import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest, CreateBookingServiceRequest, UpdateBookingServiceRequest } from '../model/types'
 
 export const bookingKeys = {
   all: ['bookings'] as const,
@@ -137,6 +137,39 @@ export const useBookingStatusesQuery = () => {
   return useQuery({
     queryKey: bookingKeys.statuses(),
     queryFn: () => bookingApi.getStatuses(),
+  })
+}
+
+export const useCreateBookingServiceMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateBookingServiceRequest) => bookingServiceApi.create(data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useUpdateBookingServiceMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; bookingID: string; data: UpdateBookingServiceRequest }) => bookingServiceApi.update(id, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useDeleteBookingServiceMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id }: { id: number; bookingID: string }) => bookingServiceApi.delete(id),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+    },
   })
 }
 

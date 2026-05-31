@@ -22,19 +22,25 @@ import {
   FieldTimeOutlined,
   EditOutlined,
   InfoCircleOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 import { formatCompactCurrency } from '@/utils/format'
 import {
-  useBookingSlotsQuery,
-  useBookingServicesQuery,
   useUpdateBookingStatusMutation,
   usePayBookingMutation,
   useRescheduleBookingMutation,
   useBookingStatusesQuery,
+  useCreateBookingServiceMutation,
+  useUpdateBookingServiceMutation,
+  useDeleteBookingServiceMutation,
+  useBookingQuery,
 } from '@/features/bookings/api/useBookingQueries'
 import { useServicesQuery } from '@/features/services/api/useServiceQueries'
+import { useCombosQuery } from '@/features/combos/api/useComboQueries'
 import { useCourtSlotsAvailabilityQuery } from '@/features/courts/api/useCourtQueries'
 
 import type { Booking } from '@/features/bookings/model/types'
@@ -67,13 +73,19 @@ interface BookingDetailDrawerProps {
 }
 
 export function BookingDetailDrawer({
-  booking: selectedBooking,
+  booking: initialBooking,
   open: isOpen,
   onClose,
   courts: courtList,
   onRefresh,
 }: BookingDetailDrawerProps) {
   const { message } = App.useApp()
+
+  // ─── Data Query: Fetch complete booking detail by ID with eager-loaded relations ───
+  const { data: dbBooking, isLoading: isBookingLoading } = useBookingQuery(
+    initialBooking?.bookingID ?? '',
+  )
+  const selectedBooking = dbBooking || initialBooking
 
   // ─── Mutations ──────────────────────────────────────────────────────────────
   const updateStatusMutation = useUpdateBookingStatusMutation()
@@ -103,28 +115,126 @@ export function BookingDetailDrawer({
     ? dayjs(selectedBooking.bookingDate).format('YYYY-MM-DD')
     : ''
 
+  // Service Management Modal State
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false)
+  const [serviceForm] = Form.useForm()
+  const [selectedAddServiceId, setSelectedAddServiceId] = useState<number | null>(null)
+
+  // Booking Service Mutations
+  const createServiceMutation = useCreateBookingServiceMutation()
+  const updateServiceMutation = useUpdateBookingServiceMutation()
+  const deleteServiceMutation = useDeleteBookingServiceMutation()
+
+  const handleAddService = (serviceID: number, quantity: number) => {
+    if (!selectedBooking) return
+
+    const serviceDetail = availableServices.find((s) => s.serviceID === serviceID)
+    if (!serviceDetail) return
+
+    createServiceMutation.mutate(
+      {
+        bookingID: selectedBooking.bookingID as string,
+        serviceID,
+        quantity,
+        unitPrice: serviceDetail.price,
+        discountAmount: 0,
+        status: 'active',
+      },
+      {
+        onSuccess: () => {
+          message.success('Thêm dịch vụ thành công!')
+          onRefresh?.()
+        },
+        onError: (error) => {
+          const fallback = 'Thêm dịch vụ thất bại!'
+          const serverMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data
+              ?.message || fallback
+          message.error(serverMessage)
+        },
+      },
+    )
+  }
+
+  const handleUpdateServiceQty = (bookingServiceID: number, newQty: number) => {
+    if (!selectedBooking) return
+
+    if (newQty <= 0) {
+      handleDeleteService(bookingServiceID)
+      return
+    }
+
+    updateServiceMutation.mutate(
+      {
+        id: bookingServiceID,
+        bookingID: selectedBooking.bookingID as string,
+        data: {
+          quantity: newQty,
+        },
+      },
+      {
+        onSuccess: () => {
+          message.success('Cập nhật số lượng thành công!')
+          onRefresh?.()
+        },
+        onError: (error) => {
+          const fallback = 'Cập nhật số lượng thất bại!'
+          const serverMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data
+              ?.message || fallback
+          message.error(serverMessage)
+        },
+      },
+    )
+  }
+
+  const handleDeleteService = (bookingServiceID: number) => {
+    if (!selectedBooking) return
+
+    deleteServiceMutation.mutate(
+      {
+        id: bookingServiceID,
+        bookingID: selectedBooking.bookingID as string,
+      },
+      {
+        onSuccess: () => {
+          message.success('Xóa dịch vụ thành công!')
+          onRefresh?.()
+        },
+        onError: (error) => {
+          const fallback = 'Xóa dịch vụ thất bại!'
+          const serverMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data
+              ?.message || fallback
+          message.error(serverMessage)
+        },
+      },
+    )
+  }
+
   // ─── Data Queries ───────────────────────────────────────────────────────────
-  const { data: slotsData, isLoading: isSlotsLoading } = useBookingSlotsQuery(
-    selectedBooking?.bookingID ?? null,
-  )
-  const { data: bookingServicesData, isLoading: isServicesLoading } =
-    useBookingServicesQuery(selectedBooking?.bookingID ?? null)
   const { data: availableServicesData } = useServicesQuery()
+  const { data: availableCombosData } = useCombosQuery()
   const { data: statusesData, isLoading: isStatusesLoading } = useBookingStatusesQuery()
   const rescheduleSlotsQuery = useCourtSlotsAvailabilityQuery(
     selectedBooking?.courtID ?? null,
     selectedBookingDate,
   )
 
+  const isSlotsLoading = isBookingLoading
+  const isServicesLoading = isBookingLoading
+
   if (!selectedBooking) return null
 
   const matchedCourt = courtList.find(
     (court) => court.courtID === selectedBooking.courtID,
   )
-  const bookingSlots = slotsData ?? []
+  const bookingSlots = (selectedBooking as Booking).bookingSlots ?? []
   const rescheduleSlots = rescheduleSlotsQuery.data ?? []
-  const bookingServices = bookingServicesData ?? []
+  const bookingServices = (selectedBooking as Booking).bookingServices ?? []
   const availableServices = availableServicesData?.items ?? []
+  const bookingCombos = (selectedBooking as Booking).bookingCombos ?? []
+  const availableCombos = availableCombosData?.items ?? []
   const displayStatus =
     optimisticStatus.bookingId === selectedBooking.bookingID && optimisticStatus.status
       ? optimisticStatus.status
@@ -137,10 +247,17 @@ export function BookingDetailDrawer({
   )
   const selectValue = matchedStatusOption ? matchedStatusOption.code : displayStatus
   const isTerminalStatus = matchedStatusOption ? matchedStatusOption.isTerminal : false
-  const isRescheduleAllowed = matchedStatusOption ? matchedStatusOption.canReschedule : false
+  const isRescheduleAllowed = matchedStatusOption
+    ? matchedStatusOption.canReschedule
+    : false
+  const isAddServiceAllowed = matchedStatusOption
+    ? matchedStatusOption.canService
+    : false
 
   const statusOptions = (statusesData ?? []).map((option) => {
-    const currentCode = matchedStatusOption ? matchedStatusOption.code : BookingStatusConstants.Pending
+    const currentCode = matchedStatusOption
+      ? matchedStatusOption.code
+      : BookingStatusConstants.Pending
     const isFinishedWorkflowStatus =
       option.code <= currentCode && option.code !== currentCode
 
@@ -155,12 +272,18 @@ export function BookingDetailDrawer({
     (sum, service) => sum + service.quantity * service.unitPrice,
     0,
   )
-  const totalCourtAmount = Math.max(0, selectedBooking.totalAmount - totalServicesAmount)
+  const totalCombosAmount = bookingCombos.reduce(
+    (sum, combo) => sum + combo.quantity * combo.unitPrice,
+    0,
+  )
+  const totalCourtAmount = Math.max(
+    0,
+    selectedBooking.totalAmount - totalServicesAmount - totalCombosAmount,
+  )
   const paidAmount = (selectedBooking as Booking).paidAmount ?? 0
   const remainingAmount = Math.max(0, selectedBooking.totalAmount - paidAmount)
   const isPaymentAllowed =
-    (!matchedStatusOption || !matchedStatusOption.isTerminal) &&
-    remainingAmount > 0
+    (!matchedStatusOption || !matchedStatusOption.isTerminal) && remainingAmount > 0
 
   const handleStatusChange = (newStatus: string) => {
     updateStatusMutation.mutate(
@@ -394,8 +517,20 @@ export function BookingDetailDrawer({
 
       {/* Services */}
       <Divider style={{ margin: '14px 0' }} />
-      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-        Dịch vụ đi kèm & Quản lý kho
+      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex justify-between items-center">
+        <span>Dịch vụ đi kèm</span>
+        {isAddServiceAllowed && (
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setIsServiceModalOpen(true)
+            }}
+          >
+            Quản lý dịch vụ
+          </Button>
+        )}
       </p>
       {isServicesLoading ? (
         <div className="flex justify-center p-3">
@@ -437,6 +572,38 @@ export function BookingDetailDrawer({
         </div>
       )}
 
+      {/* Combos */}
+      <Divider style={{ margin: '14px 0' }} />
+      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex justify-between items-center">
+        <span>Combo dịch vụ áp dụng</span>
+      </p>
+      <div className="flex flex-col gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+        {bookingCombos.length === 0 && (
+          <p className="text-xs text-slate-400 italic text-center py-2">
+            Không có combo dịch vụ áp dụng
+          </p>
+        )}
+        {bookingCombos.map((bookingCombo) => {
+          const comboDetail = availableCombos.find(
+            (c) => c.comboID === bookingCombo.comboID,
+          )
+          return (
+            <div
+              key={bookingCombo.bookingComboID}
+              className="flex justify-between text-xs items-center"
+            >
+              <span className="text-slate-700 font-medium">
+                {comboDetail?.comboName || `Combo #${bookingCombo.comboID}`} ×{' '}
+                {bookingCombo.quantity}
+              </span>
+              <span className="font-bold text-slate-800">
+                {formatCompactCurrency(bookingCombo.quantity * bookingCombo.unitPrice)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
       {/* Note */}
       {selectedBooking.note && (
         <>
@@ -461,6 +628,12 @@ export function BookingDetailDrawer({
           <div className="flex justify-between text-slate-500 font-medium">
             <span>Dịch vụ bán kèm</span>
             <span>{formatCompactCurrency(totalServicesAmount)}</span>
+          </div>
+        )}
+        {totalCombosAmount > 0 && (
+          <div className="flex justify-between text-slate-500 font-medium">
+            <span>Combo dịch vụ</span>
+            <span>{formatCompactCurrency(totalCombosAmount)}</span>
           </div>
         )}
         <div className="flex justify-between text-slate-800 font-bold border-t border-slate-200 pt-1.5 text-sm">
@@ -714,6 +887,212 @@ export function BookingDetailDrawer({
             </Button>
           </div>
         </Form>
+      </Modal>
+
+      {/* Form Modal Quản lý dịch vụ đi kèm */}
+      <Modal
+        title={
+          <span className="flex items-center gap-2 font-extrabold text-slate-800 text-base">
+            <PlusOutlined className="text-indigo-650 text-indigo-600" /> Quản lý dịch vụ
+            đi kèm
+          </span>
+        }
+        open={isServiceModalOpen}
+        onCancel={() => {
+          setIsServiceModalOpen(false)
+          setSelectedAddServiceId(null)
+          serviceForm.resetFields()
+        }}
+        footer={null}
+        destroyOnClose
+        width={520}
+        className="rounded-2xl overflow-hidden"
+      >
+        <div className="space-y-4">
+          {/* Section: Thêm dịch vụ mới */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+              Thêm dịch vụ mới
+            </p>
+            <Form
+              form={serviceForm}
+              layout="inline"
+              onFinish={(values) => {
+                if (!values.serviceID) return
+                handleAddService(values.serviceID, values.quantity || 1)
+                serviceForm.resetFields()
+                setSelectedAddServiceId(null)
+              }}
+              className="flex items-end gap-2"
+            >
+              <Form.Item
+                name="serviceID"
+                className="flex-1 mb-0"
+                rules={[{ required: true, message: 'Chọn dịch vụ' }]}
+              >
+                <Select
+                  placeholder="Chọn dịch vụ mới..."
+                  onChange={(val) => setSelectedAddServiceId(val)}
+                  showSearch
+                  optionFilterProp="label"
+                  style={{ width: '100%' }}
+                >
+                  {availableServices
+                    .filter(
+                      (s) =>
+                        !bookingServices.some((bs) => bs.serviceID === s.serviceID) &&
+                        s.isActive,
+                    )
+                    .map((svc) => {
+                      const stockText = svc.isTrackStock
+                        ? ` (Kho: ${svc.stockQuantity})`
+                        : ''
+                      return (
+                        <Select.Option
+                          key={svc.serviceID}
+                          value={svc.serviceID}
+                          label={svc.serviceName}
+                        >
+                          {svc.serviceName} - {formatCompactCurrency(svc.price)}{' '}
+                          {stockText}
+                        </Select.Option>
+                      )
+                    })}
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="quantity"
+                className="mb-0"
+                initialValue={1}
+                rules={[{ required: true }]}
+              >
+                <InputNumber min={1} placeholder="SL" style={{ width: 80 }} />
+              </Form.Item>
+
+              <Form.Item className="mb-0">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<PlusOutlined />}
+                  loading={createServiceMutation.isPending}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Thêm
+                </Button>
+              </Form.Item>
+            </Form>
+
+            {(() => {
+              const chosen = availableServices.find(
+                (s) => s.serviceID === selectedAddServiceId,
+              )
+              if (chosen && chosen.isTrackStock) {
+                return (
+                  <div className="mt-2 text-xs text-cyan-600 font-semibold bg-cyan-50 p-2 rounded border border-cyan-100 flex items-center gap-1">
+                    <InfoCircleOutlined /> Mặt hàng theo dõi kho. Hiện còn:{' '}
+                    {chosen.stockQuantity} {chosen.unit || 'sản phẩm'}
+                  </div>
+                )
+              }
+              return null
+            })()}
+          </div>
+
+          {/* Section: Danh sách dịch vụ hiện tại */}
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">
+              Dịch vụ hiện tại ({bookingServices.length})
+            </p>
+            <div className="max-h-[45vh] overflow-y-auto pr-1 flex flex-col gap-2.5">
+              {bookingServices.length === 0 ? (
+                <p className="text-xs text-slate-400 italic text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  Chưa có dịch vụ nào trong hóa đơn này
+                </p>
+              ) : (
+                bookingServices.map((bs) => {
+                  const svcDetail = availableServices.find(
+                    (s) => s.serviceID === bs.serviceID,
+                  )
+                  const isSvcLoading =
+                    createServiceMutation.isPending ||
+                    updateServiceMutation.isPending ||
+                    deleteServiceMutation.isPending
+
+                  return (
+                    <div
+                      key={bs.bookingServiceID}
+                      className="flex justify-between items-center p-3 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm rounded-xl transition duration-150"
+                    >
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div
+                          className="text-xs font-bold text-slate-800 truncate"
+                          title={svcDetail?.serviceName}
+                        >
+                          {svcDetail?.serviceName || `Dịch vụ #${bs.serviceID}`}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                          {formatCompactCurrency(bs.unitPrice)} /{' '}
+                          {svcDetail?.unit || 'lượt'}
+                          {svcDetail?.isTrackStock &&
+                            ` · Kho: ${svcDetail.stockQuantity}`}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-inner">
+                          <Button
+                            type="text"
+                            size="small"
+                            disabled={isSvcLoading}
+                            icon={<MinusOutlined className="text-[10px]" />}
+                            onClick={() =>
+                              handleUpdateServiceQty(bs.bookingServiceID, bs.quantity - 1)
+                            }
+                            className="hover:bg-white text-slate-500"
+                          />
+                          <span className="text-xs font-bold text-slate-800 px-1.5 min-w-6 text-center select-none">
+                            {bs.quantity}
+                          </span>
+                          <Button
+                            type="text"
+                            size="small"
+                            disabled={isSvcLoading}
+                            icon={<PlusOutlined className="text-[10px]" />}
+                            onClick={() =>
+                              handleUpdateServiceQty(bs.bookingServiceID, bs.quantity + 1)
+                            }
+                            className="hover:bg-white text-slate-500"
+                          />
+                        </div>
+
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          disabled={isSvcLoading}
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleDeleteService(bs.bookingServiceID)}
+                          className="hover:bg-red-50"
+                        />
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
+          <Button
+            type="primary"
+            onClick={() => setIsServiceModalOpen(false)}
+            className="bg-slate-800 hover:bg-slate-900 border-none rounded-lg"
+          >
+            Hoàn tất
+          </Button>
+        </div>
       </Modal>
     </Drawer>
   )

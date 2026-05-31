@@ -1,4 +1,4 @@
-export type BookingStatus = string;
+export type BookingStatus = string
 export type BookingGroupStatus = 'Active' | 'Paused' | 'Cancelled' | 'Completed'
 export type BookingGroupType = 'recurring' | 'tournament' | 'corporate'
 
@@ -9,7 +9,6 @@ export type Booking = {
   bookingGroupID?: number | null
   bookingDate: string
   totalAmount: number
-  comboID?: number | null
   status: BookingStatus
   note: string
   cancellationReason: string
@@ -18,6 +17,9 @@ export type Booking = {
   startTime?: string
   endTime?: string
   paidAmount?: number
+  bookingSlots?: BookingSlot[]
+  bookingServices?: BookingService[]
+  bookingCombos?: BookingCombo[]
 }
 
 export type BookingGroup = {
@@ -60,7 +62,6 @@ export type CreateFullBookingRequest = {
   courtID: number
   customerID: number
   bookingDate: string
-  comboID?: number | null
   note?: string
   slots: Array<{
     startTime: string
@@ -68,6 +69,10 @@ export type CreateFullBookingRequest = {
   }>
   services: Array<{
     serviceID: number
+    quantity: number
+  }>
+  combos: Array<{
+    comboID: number
     quantity: number
   }>
 }
@@ -132,6 +137,18 @@ export type BookingService = {
   createdDate: string
 }
 
+export type BookingCombo = {
+  bookingComboID: number
+  bookingID: string
+  comboID: number
+  quantity: number
+  unitPrice: number
+  discountAmount: number
+  totalAmount: number
+  status: string
+  createdDate: string
+}
+
 export type CreateBookingServiceRequest = {
   bookingID: string
   serviceID: number
@@ -182,5 +199,7 @@ export type BookingStatusOption = {
   label: string
   isTerminal: boolean
   canReschedule: boolean
+  canCombo: boolean
+  canService: boolean
   colorCode: string
 }

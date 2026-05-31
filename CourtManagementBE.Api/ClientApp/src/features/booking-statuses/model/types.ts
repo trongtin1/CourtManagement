@@ -5,6 +5,8 @@ export type BookingStatus = {
   labelName: string
   isTerminal: boolean
   canReschedule: boolean
+  canCombo: boolean
+  canService: boolean
   colorCode: string
 }
 
@@ -14,5 +16,7 @@ export type BookingStatusRequest = {
   labelName: string
   isTerminal: boolean
   canReschedule: boolean
+  canCombo: boolean
+  canService: boolean
   colorCode: string
 }

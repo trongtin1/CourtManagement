@@ -47,6 +47,7 @@ public class AppDbContext : DbContext
     public DbSet<Bookings> Bookings => Set<Bookings>();
     public DbSet<BookingSlots> BookingSlots => Set<BookingSlots>();
     public DbSet<BookingServices> BookingServices => Set<BookingServices>();
+    public DbSet<BookingCombos> BookingCombos => Set<BookingCombos>();
     public DbSet<Payments> Payments => Set<Payments>();
     public DbSet<BookingHistories> BookingHistories => Set<BookingHistories>();
     public DbSet<BookingStatuses> BookingStatuses => Set<BookingStatuses>();
@@ -341,11 +342,6 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.CancellationReasonID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasOne(x => x.Combo)
-                .WithMany()
-                .HasForeignKey(x => x.ComboID)
-                .OnDelete(DeleteBehavior.Restrict);
-
             e.HasOne(x => x.Court)
                 .WithMany()
                 .HasForeignKey(x => x.CourtID)
@@ -355,6 +351,21 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.CustomerID)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasMany(x => x.BookingSlots)
+                .WithOne()
+                .HasForeignKey(x => x.BookingID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(x => x.BookingServices)
+                .WithOne()
+                .HasForeignKey(x => x.BookingID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(x => x.BookingCombos)
+                .WithOne()
+                .HasForeignKey(x => x.BookingID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── BookingGroups ────────────────────────────────────────────────────
@@ -429,6 +440,16 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<BookingServices>(e =>
         {
             e.HasKey(x => x.BookingServiceID);
+            e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
+            e.Property(x => x.UnitPrice).HasColumnType("decimal(18,2)");
+            e.Property(x => x.DiscountAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
+        });
+
+        // ── BookingCombos ────────────────────────────────────────────────────
+        modelBuilder.Entity<BookingCombos>(e =>
+        {
+            e.HasKey(x => x.BookingComboID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
             e.Property(x => x.UnitPrice).HasColumnType("decimal(18,2)");
             e.Property(x => x.DiscountAmount).HasColumnType("decimal(18,2)");

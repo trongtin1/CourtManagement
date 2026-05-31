@@ -8,7 +8,6 @@ public class BookingRequest
     [Required] public int CustomerID { get; set; }
     [Required] public DateTime BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
-    public int? ComboID { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
     public int? CancellationReasonID { get; set; }
@@ -20,10 +19,16 @@ public class CreateFullBookingRequest
     [Required] public int CourtID { get; set; }
     [Required] public int CustomerID { get; set; }
     [Required] public DateTime BookingDate { get; set; }
-    public int? ComboID { get; set; }
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
     public List<CreateFullBookingSlotRequest> Slots { get; set; } = [];
     public List<CreateFullBookingServiceRequest> Services { get; set; } = [];
+    public List<CreateFullBookingComboRequest> Combos { get; set; } = [];
+}
+
+public class CreateFullBookingComboRequest
+{
+    [Required] public int ComboID { get; set; }
+    [Required, Range(1, int.MaxValue)] public int Quantity { get; set; }
 }
 
 public class CreateFullBookingSlotRequest

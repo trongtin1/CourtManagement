@@ -20,6 +20,7 @@ public interface ICustomerRepository : IGenericRepository<Customers> { }
 public interface IBookingRepository : IGenericRepository<Bookings> { }
 public interface IBookingSlotRepository : IGenericRepository<BookingSlots> { }
 public interface IBookingServiceRepository : IGenericRepository<BookingServices> { }
+public interface IBookingComboRepository : IGenericRepository<BookingCombos> { }
 public interface IPaymentRepository : IGenericRepository<Payments> { }
 public interface IServiceRepository : IGenericRepository<Services> { }
 public interface ICourtAreaMappingRepository : IGenericRepository<CourtAreaMapping> { }

@@ -40,6 +40,7 @@ public class UnitOfWork : IUnitOfWork
     public IBookingRepository IBookingRepository => new BookingRepository(_context);
     public IBookingSlotRepository IBookingSlotRepository => new BookingSlotRepository(_context);
     public IBookingServiceRepository IBookingServiceRepository => new BookingServiceRepository(_context);
+    public IBookingComboRepository IBookingComboRepository => new BookingComboRepository(_context);
     public IPaymentRepository IPaymentRepository => new PaymentRepository(_context);
     public IServiceRepository IServiceRepository => new ServiceRepository(_context);
 

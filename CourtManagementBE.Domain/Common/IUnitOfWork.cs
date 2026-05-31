@@ -23,6 +23,7 @@ public interface IUnitOfWork : IDisposable
     IBookingRepository IBookingRepository { get; }
     IBookingSlotRepository IBookingSlotRepository { get; }
     IBookingServiceRepository IBookingServiceRepository { get; }
+    IBookingComboRepository IBookingComboRepository { get; }
     IPaymentRepository IPaymentRepository { get; }
     IServiceRepository IServiceRepository { get; }
 

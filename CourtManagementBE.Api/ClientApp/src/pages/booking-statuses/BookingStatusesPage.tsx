@@ -59,6 +59,8 @@ export function BookingStatusesPage() {
       labelName: '',
       isTerminal: false,
       canReschedule: false,
+      canCombo: false,
+      canService: false,
       colorCode: '#22c55e',
     })
     setOpen(true)
@@ -80,6 +82,8 @@ export function BookingStatusesPage() {
         colorCode: values.colorCode || '#22c55e',
         isTerminal: !!values.isTerminal,
         canReschedule: !!values.canReschedule,
+        canCombo: !!values.canCombo,
+        canService: !!values.canService,
       }
 
       if (editingId) {
@@ -318,6 +322,22 @@ export function BookingStatusesPage() {
               <Checkbox>
                 <span className="text-xs font-bold text-slate-700">
                   Cho phép dời lịch chơi
+                </span>
+              </Checkbox>
+            </Form.Item>
+
+            <Form.Item name="canCombo" valuePropName="checked" className="mb-0 flex-1">
+              <Checkbox>
+                <span className="text-xs font-bold text-slate-700">
+                  Cho phép áp dụng combo
+                </span>
+              </Checkbox>
+            </Form.Item>
+
+            <Form.Item name="canService" valuePropName="checked" className="mb-0 flex-1">
+              <Checkbox>
+                <span className="text-xs font-bold text-slate-700">
+                  Cho phép áp dụng dịch vụ
                 </span>
               </Checkbox>
             </Form.Item>

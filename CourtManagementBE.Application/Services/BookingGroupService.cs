@@ -350,7 +350,6 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 BookingDate = targetDateTime,
                 StartTime = config.StartTime,
                 EndTime = config.EndTime,
-                ComboID = group.ComboID,
                 Status = BookingStatusConstants.Confirmed,
                 Note = $"[Đặt định kỳ] Nhóm: {group.GroupName}",
                 TotalAmount = 0,

@@ -174,7 +174,6 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
         courtID: courtID,
         customerID: customerID,
         bookingDate: date,
-        comboID: selectedComboID,
         note: note,
         slots: selectedSlots
           .map((id) => timeSlots.find((s) => s.slotIndex === id))
@@ -187,6 +186,9 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
           serviceID: Number(svcId),
           quantity: svc.quantity,
         })),
+        combos: selectedComboID
+          ? [{ comboID: selectedComboID, quantity: 1 }]
+          : [],
       })
 
       await queryClient.invalidateQueries()

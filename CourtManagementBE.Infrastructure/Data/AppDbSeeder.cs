@@ -648,19 +648,30 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new BookingStatuses { Code = "001", StatusName = "Pending", LabelName = "Chờ duyệt / Chờ cọc (Pending)", IsTerminal = false, CanReschedule = true, ColorCode = "warning" },
-            new BookingStatuses { Code = "002", StatusName = "Confirmed", LabelName = "Đã xác nhận (Confirmed)", IsTerminal = false, CanReschedule = true, ColorCode = "processing" },
-            new BookingStatuses { Code = "003", StatusName = "CheckedIn", LabelName = "Đã nhận sân (CheckedIn)", IsTerminal = false, CanReschedule = false, ColorCode = "success" },
-            new BookingStatuses { Code = "004", StatusName = "Completed", LabelName = "Hoàn tất buổi chơi (Completed)", IsTerminal = true, CanReschedule = false, ColorCode = "success" },
-            new BookingStatuses { Code = "005", StatusName = "Cancelled", LabelName = "Hủy đơn hàng (Cancelled)", IsTerminal = true, CanReschedule = false, ColorCode = "error" },
-            new BookingStatuses { Code = "006", StatusName = "NoShow", LabelName = "Khách không đến (NoShow)", IsTerminal = true, CanReschedule = false, ColorCode = "default" }
+            new BookingStatuses { Code = "001", StatusName = "Pending", LabelName = "Chờ duyệt / Chờ cọc (Pending)", IsTerminal = false, CanReschedule = true, CanCombo = true, CanService = true, ColorCode = "warning" },
+            new BookingStatuses { Code = "002", StatusName = "Confirmed", LabelName = "Đã xác nhận (Confirmed)", IsTerminal = false, CanReschedule = true, CanCombo = true, CanService = true, ColorCode = "processing" },
+            new BookingStatuses { Code = "003", StatusName = "CheckedIn", LabelName = "Đã nhận sân (CheckedIn)", IsTerminal = false, CanReschedule = false, CanCombo = true, CanService = true, ColorCode = "success" },
+            new BookingStatuses { Code = "004", StatusName = "Completed", LabelName = "Hoàn tất buổi chơi (Completed)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "success" },
+            new BookingStatuses { Code = "005", StatusName = "Cancelled", LabelName = "Hủy đơn hàng (Cancelled)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "error" },
+            new BookingStatuses { Code = "006", StatusName = "NoShow", LabelName = "Khách không đến (NoShow)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "default" }
         };
 
         foreach (var item in seed)
         {
-            if (!await db.BookingStatuses.AnyAsync(x => x.Code == item.Code, cancellationToken))
+            var existing = await db.BookingStatuses.FirstOrDefaultAsync(x => x.Code == item.Code, cancellationToken);
+            if (existing is null)
             {
                 db.BookingStatuses.Add(item);
+            }
+            else
+            {
+                existing.CanCombo = item.CanCombo;
+                existing.CanService = item.CanService;
+                existing.IsTerminal = item.IsTerminal;
+                existing.CanReschedule = item.CanReschedule;
+                existing.ColorCode = item.ColorCode;
+                existing.LabelName = item.LabelName;
+                existing.StatusName = item.StatusName;
             }
         }
 

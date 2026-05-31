@@ -26,9 +26,31 @@ public class BookingServiceService : BaseService, IBookingServiceService
             return Unauthorized<BookingServiceResponse>("Bạn không có quyền thêm dịch vụ này vào booking.");
         }
 
+        var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == request.ServiceID);
+        if (service == null) return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ.");
+
+        if (service.IsTrackStock)
+        {
+            if (service.StockQuantity < request.Quantity)
+            {
+                return BadRequest<BookingServiceResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).");
+            }
+            service.StockQuantity -= request.Quantity;
+            _unitOfWork.IServiceRepository.Update(service);
+        }
+
         var entity = _mapper.Map<BookingServices>(request);
         entity.TotalAmount = request.UnitPrice * request.Quantity - request.DiscountAmount;
         entity.CreatedDate = DateTimeOffset.UtcNow;
+
+        var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == request.BookingID);
+        if (booking != null)
+        {
+            booking.TotalAmount += entity.TotalAmount;
+            booking.ModifiedDate = DateTimeOffset.UtcNow;
+            _unitOfWork.IBookingRepository.Update(booking);
+        }
+
         await _unitOfWork.IBookingServiceRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
         return Created(_mapper.Map<BookingServiceResponse>(entity));
@@ -39,8 +61,31 @@ public class BookingServiceService : BaseService, IBookingServiceService
         var entity = await _unitOfWork.IBookingServiceRepository.FindFirst(x => x.BookingServiceID == id);
         if (entity is null) return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ booking.");
         if (!await CanAccessBooking(entity.BookingID)) return Unauthorized<BookingServiceResponse>("Bạn không có quyền cập nhật dịch vụ booking này.");
+
+        var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == entity.ServiceID);
+        if (service != null && service.IsTrackStock)
+        {
+            var stockDiff = request.Quantity - entity.Quantity;
+            if (service.StockQuantity < stockDiff)
+            {
+                return BadRequest<BookingServiceResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).");
+            }
+            service.StockQuantity -= stockDiff;
+            _unitOfWork.IServiceRepository.Update(service);
+        }
+
+        var oldTotalAmount = entity.TotalAmount;
         _mapper.Map(request, entity);
         entity.TotalAmount = entity.UnitPrice * request.Quantity - request.DiscountAmount;
+
+        var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == entity.BookingID);
+        if (booking != null)
+        {
+            booking.TotalAmount += (entity.TotalAmount - oldTotalAmount);
+            booking.ModifiedDate = DateTimeOffset.UtcNow;
+            _unitOfWork.IBookingRepository.Update(booking);
+        }
+
         _unitOfWork.IBookingServiceRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(_mapper.Map<BookingServiceResponse>(entity));
@@ -51,6 +96,22 @@ public class BookingServiceService : BaseService, IBookingServiceService
         var entity = await _unitOfWork.IBookingServiceRepository.FindFirst(x => x.BookingServiceID == id);
         if (entity is null) return NotFound<bool>("Không tìm thấy dịch vụ booking.");
         if (!await CanAccessBooking(entity.BookingID)) return Unauthorized<bool>("Bạn không có quyền xóa dịch vụ booking này.");
+
+        var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == entity.ServiceID);
+        if (service != null && service.IsTrackStock)
+        {
+            service.StockQuantity += entity.Quantity;
+            _unitOfWork.IServiceRepository.Update(service);
+        }
+
+        var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == entity.BookingID);
+        if (booking != null)
+        {
+            booking.TotalAmount -= entity.TotalAmount;
+            booking.ModifiedDate = DateTimeOffset.UtcNow;
+            _unitOfWork.IBookingRepository.Update(booking);
+        }
+
         _unitOfWork.IBookingServiceRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
         return Success(true, "Xóa dịch vụ booking thành công.");

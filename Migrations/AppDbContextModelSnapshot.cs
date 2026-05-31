@@ -196,6 +196,57 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingCombos", b =>
+                {
+                    b.Property<int>("BookingComboID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingComboID"));
+
+                    b.Property<Guid>("BookingID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ComboID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("ModifiedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("BookingComboID");
+
+                    b.HasIndex("BookingID");
+
+                    b.ToTable("BookingCombos");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
                 {
                     b.Property<int>("BookingGroupID")
@@ -349,6 +400,8 @@ namespace CourtManagementBE.Migrations
 
                     b.HasKey("BookingServiceID");
 
+                    b.HasIndex("BookingID");
+
                     b.ToTable("BookingServices");
                 });
 
@@ -377,6 +430,8 @@ namespace CourtManagementBE.Migrations
 
                     b.HasKey("ID");
 
+                    b.HasIndex("BookingID");
+
                     b.HasIndex("CourtID", "BookingDate", "StartTime", "EndTime")
                         .IsUnique();
 
@@ -390,6 +445,12 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingStatusID"));
+
+                    b.Property<bool>("CanCombo")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanService")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("CanReschedule")
                         .HasColumnType("bit");
@@ -443,9 +504,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int?>("ComboID")
-                        .HasColumnType("int");
-
                     b.Property<int>("CourtID")
                         .HasColumnType("int");
 
@@ -495,8 +553,6 @@ namespace CourtManagementBE.Migrations
                     b.HasIndex("BookingGroupID");
 
                     b.HasIndex("CancellationReasonID");
-
-                    b.HasIndex("ComboID");
 
                     b.HasIndex("CourtID");
 
@@ -1970,6 +2026,15 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Utilities");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingCombos", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Bookings", null)
+                        .WithMany("BookingCombos")
+                        .HasForeignKey("BookingID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
                 {
                     b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
@@ -2005,6 +2070,24 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Booking");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingServices", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Bookings", null)
+                        .WithMany("BookingServices")
+                        .HasForeignKey("BookingID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingSlots", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.Bookings", null)
+                        .WithMany("BookingSlots")
+                        .HasForeignKey("BookingID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
                 {
                     b.HasOne("CourtManagementBE.Domain.Entities.BookingGroups", "BookingGroup")
@@ -2015,11 +2098,6 @@ namespace CourtManagementBE.Migrations
                     b.HasOne("CourtManagementBE.Domain.Entities.CancellationReasons", "CancellationReasonNavigation")
                         .WithMany()
                         .HasForeignKey("CancellationReasonID")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
-                        .WithMany()
-                        .HasForeignKey("ComboID")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("CourtManagementBE.Domain.Entities.Courts", "Court")
@@ -2037,8 +2115,6 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("BookingGroup");
 
                     b.Navigation("CancellationReasonNavigation");
-
-                    b.Navigation("Combo");
 
                     b.Navigation("Court");
 
@@ -2190,6 +2266,15 @@ namespace CourtManagementBE.Migrations
                     b.Navigation("Bookings");
 
                     b.Navigation("RecurringConfig");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
+                {
+                    b.Navigation("BookingCombos");
+
+                    b.Navigation("BookingServices");
+
+                    b.Navigation("BookingSlots");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CourtFeatureCategories", b =>

@@ -26,7 +26,6 @@ public class Bookings
     public int? CancellationReasonID { get; set; }
     public string CancellationReason { get; set; } = string.Empty; // Chi tiết lý do hủy của khách hàng
 
-    public int? ComboID { get; set; } // Combo dịch vụ áp dụng cho buổi này
     public int? BookingGroupID { get; set; } // FK tới BookingGroups (null nếu đặt lẻ)
 
     public string Note { get; set; } = string.Empty;
@@ -39,7 +38,9 @@ public class Bookings
     // Navigation properties
     public BookingGroups? BookingGroup { get; set; }
     public CancellationReasons? CancellationReasonNavigation { get; set; } // Đổi tên navigation tránh trùng với string property
-    public Combos? Combo { get; set; }
     public Courts? Court { get; set; }
     public Customers? Customer { get; set; }
+    public ICollection<BookingSlots> BookingSlots { get; set; } = [];
+    public ICollection<BookingServices> BookingServices { get; set; } = [];
+    public ICollection<BookingCombos> BookingCombos { get; set; } = [];
 }

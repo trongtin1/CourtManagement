@@ -5,9 +5,9 @@ using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
-using CourtManagementBE.Domain.Enums;
 using CourtManagementBE.Application.DTOs.Response;
 using CourtManagementBE.Domain.Constants;
+using Microsoft.EntityFrameworkCore;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -61,7 +61,17 @@ public class BookingService : BaseService, IBookingService
 
     public async Task<Result<BookingResponse>> GetById(Guid id)
     {
-        var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
+        var entity = await _unitOfWork.IBookingRepository.FindFirst(
+            x => x.BookingID == id,
+            include: query => query
+                .Include(x => x.Court)
+                .Include(x => x.Customer)
+                .Include(x => x.BookingGroup)
+                .Include(x => x.CancellationReasonNavigation)
+                .Include(x => x.BookingSlots)
+                .Include(x => x.BookingServices)
+                .Include(x => x.BookingCombos)
+        );
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền truy cập booking này.");
         return Success(_mapper.Map<BookingResponse>(entity));
@@ -169,14 +179,35 @@ public class BookingService : BaseService, IBookingService
             }
         }
 
-        Combos? combo = null;
-        if (request.ComboID is not null)
+        var comboLines = new List<BookingCombos>();
+        decimal comboTotal = 0;
+        Combos? firstCombo = null;
+        foreach (var requestedCombo in request.Combos.Where(x => x.Quantity > 0))
         {
-            combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == request.ComboID.Value);
+            var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == requestedCombo.ComboID);
             if (combo is null || !combo.IsActive)
             {
                 return BadRequest<BookingResponse>("Combo không tồn tại hoặc đang ngừng hoạt động.");
             }
+
+            if (firstCombo is null)
+            {
+                firstCombo = combo;
+            }
+
+            var lineTotal = combo.ComboPrice * requestedCombo.Quantity;
+            comboTotal += lineTotal;
+            comboLines.Add(new BookingCombos
+            {
+                ComboID = requestedCombo.ComboID,
+                Quantity = requestedCombo.Quantity,
+                UnitPrice = combo.ComboPrice,
+                DiscountAmount = 0,
+                TotalAmount = lineTotal,
+                Status = "active",
+                CreatedDate = DateTimeOffset.UtcNow,
+                ModifiedDate = DateTimeOffset.UtcNow
+            });
         }
 
         var serviceLines = new List<BookingServices>();
@@ -230,9 +261,9 @@ public class BookingService : BaseService, IBookingService
             });
         }
 
-        if (combo is not null)
+        if (firstCombo is not null)
         {
-            courtTotal = CalculateComboCourtTotal(combo, normalizedSlots.Count, availability, normalizedSlots);
+            courtTotal = CalculateComboCourtTotal(firstCombo, normalizedSlots.Count, availability, normalizedSlots);
         }
 
         var bookingId = Guid.NewGuid();
@@ -243,10 +274,9 @@ public class BookingService : BaseService, IBookingService
             CourtID = request.CourtID,
             CustomerID = request.CustomerID,
             BookingDate = bookingDate,
-            ComboID = request.ComboID,
             Status = BookingStatusConstants.Pending,
             Note = request.Note,
-            TotalAmount = courtTotal + serviceTotal,
+            TotalAmount = courtTotal + serviceTotal + comboTotal,
             CreatedDate = now,
             ModifiedDate = now
         };
@@ -265,6 +295,11 @@ public class BookingService : BaseService, IBookingService
             line.BookingID = bookingId;
         }
 
+        foreach (var line in comboLines)
+        {
+            line.BookingID = bookingId;
+        }
+
         try
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -273,6 +308,10 @@ public class BookingService : BaseService, IBookingService
             if (serviceLines.Count > 0)
             {
                 await _unitOfWork.IBookingServiceRepository.AddRange(serviceLines);
+            }
+            if (comboLines.Count > 0)
+            {
+                await _unitOfWork.IBookingComboRepository.AddRange(comboLines);
             }
 
             await _unitOfWork.CommitTransactionAsync();
@@ -584,9 +623,11 @@ public class BookingService : BaseService, IBookingService
         var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
         decimal serviceTotal = bookingServices.Sum(x => x.TotalAmount);
 
-        if (booking.ComboID is not null)
+        var bookingCombos = await _unitOfWork.IBookingComboRepository.FindList(x => x.BookingID == id && x.Status == "active");
+        if (bookingCombos.Any())
         {
-            var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == booking.ComboID.Value);
+            var firstBookingCombo = bookingCombos.First();
+            var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == firstBookingCombo.ComboID);
             if (combo is not null && combo.IsActive)
             {
                 courtTotal = CalculateComboCourtTotal(combo, matchedSlots.Count, availability, matchedSlots.Select(x => new CreateFullBookingSlotRequest

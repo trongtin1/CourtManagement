@@ -8,5 +8,7 @@ public class BookingStatusResponse
     public string LabelName { get; set; } = string.Empty;
     public bool IsTerminal { get; set; }
     public bool CanReschedule { get; set; }
+    public bool CanCombo { get; set; }
+    public bool CanService { get; set; }
     public string ColorCode { get; set; } = string.Empty;
 }

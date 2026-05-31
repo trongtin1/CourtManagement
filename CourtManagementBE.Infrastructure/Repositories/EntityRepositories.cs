@@ -56,6 +56,9 @@ public class BookingSlotRepository : GenericRepository<BookingSlots>, IBookingSl
 public class BookingServiceRepository : GenericRepository<BookingServices>, IBookingServiceRepository
 { public BookingServiceRepository(AppDbContext ctx) : base(ctx) { } }
 
+public class BookingComboRepository : GenericRepository<BookingCombos>, IBookingComboRepository
+{ public BookingComboRepository(AppDbContext ctx) : base(ctx) { } }
+
 public class PaymentRepository : GenericRepository<Payments>, IPaymentRepository
 { public PaymentRepository(AppDbContext ctx) : base(ctx) { } }
 
