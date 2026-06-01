@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { App, Button, Form, Input, Tag, Badge, Tabs, Pagination, Empty } from 'antd'
+import { App, Button, Form, Input, InputNumber, Badge, Tabs, Pagination, Empty } from 'antd'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -98,6 +98,34 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
     setSelectedSlots((cur) =>
       cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
     )
+
+  const getClampedServiceQuantity = useCallback((quantity: number, maxQuantity?: number) => {
+    const normalizedMax = maxQuantity != null ? Math.max(1, maxQuantity) : undefined
+    return normalizedMax != null ? Math.min(quantity, normalizedMax) : quantity
+  }, [])
+
+  const updateServiceQuantity = useCallback(
+    (serviceID: number, unitPrice: number, quantity: number, maxQuantity?: number) => {
+      const nextQuantity = getClampedServiceQuantity(quantity, maxQuantity)
+
+      setServices((current) => {
+        if (nextQuantity <= 0) {
+          const next = { ...current }
+          delete next[serviceID]
+          return next
+        }
+
+        return {
+          ...current,
+          [serviceID]: {
+            quantity: nextQuantity,
+            unitPrice,
+          },
+        }
+      })
+    },
+    [getClampedServiceQuantity],
+  )
 
   const getSlotPriceReal = useCallback(
     (slotId: number) => {
@@ -276,9 +304,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
             {step === 0 && (
               <div>
                 <h3 className="text-base font-bold text-slate-800 mb-1">Chọn sân</h3>
-                <p className="text-sm text-slate-400 mb-4">
-                  Chọn sân muốn đặt cho khách hàng
-                </p>
+                <p className="text-sm text-slate-400 mb-4">Chọn sân muốn đặt cho khách hàng</p>
 
                 <Form.Item label="Ngày đặt" className="mb-4" style={{ maxWidth: 220 }}>
                   <Input
@@ -299,9 +325,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                       }`}
                       onClick={() => setCourtID(c.courtID)}
                     >
-                      <span className="text-sm font-bold text-slate-800">
-                        {c.courtName}
-                      </span>
+                      <span className="text-sm font-bold text-slate-800">{c.courtName}</span>
                       <div className="flex gap-1 items-center">
                         <span className="text-[10px] font-semibold text-slate-500">
                           {c.isActive ? 'Hoạt động' : 'Tạm khóa'}
@@ -317,12 +341,10 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
             {/* Step 1: Slot picker */}
             {step === 1 && (
               <div>
-                <h3 className="text-base font-bold text-slate-800 mb-1">
-                  Chọn khung giờ
-                </h3>
+                <h3 className="text-base font-bold text-slate-800 mb-1">Chọn khung giờ</h3>
                 <p className="text-sm text-slate-400 mb-4">
-                  Sân: <strong className="text-teal-600">{court?.courtName}</strong> ·
-                  Ngày: <strong>{date}</strong>
+                  Sân: <strong className="text-teal-600">{court?.courtName}</strong> · Ngày:{' '}
+                  <strong>{date}</strong>
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {timeSlots.map((slot) => {
@@ -402,54 +424,57 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                                   return (
                                     <div
                                       key={combo.comboID}
-                                      className={`relative flex flex-col justify-between p-4 bg-white border-2 rounded-xl transition-all duration-200 hover:shadow-md cursor-pointer ${
+                                      className={`relative flex flex-col justify-between p-4 bg-white border-2 rounded-xl transition-all duration-200 hover:shadow-md cursor-pointer min-h-42.5 ${
                                         isSel
-                                          ? 'border-rose-500 bg-rose-50/10 shadow-sm'
-                                          : 'border-slate-100 hover:border-rose-200'
+                                          ? 'border-indigo-500 bg-indigo-50/10 shadow-sm'
+                                          : 'border-slate-100 hover:border-indigo-200'
                                       }`}
                                       onClick={() => toggleCombo(combo)}
                                     >
                                       {isSel && (
-                                        <div className="absolute top-2 right-2">
-                                          <span className="text-xs font-semibold text-rose-600">
+                                        <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                                          <span className="text-[10px] font-semibold text-indigo-600">
                                             [Đang chọn]
                                           </span>
+                                          <Badge
+                                            count={1}
+                                            style={{ backgroundColor: '#6366f1' }}
+                                          />
                                         </div>
                                       )}
-                                      <div>
-                                        <span className="font-bold text-slate-800 text-sm block mb-1">
-                                          {combo.comboName}
-                                        </span>
-                                        <span className="text-xs text-slate-400 block min-h-8 mb-3">
-                                          {combo.description || 'Không có mô tả'}
-                                        </span>
 
-                                        <div className="flex flex-wrap gap-1 mb-3">
-                                          {combo.services && combo.services.length > 0 ? (
-                                            combo.services.map((s) => (
-                                              <Tag
-                                                color="purple"
-                                                key={s.serviceID}
-                                                className="text-[10px]"
-                                              >
-                                                {s.serviceName} x{s.quantity} {s.unit}
-                                              </Tag>
-                                            ))
-                                          ) : (
-                                            <span className="text-gray-400 text-xs">
-                                              Không tặng kèm dịch vụ
-                                            </span>
-                                          )}
+                                      <div className="flex flex-col mb-3">
+                                        <div
+                                          className="font-semibold text-slate-800 text-sm w-full truncate"
+                                          title={combo.comboName}
+                                        >
+                                          {combo.comboName}
                                         </div>
+                                          <div className="text-xs font-bold text-orange-500 mt-1">
+                                          {combo.durationHours} giờ chơi
+                                        </div>
+                                        <div className="text-xs font-semibold text-emerald-600 mt-1">
+                                          {formatCompactCurrency(combo.comboPrice)} 
+                                        </div>
+                                      
                                       </div>
 
-                                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
-                                        <span className="text-xs font-bold text-orange-500">
-                                          {combo.durationHours} Giờ chơi
-                                        </span>
-                                        <span className="text-sm font-bold text-rose-600">
-                                          {formatCompactCurrency(combo.comboPrice)}
-                                        </span>
+                                      <div
+                                        className="w-full"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Button
+                                          type={isSel ? 'primary' : 'dashed'}
+                                          block
+                                          className={
+                                            isSel
+                                              ? 'bg-indigo-600 hover:bg-indigo-700'
+                                              : 'text-slate-500 hover:text-indigo-600 hover:border-indigo-500'
+                                          }
+                                          onClick={() => toggleCombo(combo)}
+                                        >
+                                          {isSel ? 'Đã chọn' : 'Chọn combo'}
+                                        </Button>
                                       </div>
                                     </div>
                                   )
@@ -493,6 +518,8 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                                   const sel = services[svc.serviceID]
                                   const quantity = sel?.quantity || 0
                                   const svcPrice = svc.price ?? 0
+                                  const maxServiceQuantity =
+                                    svc.maxQuantity != null ? Math.max(1, svc.maxQuantity) : undefined
 
                                   return (
                                     <div
@@ -510,13 +537,12 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                                             return next
                                           })
                                         } else {
-                                          setServices((c) => ({
-                                            ...c,
-                                            [svc.serviceID]: {
-                                              quantity: 1,
-                                              unitPrice: svcPrice,
-                                            },
-                                          }))
+                                          updateServiceQuantity(
+                                            svc.serviceID,
+                                            svcPrice,
+                                            1,
+                                            maxServiceQuantity,
+                                          )
                                         }
                                       }}
                                     >
@@ -542,7 +568,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                                         <div className="text-xs font-semibold text-emerald-600 mt-1">
                                           {svc.price == null
                                             ? 'Chưa có giá'
-                                            : `${formatCompactCurrency(svcPrice)} / ${svc.unit}`}
+                                            : `${formatCompactCurrency(svcPrice)} / ${svc.baseUnit?.name}`}
                                         </div>
                                       </div>
 
@@ -556,57 +582,68 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                                             block
                                             className="text-slate-500 hover:text-indigo-600 hover:border-indigo-500"
                                             onClick={() => {
-                                              setServices((c) => ({
-                                                ...c,
-                                                [svc.serviceID]: {
-                                                  quantity: 1,
-                                                  unitPrice: svcPrice,
-                                                },
-                                              }))
+                                              updateServiceQuantity(
+                                                svc.serviceID,
+                                                svcPrice,
+                                                1,
+                                                maxServiceQuantity,
+                                              )
                                             }}
                                           >
                                             Thêm
                                           </Button>
                                         ) : (
-                                          <div className="flex items-center justify-between border border-slate-200 rounded-lg p-1 bg-white">
+                                          <div className="flex items-center gap-2 border border-slate-200 rounded-lg p-1.5 bg-white">
                                             <Button
                                               type="text"
                                               size="small"
                                               className="text-slate-400 hover:text-red-500 font-bold"
                                               onClick={(e) => {
                                                 e.stopPropagation()
-                                                setServices((c) => {
-                                                  const next = { ...c }
-                                                  if (quantity <= 1) {
-                                                    delete next[svc.serviceID]
-                                                  } else {
-                                                    next[svc.serviceID] = {
-                                                      ...next[svc.serviceID],
-                                                      quantity: quantity - 1,
-                                                    }
-                                                  }
-                                                  return next
-                                                })
+                                                updateServiceQuantity(
+                                                  svc.serviceID,
+                                                  svcPrice,
+                                                  quantity - 1,
+                                                  maxServiceQuantity,
+                                                )
                                               }}
                                             >
                                               -
                                             </Button>
-                                            <span className="font-bold text-slate-800 text-sm select-none">
-                                              {quantity}
-                                            </span>
+                                            <InputNumber
+                                              className="flex-1"
+                                              min={1}
+                                              max={maxServiceQuantity}
+                                              value={quantity}
+                                              controls={false}
+                                              onClick={(e) => e.stopPropagation()}
+                                              onChange={(value) => {
+                                                if (typeof value === 'number' && value > 0) {
+                                                  updateServiceQuantity(
+                                                    svc.serviceID,
+                                                    svcPrice,
+                                                    value,
+                                                    maxServiceQuantity,
+                                                  )
+                                                }
+                                              }}
+                                            />
                                             <Button
                                               type="text"
                                               size="small"
                                               className="text-indigo-600 font-bold"
+                                              disabled={
+                                                maxServiceQuantity != null &&
+                                                quantity >= maxServiceQuantity
+                                              }
                                               onClick={(e) => {
                                                 e.stopPropagation()
-                                                setServices((c) => ({
-                                                  ...c,
-                                                  [svc.serviceID]: {
-                                                    ...c[svc.serviceID],
-                                                    quantity: quantity + 1,
-                                                  },
-                                                }))
+                                                updateServiceQuantity(
+                                                  svc.serviceID,
+                                                  svcPrice,
+                                                  quantity + 1,
+                                                  maxServiceQuantity,
+                                                )
                                               }}
                                             >
                                               +

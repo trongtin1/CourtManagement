@@ -2,9 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
 import { bookingSlotApi } from '@/features/bookings/api/bookingSlotApi'
 import { bookingServiceApi } from '@/features/bookings/api/bookingServiceApi'
+import { bookingComboApi } from '@/features/bookings/api/bookingComboApi'
 import { paymentKeys } from '@/features/payments/api/usePaymentQueries'
 import type { PaginationQuery } from '@/types/api'
-import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest, CreateBookingServiceRequest, UpdateBookingServiceRequest } from '../model/types'
+import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest, CreateBookingServiceRequest, UpdateBookingServiceRequest, BulkUpdateBookingServiceItemRequest, CreateBookingComboRequest, UpdateBookingComboRequest, BulkUpdateBookingComboItemRequest } from '../model/types'
 
 export const bookingKeys = {
   all: ['bookings'] as const,
@@ -14,6 +15,7 @@ export const bookingKeys = {
   bookedSlots: (courtId: number, date: string) => [...bookingKeys.all, 'bookedSlots', courtId, date] as const,
   slotsByBooking: (bookingId: string) => [...bookingKeys.all, 'slots', bookingId] as const,
   servicesByBooking: (bookingId: string) => [...bookingKeys.all, 'services', bookingId] as const,
+  combosByBooking: (bookingId: string) => [...bookingKeys.all, 'combos', bookingId] as const,
   slotsByDate: (date: string) => [...bookingKeys.all, 'slotsByDate', date] as const,
   statuses: () => [...bookingKeys.all, 'statuses'] as const,
 }
@@ -169,6 +171,76 @@ export const useDeleteBookingServiceMutation = () => {
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
       qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useBulkUpdateBookingServiceMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingID, data }: { bookingID: string; data: BulkUpdateBookingServiceItemRequest[] }) =>
+      bookingServiceApi.bulkUpdate(bookingID, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
+      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useBookingCombosQuery = (bookingId: string | null) => {
+  return useQuery({
+    queryKey: bookingKeys.combosByBooking(bookingId ?? ''),
+    queryFn: () => bookingComboApi.getByBooking(bookingId!),
+    enabled: !!bookingId,
+  })
+}
+
+export const useCreateBookingComboMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateBookingComboRequest) => bookingComboApi.create(data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
+      qc.invalidateQueries({ queryKey: bookingKeys.combosByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useUpdateBookingComboMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; bookingID: string; data: UpdateBookingComboRequest }) => bookingComboApi.update(id, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
+      qc.invalidateQueries({ queryKey: bookingKeys.combosByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useDeleteBookingComboMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id }: { id: number; bookingID: string }) => bookingComboApi.delete(id),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
+      qc.invalidateQueries({ queryKey: bookingKeys.combosByBooking(variables.bookingID) })
+    },
+  })
+}
+
+export const useBulkUpdateBookingComboMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingID, data }: { bookingID: string; data: BulkUpdateBookingComboItemRequest[] }) =>
+      bookingComboApi.bulkUpdate(bookingID, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
+      qc.invalidateQueries({ queryKey: bookingKeys.combosByBooking(variables.bookingID) })
     },
   })
 }

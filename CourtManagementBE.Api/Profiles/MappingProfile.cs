@@ -91,6 +91,14 @@ public class MappingProfile : Profile
         // ── BookingServices ──────────────────────────────────────────────
         CreateMap<BookingServices, BookingServiceResponse>();
         CreateMap<BookingServiceRequest, BookingServices>();
+        CreateMap<UpdateBookingServiceRequest, BookingServices>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        // ── BookingCombos ────────────────────────────────────────────────
+        CreateMap<BookingCombos, BookingComboResponse>();
+        CreateMap<BookingComboRequest, BookingCombos>();
+        CreateMap<UpdateBookingComboRequest, BookingCombos>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
 
 

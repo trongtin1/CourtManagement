@@ -366,7 +366,7 @@ export function CombosPage() {
                               ?.filter((s) => s.isActive)
                               .map((s) => ({
                                 value: s.serviceID,
-                                label: `${s.serviceName} (${s.unit})`,
+                                label: `${s.serviceName} (${s.baseUnit?.name})`,
                               })) ?? []
                           }
                         />

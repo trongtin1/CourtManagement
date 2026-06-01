@@ -27,7 +27,6 @@ import {
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
-  useToggleServiceMutation,
 } from '@/features/services/api/useServiceQueries'
 import { useUnitsQuery } from '@/features/units/api/useUnitQueries'
 import { useServiceTypesQuery } from '@/features/service-types/api/useServiceTypeQueries'
@@ -157,7 +156,7 @@ export function ServicesPage() {
                         : 'text-green-600 font-medium'
                     }
                   >
-                    {r.stockQuantity} {r.baseUnit?.symbol || r.baseUnit?.name || ''}
+                    {r.stockQuantity} {r.baseUnit?.name}
                   </span>
                 )
               },

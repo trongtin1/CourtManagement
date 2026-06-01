@@ -31,9 +31,16 @@ public class BookingServiceController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] BookingServiceRequest req)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateBookingServiceRequest req)
     {
         var r = await _service.Update(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPut("booking/{bookingId}/bulk")]
+    public async Task<IActionResult> BulkUpdate(Guid bookingId, [FromBody] List<BookingServiceBulkUpdateItemRequest> req)
+    {
+        var r = await _service.BulkUpdate(bookingId, req);
         return StatusCode((int)r.StatusCode, r);
     }
 

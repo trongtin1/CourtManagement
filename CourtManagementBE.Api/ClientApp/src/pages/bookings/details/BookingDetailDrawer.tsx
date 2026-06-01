@@ -22,8 +22,6 @@ import {
   FieldTimeOutlined,
   EditOutlined,
   InfoCircleOutlined,
-  PlusOutlined,
-  MinusOutlined,
   DeleteOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -34,10 +32,9 @@ import {
   usePayBookingMutation,
   useRescheduleBookingMutation,
   useBookingStatusesQuery,
-  useCreateBookingServiceMutation,
-  useUpdateBookingServiceMutation,
-  useDeleteBookingServiceMutation,
   useBookingQuery,
+  useBulkUpdateBookingServiceMutation,
+  useBulkUpdateBookingComboMutation,
 } from '@/features/bookings/api/useBookingQueries'
 import { useServicesQuery } from '@/features/services/api/useServiceQueries'
 import { useCombosQuery } from '@/features/combos/api/useComboQueries'
@@ -81,11 +78,10 @@ export function BookingDetailDrawer({
 }: BookingDetailDrawerProps) {
   const { message } = App.useApp()
 
-  // ─── Data Query: Fetch complete booking detail by ID with eager-loaded relations ───
   const { data: dbBooking, isLoading: isBookingLoading } = useBookingQuery(
     initialBooking?.bookingID ?? '',
   )
-  const selectedBooking = dbBooking || initialBooking
+  const selectedBooking = dbBooking || (initialBooking as Booking) || null
 
   // ─── Mutations ──────────────────────────────────────────────────────────────
   const updateStatusMutation = useUpdateBookingStatusMutation()
@@ -96,8 +92,6 @@ export function BookingDetailDrawer({
     updateStatusMutation.isPending ||
     payMutation.isPending ||
     rescheduleMutation.isPending
-
-  // ─── States ──────────────────────────────────────────────────────────────────
 
   // Payment Modal State
   const [isPayModalOpen, setIsPayModalOpen] = useState(false)
@@ -117,69 +111,153 @@ export function BookingDetailDrawer({
 
   // Service Management Modal State
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false)
-  const [serviceForm] = Form.useForm()
-  const [selectedAddServiceId, setSelectedAddServiceId] = useState<number | null>(null)
 
-  // Booking Service Mutations
-  const createServiceMutation = useCreateBookingServiceMutation()
-  const updateServiceMutation = useUpdateBookingServiceMutation()
-  const deleteServiceMutation = useDeleteBookingServiceMutation()
+  // Combo Management Modal State
+  const [isComboModalOpen, setIsComboModalOpen] = useState(false)
 
-  const handleAddService = (serviceID: number, quantity: number) => {
-    if (!selectedBooking) return
+  // Local Service State for Bulk Updates
+  const [localServices, setLocalServices] = useState<
+    Array<{
+      bookingServiceID: number
+      serviceID: number
+      quantity: number
+      unitPrice: number
+    }>
+  >([])
+
+  // Booking Service Bulk Mutation
+  const bulkUpdateServiceMutation = useBulkUpdateBookingServiceMutation()
+  const isSvcLoading = bulkUpdateServiceMutation.isPending
+
+  // Local Combo State for Bulk Updates
+  const [localCombos, setLocalCombos] = useState<
+    Array<{
+      bookingComboID: number
+      comboID: number
+      quantity: number
+      unitPrice: number
+    }>
+  >([])
+
+  // Booking Combo Bulk Mutation
+  const bulkUpdateComboMutation = useBulkUpdateBookingComboMutation()
+  const isComboLoading = bulkUpdateComboMutation.isPending
+
+  const handleAddLocalService = (serviceID: number, quantity: number) => {
     const serviceDetail = availableServices.find((s) => s.serviceID === serviceID)
     if (!serviceDetail) return
-    createServiceMutation.mutate(
+    if (localServices.some((item) => item.serviceID === serviceID)) return
+
+    setLocalServices((prev) => [
+      ...prev,
       {
-        bookingID: selectedBooking.bookingID as string,
+        bookingServiceID: 0,
         serviceID,
         quantity,
         unitPrice: serviceDetail.price,
-        discountAmount: 0,
-        status: 'active',
+      },
+    ])
+  }
+
+  const handleUpdateLocalQty = (serviceID: number, quantity: number) => {
+    const serviceDetail = availableServices.find((s) => s.serviceID === serviceID)
+    const maxAllowedQuantity = serviceDetail?.maxQuantity
+      ? Math.max(1, serviceDetail.maxQuantity)
+      : undefined
+    const finalQuantity =
+      maxAllowedQuantity != null ? Math.min(quantity, maxAllowedQuantity) : quantity
+
+    setLocalServices((prev) =>
+      prev.map((item) =>
+        item.serviceID === serviceID ? { ...item, quantity: finalQuantity } : item,
+      ),
+    )
+  }
+
+  const handleDeleteLocalService = (serviceID: number) => {
+    setLocalServices((prev) => prev.filter((item) => item.serviceID !== serviceID))
+  }
+
+  const handleSaveServices = () => {
+    if (!selectedBooking) return
+    const data = localServices.map((ls) => ({
+      bookingServiceID: ls.bookingServiceID,
+      serviceID: ls.serviceID,
+      quantity: ls.quantity,
+      unitPrice: ls.unitPrice,
+      discountAmount: 0,
+      status: 'active',
+    }))
+
+    bulkUpdateServiceMutation.mutate(
+      {
+        bookingID: selectedBooking.bookingID as string,
+        data,
       },
       {
         onSuccess: () => {
-          message.success('Thêm dịch vụ thành công!')
+          message.success('Cập nhật dịch vụ thành công!')
+          setIsServiceModalOpen(false)
           onRefresh?.()
         },
-        onError: () => message.error('Thêm dịch vụ thất bại!'),
+        onError: () => {
+          message.error('Cập nhật dịch vụ thất bại!')
+        },
       },
     )
   }
 
-  const handleUpdateServiceQty = (bookingServiceID: number, newQty: number) => {
-    if (!selectedBooking) return
-    if (newQty <= 0) return handleDeleteService(bookingServiceID)
-    updateServiceMutation.mutate(
+  const handleAddLocalCombo = (comboID: number, quantity: number) => {
+    const comboDetail = availableCombos.find((c) => c.comboID === comboID)
+    if (!comboDetail) return
+    if (localCombos.some((item) => item.comboID === comboID)) return
+
+    setLocalCombos((prev) => [
+      ...prev,
       {
-        id: bookingServiceID,
-        bookingID: selectedBooking.bookingID as string,
-        data: { quantity: newQty },
+        bookingComboID: 0,
+        comboID,
+        quantity,
+        unitPrice: comboDetail.comboPrice,
       },
-      {
-        onSuccess: () => {
-          message.success('Cập nhật số lượng thành công!')
-          onRefresh?.()
-        },
-        onError: () => message.error('Cập nhật số lượng thất bại!'),
-      },
+    ])
+  }
+
+  const handleUpdateLocalComboQty = (comboID: number, quantity: number) => {
+    setLocalCombos((prev) =>
+      prev.map((item) => (item.comboID === comboID ? { ...item, quantity } : item)),
     )
   }
 
-  const handleDeleteService = (bookingServiceID: number) => {
+  const handleDeleteLocalCombo = (comboID: number) => {
+    setLocalCombos((prev) => prev.filter((item) => item.comboID !== comboID))
+  }
+
+  const handleSaveCombos = () => {
     if (!selectedBooking) return
-    deleteServiceMutation.mutate(
+    const data = localCombos.map((lc) => ({
+      bookingComboID: lc.bookingComboID,
+      comboID: lc.comboID,
+      quantity: lc.quantity,
+      unitPrice: lc.unitPrice,
+      discountAmount: 0,
+      status: 'active',
+    }))
+
+    bulkUpdateComboMutation.mutate(
       {
-        id: bookingServiceID,
         bookingID: selectedBooking.bookingID as string,
+        data,
       },
       {
         onSuccess: () => {
-          message.success('Xóa dịch vụ thành công!')
+          message.success('Cập nhật combo thành công!')
+          setIsComboModalOpen(false)
           onRefresh?.()
         },
-        onError: () => message.error('Xóa dịch vụ thất bại!'),
+        onError: () => {
+          message.error('Cập nhật combo thất bại!')
+        },
       },
     )
   }
@@ -192,21 +270,27 @@ export function BookingDetailDrawer({
     selectedBooking?.courtID ?? null,
     selectedBookingDate,
   )
-  if (!selectedBooking) return null
 
-  const matchedCourt = courtList.find(
-    (court) => court.courtID === selectedBooking.courtID,
-  )
-  const bookingSlots = (selectedBooking as Booking).bookingSlots || []
+  const matchedCourt = selectedBooking
+    ? courtList.find((court) => court.courtID === selectedBooking.courtID)
+    : undefined
+  const bookingSlots = (selectedBooking as Booking | null)?.bookingSlots || []
   const rescheduleSlots = rescheduleSlotsQuery.data || []
-  const bookingServices = (selectedBooking as Booking).bookingServices || []
+  const bookingServices = (selectedBooking as Booking | null)?.bookingServices || []
   const availableServices = availableServicesData?.items || []
-  const bookingCombos = (selectedBooking as Booking).bookingCombos || []
+  const bookingCombos = (selectedBooking as Booking | null)?.bookingCombos || []
   const availableCombos = availableCombosData?.items || []
+  const modalRemainingServices = availableServices.filter(
+    (s) => s.isActive && !localServices.some((ls) => ls.serviceID === s.serviceID),
+  )
+
+  const modalRemainingCombos = availableCombos.filter(
+    (c) => c.isActive && !localCombos.some((lc) => lc.comboID === c.comboID),
+  )
   const displayStatus =
-    optimisticStatus.bookingId === selectedBooking.bookingID && optimisticStatus.status
+    optimisticStatus.bookingId === selectedBooking?.bookingID && optimisticStatus.status
       ? optimisticStatus.status
-      : (selectedBooking.status ?? '')
+      : (selectedBooking?.status ?? '')
 
   const bookingStatuses = (statusesData ?? []) as BookingStatusResponse[]
 
@@ -219,6 +303,7 @@ export function BookingDetailDrawer({
   const isTerminalStatus = matchedStatusOption?.isTerminal ?? false
   const isRescheduleAllowed = matchedStatusOption?.canReschedule ?? false
   const isAddServiceAllowed = matchedStatusOption?.canService ?? false
+  const isAddComboAllowed = matchedStatusOption?.canCombo ?? false
 
   const statusOptions = bookingStatuses.map((option) => {
     const currentCode = matchedStatusOption?.code ?? BookingStatusConstants.Pending
@@ -242,12 +327,14 @@ export function BookingDetailDrawer({
   )
   const totalCourtAmount = Math.max(
     0,
-    selectedBooking.totalAmount - totalServicesAmount - totalCombosAmount,
+    (selectedBooking?.totalAmount ?? 0) - totalServicesAmount - totalCombosAmount,
   )
-  const paidAmount = (selectedBooking as Booking).paidAmount ?? 0
-  const remainingAmount = Math.max(0, selectedBooking.totalAmount - paidAmount)
+  const paidAmount = selectedBooking?.paidAmount ?? 0
+  const remainingAmount = Math.max(0, (selectedBooking?.totalAmount ?? 0) - paidAmount)
   const isPaymentAllowed =
     (!matchedStatusOption || !matchedStatusOption.isTerminal) && remainingAmount > 0
+
+  if (!selectedBooking) return null
 
   const handleStatusChange = (newStatus: string) => {
     updateStatusMutation.mutate(
@@ -489,6 +576,16 @@ export function BookingDetailDrawer({
             size="small"
             icon={<EditOutlined />}
             onClick={() => {
+              if (selectedBooking?.bookingServices) {
+                setLocalServices(
+                  selectedBooking.bookingServices.map((bs) => ({
+                    bookingServiceID: bs.bookingServiceID,
+                    serviceID: bs.serviceID,
+                    quantity: bs.quantity,
+                    unitPrice: bs.unitPrice,
+                  })),
+                )
+              }
               setIsServiceModalOpen(true)
             }}
           >
@@ -537,35 +634,66 @@ export function BookingDetailDrawer({
 
       {/* Combos */}
       <Divider style={{ margin: '14px 0' }} />
+
       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex justify-between items-center">
         <span>Combo dịch vụ áp dụng</span>
-      </p>
-      <div className="flex flex-col gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-        {bookingCombos.length === 0 && (
-          <p className="text-xs text-slate-400 italic text-center py-2">
-            Không có combo dịch vụ áp dụng
-          </p>
+
+        {isAddComboAllowed && (
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              if (selectedBooking?.bookingCombos) {
+                setLocalCombos(
+                  selectedBooking.bookingCombos.map((bc) => ({
+                    bookingComboID: bc.bookingComboID,
+                    comboID: bc.comboID,
+                    quantity: bc.quantity,
+                    unitPrice: bc.unitPrice,
+                  })),
+                )
+              }
+
+              setIsComboModalOpen(true)
+            }}
+          >
+            Quản lý combo
+          </Button>
         )}
-        {bookingCombos.map((bookingCombo) => {
-          const comboDetail = availableCombos.find(
-            (c) => c.comboID === bookingCombo.comboID,
-          )
-          return (
-            <div
-              key={bookingCombo.bookingComboID}
-              className="flex justify-between text-xs items-center"
-            >
-              <span className="text-slate-700 font-medium">
-                {comboDetail?.comboName || `Combo #${bookingCombo.comboID}`} ×{' '}
-                {bookingCombo.quantity}
-              </span>
-              <span className="font-bold text-slate-800">
-                {formatCompactCurrency(bookingCombo.quantity * bookingCombo.unitPrice)}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+      </p>
+      {isBookingLoading ? (
+        <div className="flex justify-center p-3">
+          <Spin size="small" />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+          {bookingCombos.length === 0 && (
+            <p className="text-xs text-slate-400 italic text-center py-2">
+              Không có combo dịch vụ áp dụng
+            </p>
+          )}
+          {bookingCombos.map((bookingCombo) => {
+            const comboDetail = availableCombos.find(
+              (c) => c.comboID === bookingCombo.comboID,
+            )
+            return (
+              <div
+                key={bookingCombo.bookingComboID}
+                className="flex justify-between text-xs items-center"
+              >
+                <span className="text-slate-700 font-medium">
+                  {comboDetail?.comboName || `Combo #${bookingCombo.comboID}`} ×{' '}
+                  {bookingCombo.quantity}
+                </span>
+                <span className="font-bold text-slate-800">
+                  {formatCompactCurrency(bookingCombo.quantity * bookingCombo.unitPrice)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Note */}
       {selectedBooking.note && (
@@ -854,207 +982,399 @@ export function BookingDetailDrawer({
 
       {/* Form Modal Quản lý dịch vụ đi kèm */}
       <Modal
-        title={
-          <span className="flex items-center gap-2 font-extrabold text-slate-800 text-base">
-            <PlusOutlined className="text-indigo-650 text-indigo-600" /> Quản lý dịch vụ
-            đi kèm
-          </span>
-        }
+        title={null}
         open={isServiceModalOpen}
         onCancel={() => {
           setIsServiceModalOpen(false)
-          setSelectedAddServiceId(null)
-          serviceForm.resetFields()
         }}
         footer={null}
         destroyOnClose
-        width={520}
-        className="rounded-2xl overflow-hidden"
+        width={560}
       >
-        <div className="space-y-4">
-          {/* Section: Thêm dịch vụ mới */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
-              Thêm dịch vụ mới
-            </p>
-            <Form
-              form={serviceForm}
-              layout="inline"
-              onFinish={(values) => {
-                if (!values.serviceID) return
-                handleAddService(values.serviceID, values.quantity || 1)
-                serviceForm.resetFields()
-                setSelectedAddServiceId(null)
-              }}
-              className="flex items-end gap-2"
-            >
-              <Form.Item
-                name="serviceID"
-                className="flex-1 mb-0"
-                rules={[{ required: true, message: 'Chọn dịch vụ' }]}
-              >
+        <div className="-mx-6 px-6 pb-3 border-b border-slate-100 -mt-6 pt-6">
+          <h3 className="text-xl font-bold text-slate-900 m-0">Quản lý dịch vụ đi kèm</h3>
+        </div>
+        <div className="pt-3">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-base font-bold text-slate-800">Dịch vụ đã chọn</span>
+          </div>
+
+          <div className="flex flex-col gap-2 max-h-95 overflow-y-auto pr-1">
+            {localServices.map((bs) => {
+              const svcDetail = availableServices.find(
+                (s) => s.serviceID === bs.serviceID,
+              )
+              const isSvcLoading = bulkUpdateServiceMutation.isPending
+              const maxServiceQuantity = svcDetail?.maxQuantity
+                ? Math.max(1, svcDetail.maxQuantity)
+                : undefined
+
+              return (
+                <div
+                  key={bs.serviceID}
+                  className="p-2.5 bg-slate-50 border border-slate-200/60 rounded-xl flex flex-col gap-1.5 transition-colors shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    {/* Dynamic dropdown select */}
+                    <div className="flex-1">
+                      <Select
+                        className="w-full"
+                        value={bs.serviceID}
+                        disabled={isSvcLoading}
+                        onChange={(newVal) => {
+                          if (newVal) {
+                            const newSvcDetail = availableServices.find(
+                              (s) => s.serviceID === newVal,
+                            )
+                            if (newSvcDetail) {
+                              setLocalServices((prev) =>
+                                prev.map((item) =>
+                                  item.serviceID === bs.serviceID
+                                    ? {
+                                        bookingServiceID: 0, // mark as new addition because the service ID has changed!
+                                        serviceID: newVal,
+                                        quantity: item.quantity,
+                                        unitPrice: newSvcDetail.price,
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                          }
+                        }}
+                        options={availableServices
+                          .filter(
+                            (s) =>
+                              s.isActive &&
+                              (s.serviceID === bs.serviceID ||
+                                !localServices.some(
+                                  (other) => other.serviceID === s.serviceID,
+                                )),
+                          )
+                          .map((s) => ({
+                            value: s.serviceID,
+                            label: `${s.serviceName} (${s.baseUnit?.name || s.baseUnit?.symbol || 'N/A'})`,
+                          }))}
+                        dropdownStyle={{ borderRadius: '12px' }}
+                      />
+                    </div>
+
+                    {/* Quantity InputNumber */}
+                    <InputNumber
+                      min={1}
+                      max={maxServiceQuantity}
+                      value={bs.quantity}
+                      disabled={isSvcLoading}
+                      onChange={(newVal) => {
+                        if (newVal !== null && newVal !== undefined) {
+                          handleUpdateLocalQty(bs.serviceID, newVal)
+                        }
+                      }}
+                      className="w-20 rounded-lg text-xs"
+                    />
+
+                    {/* Trash Delete Button (Local Action) */}
+                    <button
+                      type="button"
+                      disabled={isSvcLoading}
+                      onClick={() => handleDeleteLocalService(bs.serviceID)}
+                      className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-lg bg-white hover:bg-red-50 text-red-500 hover:text-red-600 transition cursor-pointer"
+                    >
+                      <DeleteOutlined className="text-sm" />
+                    </button>
+                  </div>
+
+                  {/* Price display and quantity limits below the select */}
+                  <div className="text-[11px] text-slate-400 font-medium px-1 flex justify-between items-center mt-1">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        Đơn giá:{' '}
+                        <span className="text-slate-700 font-bold font-mono">
+                          {formatCompactCurrency(bs.unitPrice)}
+                        </span>{' '}
+                        /{' '}
+                        {svcDetail?.baseUnit?.name ||
+                          svcDetail?.baseUnit?.symbol ||
+                          'Cái'}
+                      </span>
+                      {svcDetail?.isTrackStock && (
+                        <span className="text-[10px] text-cyan-600 font-semibold bg-cyan-50 px-1.5 py-0.5 rounded">
+                          Kho: {svcDetail.stockQuantity}{' '}
+                          {svcDetail?.baseUnit?.name || svcDetail?.baseUnit?.symbol || ''}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-slate-400">
+                      Giới hạn: 1
+                      {maxServiceQuantity != null ? ` – ${maxServiceQuantity}` : ''}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+
+            {localServices.length === 0 && (
+              <div className="text-sm text-slate-400 italic text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                Chưa có dịch vụ nào trong hóa đơn này
+              </div>
+            )}
+
+            {/* Direct Select to Add Dropdown (Aesthetic & simplified addition model) */}
+            {modalRemainingServices.length > 0 && (
+              <div className="mt-2.5 p-2 bg-blue-50/20 border border-dashed border-blue-200 rounded-xl">
                 <Select
-                  placeholder="Chọn dịch vụ mới..."
-                  onChange={(val) => setSelectedAddServiceId(val)}
+                  className="w-full text-xs"
+                  placeholder="+ Thêm nước uống / dịch vụ đi kèm..."
+                  value={null}
+                  disabled={isSvcLoading}
+                  onChange={(val) => {
+                    if (val) {
+                      handleAddLocalService(val, 1)
+                    }
+                  }}
                   showSearch
                   optionFilterProp="label"
-                  style={{ width: '100%' }}
-                >
-                  {availableServices
-                    .filter(
-                      (s) =>
-                        !bookingServices.some((bs) => bs.serviceID === s.serviceID) &&
-                        s.isActive,
-                    )
-                    .map((svc) => {
-                      const stockText = svc.isTrackStock
-                        ? ` (Kho: ${svc.stockQuantity})`
-                        : ''
-                      return (
-                        <Select.Option
-                          key={svc.serviceID}
-                          value={svc.serviceID}
-                          label={svc.serviceName}
-                        >
-                          {svc.serviceName} - {formatCompactCurrency(svc.price)}{' '}
-                          {stockText}
-                        </Select.Option>
-                      )
-                    })}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="quantity"
-                className="mb-0"
-                initialValue={1}
-                rules={[{ required: true }]}
-              >
-                <InputNumber min={1} placeholder="SL" style={{ width: 80 }} />
-              </Form.Item>
-
-              <Form.Item className="mb-0">
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  icon={<PlusOutlined />}
-                  loading={createServiceMutation.isPending}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Thêm
-                </Button>
-              </Form.Item>
-            </Form>
-
-            {(() => {
-              const chosen = availableServices.find(
-                (s) => s.serviceID === selectedAddServiceId,
-              )
-              if (chosen && chosen.isTrackStock) {
-                return (
-                  <div className="mt-2 text-xs text-cyan-600 font-semibold bg-cyan-50 p-2 rounded border border-cyan-100 flex items-center gap-1">
-                    <InfoCircleOutlined /> Mặt hàng theo dõi kho. Hiện còn:{' '}
-                    {chosen.stockQuantity} {chosen.unit || 'sản phẩm'}
-                  </div>
-                )
-              }
-              return null
-            })()}
+                  options={modalRemainingServices.map((s) => ({
+                    value: s.serviceID,
+                    label: `${s.serviceName} (${s.baseUnit?.name || s.baseUnit?.symbol || 'N/A'}) - Đơn giá: ${formatCompactCurrency(s.price)}`,
+                  }))}
+                  dropdownStyle={{ borderRadius: '12px' }}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Section: Danh sách dịch vụ hiện tại */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">
-              Dịch vụ hiện tại ({bookingServices.length})
-            </p>
-            <div className="max-h-[45vh] overflow-y-auto pr-1 flex flex-col gap-2.5">
-              {bookingServices.length === 0 ? (
-                <p className="text-xs text-slate-400 italic text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  Chưa có dịch vụ nào trong hóa đơn này
-                </p>
-              ) : (
-                bookingServices.map((bs) => {
-                  const svcDetail = availableServices.find(
-                    (s) => s.serviceID === bs.serviceID,
-                  )
-                  const isSvcLoading =
-                    createServiceMutation.isPending ||
-                    updateServiceMutation.isPending ||
-                    deleteServiceMutation.isPending
-
-                  return (
-                    <div
-                      key={bs.bookingServiceID}
-                      className="flex justify-between items-center p-3 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm rounded-xl transition duration-150"
-                    >
-                      <div className="flex-1 min-w-0 pr-2">
-                        <div
-                          className="text-xs font-bold text-slate-800 truncate"
-                          title={svcDetail?.serviceName}
-                        >
-                          {svcDetail?.serviceName || `Dịch vụ #${bs.serviceID}`}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                          {formatCompactCurrency(bs.unitPrice)} /{' '}
-                          {svcDetail?.unit || 'lượt'}
-                          {svcDetail?.isTrackStock &&
-                            ` · Kho: ${svcDetail.stockQuantity}`}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-inner">
-                          <Button
-                            type="text"
-                            size="small"
-                            disabled={isSvcLoading}
-                            icon={<MinusOutlined className="text-[10px]" />}
-                            onClick={() =>
-                              handleUpdateServiceQty(bs.bookingServiceID, bs.quantity - 1)
-                            }
-                            className="hover:bg-white text-slate-500"
-                          />
-                          <span className="text-xs font-bold text-slate-800 px-1.5 min-w-6 text-center select-none">
-                            {bs.quantity}
-                          </span>
-                          <Button
-                            type="text"
-                            size="small"
-                            disabled={isSvcLoading}
-                            icon={<PlusOutlined className="text-[10px]" />}
-                            onClick={() =>
-                              handleUpdateServiceQty(bs.bookingServiceID, bs.quantity + 1)
-                            }
-                            className="hover:bg-white text-slate-500"
-                          />
-                        </div>
-
-                        <Button
-                          type="text"
-                          size="small"
-                          danger
-                          disabled={isSvcLoading}
-                          icon={<DeleteOutlined />}
-                          onClick={() => handleDeleteService(bs.bookingServiceID)}
-                          className="hover:bg-red-50"
-                        />
-                      </div>
-                    </div>
-                  )
-                })
+          {/* Subtotal */}
+          <div className="-mx-6 px-6 border-t border-slate-100 mt-6 pt-5 flex items-center justify-between">
+            <span className="text-base text-slate-500 font-medium">Tạm tính</span>
+            <span className="text-2xl font-extrabold text-slate-900 font-mono">
+              {formatCompactCurrency(
+                localServices.reduce(
+                  (sum, service) => sum + service.quantity * service.unitPrice,
+                  0,
+                ),
               )}
-            </div>
+            </span>
+          </div>
+
+          {/* Premium Footer Actions */}
+          <div className="-mx-6 px-6 border-t border-slate-100 mt-5 pt-4 flex justify-end gap-3 bg-slate-50/50 rounded-b-2xl">
+            <Button
+              className="rounded-xl px-5 h-10 font-semibold border-slate-200 text-slate-600 hover:text-slate-700"
+              disabled={isSvcLoading}
+              onClick={() => {
+                setIsServiceModalOpen(false)
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              loading={isSvcLoading}
+              className="rounded-xl px-5 h-10 font-semibold bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveServices}
+            >
+              Lưu thay đổi
+            </Button>
           </div>
         </div>
+      </Modal>
 
-        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
-          <Button
-            type="primary"
-            onClick={() => setIsServiceModalOpen(false)}
-            className="bg-slate-800 hover:bg-slate-900 border-none rounded-lg"
-          >
-            Hoàn tất
-          </Button>
+      {/* Form Modal Quản lý combo dịch vụ áp dụng */}
+      <Modal
+        title={null}
+        open={isComboModalOpen}
+        onCancel={() => {
+          setIsComboModalOpen(false)
+        }}
+        footer={null}
+        destroyOnClose
+        width={560}
+      >
+        {/* Header */}
+        <div className="-mx-6 px-6 pb-3 border-b border-slate-100 -mt-6 pt-6">
+          <h3 className="text-xl font-bold text-slate-900 m-0">Quản lý combo đi kèm</h3>
+          <p className="text-sm text-slate-400 m-0 mt-1">
+            Thêm, xoá và điều chỉnh số lượng combo
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="pt-3">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-base font-bold text-slate-800">Combo đã chọn</span>
+          </div>
+
+          <div className="flex flex-col gap-3 max-h-95 overflow-y-auto pr-1">
+            {localCombos.map((bc) => {
+              return (
+                <div
+                  key={bc.comboID}
+                  className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col gap-2.5 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    {/* Dynamic dropdown select */}
+                    <div className="flex-1">
+                      <Select
+                        className="w-full h-9"
+                        value={bc.comboID}
+                        disabled={isComboLoading}
+                        onChange={(newVal) => {
+                          if (newVal) {
+                            const newComboDetail = availableCombos.find(
+                              (c) => c.comboID === newVal,
+                            )
+                            if (newComboDetail) {
+                              setLocalCombos((prev) =>
+                                prev.map((item) =>
+                                  item.comboID === bc.comboID
+                                    ? {
+                                        bookingComboID: 0, // mark as new
+                                        comboID: newVal,
+                                        quantity: item.quantity,
+                                        unitPrice: newComboDetail.comboPrice,
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                          }
+                        }}
+                        options={availableCombos
+                          .filter(
+                            (c) =>
+                              c.isActive &&
+                              (c.comboID === bc.comboID ||
+                                !localCombos.some(
+                                  (other) => other.comboID === c.comboID,
+                                )),
+                          )
+                          .map((c) => ({
+                            value: c.comboID,
+                            label: c.comboName,
+                          }))}
+                        dropdownStyle={{ borderRadius: '12px' }}
+                      />
+                    </div>
+
+                    {/* Quantity Stepper */}
+                    <div className="flex items-center border border-slate-200 rounded-xl bg-white h-9 px-1 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (bc.quantity > 1) {
+                            handleUpdateLocalComboQty(bc.comboID, bc.quantity - 1)
+                          }
+                        }}
+                        disabled={isComboLoading || bc.quantity <= 1}
+                        className="w-8 h-7 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer font-bold"
+                      >
+                        —
+                      </button>
+                      <span className="w-10 text-center text-sm font-bold text-slate-850">
+                        {bc.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleUpdateLocalComboQty(bc.comboID, bc.quantity + 1)
+                        }}
+                        disabled={isComboLoading}
+                        className="w-8 h-7 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Trash Delete Button */}
+                    <button
+                      type="button"
+                      disabled={isComboLoading}
+                      onClick={() => handleDeleteLocalCombo(bc.comboID)}
+                      className="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-xl bg-white hover:bg-red-50 text-red-500 hover:text-red-600 transition cursor-pointer"
+                    >
+                      <DeleteOutlined className="text-base" />
+                    </button>
+                  </div>
+
+                  {/* Price display below the select */}
+                  <div className="text-xs text-slate-400 font-medium px-1 flex justify-between items-center">
+                    <span>
+                      Đơn giá:{' '}
+                      <span className="text-slate-700 font-bold font-mono">
+                        {formatCompactCurrency(bc.unitPrice)}
+                      </span>{' '}
+                      / Combo
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+
+            {localCombos.length === 0 && (
+              <div className="text-sm text-slate-400 italic text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                Chưa có combo nào trong hóa đơn này
+              </div>
+            )}
+
+            {/* Direct Select to Add Combo Dropdown (Aesthetic & simplified addition model) */}
+            {modalRemainingCombos.length > 0 && (
+              <div className="mt-2.5 p-2 bg-blue-50/20 border border-dashed border-blue-200 rounded-xl">
+                <Select
+                  className="w-full text-xs"
+                  placeholder="+ Thêm combo dịch vụ áp dụng..."
+                  value={null}
+                  disabled={isComboLoading}
+                  onChange={(val) => {
+                    if (val) {
+                      handleAddLocalCombo(val, 1)
+                    }
+                  }}
+                  showSearch
+                  optionFilterProp="label"
+                  options={modalRemainingCombos.map((c) => ({
+                    value: c.comboID,
+                    label: `${c.comboName} - Đơn giá: ${formatCompactCurrency(c.comboPrice)}`,
+                  }))}
+                  dropdownStyle={{ borderRadius: '12px' }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Subtotal */}
+          <div className="-mx-6 px-6 border-t border-slate-100 mt-6 pt-5 flex items-center justify-between">
+            <span className="text-base text-slate-500 font-medium">Tạm tính</span>
+            <span className="text-2xl font-extrabold text-slate-900 font-mono">
+              {formatCompactCurrency(
+                localCombos.reduce(
+                  (sum, combo) => sum + combo.quantity * combo.unitPrice,
+                  0,
+                ),
+              )}
+            </span>
+          </div>
+
+          {/* Premium Footer Actions */}
+          <div className="-mx-6 px-6 border-t border-slate-100 mt-5 pt-4 flex justify-end gap-3 bg-slate-50/50 rounded-b-2xl">
+            <Button
+              className="rounded-xl px-5 h-10 font-semibold border-slate-200 text-slate-600 hover:text-slate-700"
+              disabled={isComboLoading}
+              onClick={() => {
+                setIsComboModalOpen(false)
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              loading={isComboLoading}
+              className="rounded-xl px-5 h-10 font-semibold bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveCombos}
+            >
+              Lưu thay đổi
+            </Button>
+          </div>
         </div>
       </Modal>
     </Drawer>
