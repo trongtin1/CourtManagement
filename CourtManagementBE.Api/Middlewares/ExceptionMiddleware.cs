@@ -43,7 +43,7 @@ public class ExceptionMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "Unhandled exception at {Method} {Path}",
+                "Lỗi chưa xử lý tại {Method} {Path}",
                 context.Request.Method,
                 context.Request.Path);
 
@@ -57,10 +57,10 @@ public class ExceptionMiddleware
 
         string message = statusCode switch
         {
-            HttpStatusCode.Unauthorized => "Unauthorized",
-            HttpStatusCode.Forbidden => "Forbidden",
-            HttpStatusCode.NotFound => "Resource not found",
-            _ => "Request error"
+            HttpStatusCode.Unauthorized => "Bạn cần đăng nhập để tiếp tục.",
+            HttpStatusCode.Forbidden => "Bạn không có quyền thực hiện thao tác này.",
+            HttpStatusCode.NotFound => "Không tìm thấy dữ liệu phù hợp.",
+            _ => "Đã xảy ra lỗi. Vui lòng thử lại sau."
         };
 
         var result = Result<object>.Failure(statusCode, message);
@@ -78,9 +78,7 @@ public class ExceptionMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception ex)
     {
-        var message = _env.IsDevelopment()
-            ? $"{ex.GetType().Name}: {ex.Message}"
-            : "An unexpected error occurred.";
+        const string message = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
 
         var result = Result<object>.Failure(
             HttpStatusCode.InternalServerError,
