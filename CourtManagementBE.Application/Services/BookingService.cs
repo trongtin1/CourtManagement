@@ -8,6 +8,7 @@ using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Application.DTOs.Response;
 using CourtManagementBE.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
+using CourtManagementBE.Application.Resources;
 
 namespace CourtManagementBE.Application.Services;
 
@@ -16,11 +17,11 @@ public class BookingService : BaseService, IBookingService
     public BookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
         : base(unitOfWork, mapper, currentUser) { }
 
-    public async Task<Result<PageList<BookingResponse>>> GetAll(QueryResource query)
+    public async Task<Result<PageList<BookingResponse>>> GetAll(BookingResource query)
     {
-        var courtIds = await GetScopedCourtIds();
         var page = await _unitOfWork.IBookingRepository.FindAll(
-            x => courtIds.Contains(x.CourtID),
+            x => (!query.BookingGroupID.HasValue || x.BookingGroupID == query.BookingGroupID.Value)
+                && (string.IsNullOrEmpty(query.Status) || x.Status == query.Status),
             pagingSpecification: new PagingSpecification(query));
         return Success(MapPageList<Bookings, BookingResponse>(page));
     }
@@ -477,6 +478,23 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>($"Số tiền thanh toán vượt quá số còn lại ({remainingAmount:N0}).");
         }
 
+        bool isGroupDeposit = entity.BookingGroupID.HasValue;
+        BookingGroups? group = null;
+
+        if (isGroupDeposit)
+        {
+            group = await _unitOfWork.IBookingGroupRepository.FindFirst(x => x.BookingGroupID == entity.BookingGroupID!.Value);
+            if (group is null)
+            {
+                return NotFound<BookingResponse>("Không tìm thấy nhóm đặt sân định kỳ tương ứng.");
+            }
+
+            if (request.Amount > group.PaidAmount)
+            {
+                return BadRequest<BookingResponse>($"Số dư cọc của nhóm không đủ để khấu trừ (Số dư hiện tại: {group.PaidAmount:N0} đ).");
+            }
+        }
+
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -487,16 +505,17 @@ public class BookingService : BaseService, IBookingService
             var payment = new Payments
             {
                 BookingID = id,
+                BookingGroupID = entity.BookingGroupID,
                 Amount = request.Amount,
-                PaymentMethod = request.PaymentMethod,
+                PaymentMethod = "cash",
                 PaymentDate = DateTime.UtcNow,
                 Status = "success",
-                Note = request.Note,
+                Note = isGroupDeposit ? $"[Khấu trừ quỹ cọc nhóm] {request.Note}".Trim() : request.Note,
                 CreatedDate = DateTimeOffset.UtcNow
             };
             await _unitOfWork.IPaymentRepository.Add(payment);
 
-            // 2. Cập nhật PaidAmount
+            // 2. Cập nhật PaidAmount của Booking
             entity.PaidAmount += request.Amount;
 
             // 3. Nếu PaidAmount >= TotalAmount và status đang là Pending, tự động chuyển sang Confirmed
@@ -508,13 +527,23 @@ public class BookingService : BaseService, IBookingService
             entity.ModifiedDate = DateTimeOffset.UtcNow;
             _unitOfWork.IBookingRepository.Update(entity);
 
+            // 4. Nếu là khấu trừ cọc nhóm, trừ trực tiếp số dư cọc của nhóm
+            if (isGroupDeposit && group is not null)
+            {
+                group.PaidAmount -= request.Amount;
+                group.ModifiedDate = DateTimeOffset.UtcNow;
+                _unitOfWork.IBookingGroupRepository.Update(group);
+            }
+
             // Ghi BookingHistory
             await WriteBookingHistory(
                 bookingId: id,
                 action: "PAYMENT",
                 oldValue: $"PaidAmount: {oldPaidAmount}, Status: {oldStatus}",
                 newValue: $"PaidAmount: {entity.PaidAmount}, Status: {entity.Status}",
-                note: $"Thanh toán số tiền {request.Amount:N0} bằng {request.PaymentMethod}. Ghi chú: {request.Note}"
+                note: isGroupDeposit
+                    ? $"Cấn trừ số tiền cọc nhóm {request.Amount:N0}. Ghi chú: {request.Note}"
+                    : $"Thanh toán số tiền {request.Amount:N0} bằng {payment.PaymentMethod}. Ghi chú: {request.Note}"
             );
 
             await _unitOfWork.SaveChangesAsync();
@@ -526,6 +555,73 @@ public class BookingService : BaseService, IBookingService
         {
             await _unitOfWork.RollbackTransactionAsync();
             return Conflict<BookingResponse>("Đã xảy ra lỗi khi thực hiện thanh toán.");
+        }
+    }
+
+    public async Task<Result<BookingResponse>> Refund(Guid id, BookingRefundRequest request)
+    {
+        if (request.Amount <= 0)
+        {
+            return BadRequest<BookingResponse>("Số tiền hoàn trả phải lớn hơn 0.");
+        }
+
+        var entity = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == id);
+        if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
+        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền thực hiện hoàn tiền cho booking này.");
+
+        if (entity.PaidAmount <= 0)
+        {
+            return BadRequest<BookingResponse>("Booking chưa được thanh toán hoặc số tiền đã thanh toán bằng 0.");
+        }
+
+        if (request.Amount > entity.PaidAmount)
+        {
+            return BadRequest<BookingResponse>($"Số tiền hoàn trả không được vượt quá số tiền đã thanh toán ({entity.PaidAmount:N0}).");
+        }
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var oldPaidAmount = entity.PaidAmount;
+
+            // 1. Tạo Payment record hoàn tiền
+            var payment = new Payments
+            {
+                BookingID = id,
+                BookingGroupID = entity.BookingGroupID,
+                Amount = -request.Amount,
+                RefundedAmount = request.Amount,
+                PaymentMethod = "cash",
+                PaymentDate = DateTime.UtcNow,
+                Status = "refunded",
+                Note = request.Note,
+                CreatedDate = DateTimeOffset.UtcNow
+            };
+            await _unitOfWork.IPaymentRepository.Add(payment);
+
+            // 2. Cấn trừ PaidAmount của Booking
+            entity.PaidAmount -= request.Amount;
+            entity.ModifiedDate = DateTimeOffset.UtcNow;
+            _unitOfWork.IBookingRepository.Update(entity);
+
+            // Ghi BookingHistory
+            await WriteBookingHistory(
+                bookingId: id,
+                action: "REFUND",
+                oldValue: $"PaidAmount: {oldPaidAmount}",
+                newValue: $"PaidAmount: {entity.PaidAmount}",
+                note: $"Hoàn tiền số tiền {request.Amount:N0}. Ghi chú: {request.Note}"
+            );
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+
+            return Success(_mapper.Map<BookingResponse>(entity), "Hoàn tiền thành công.");
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            return Conflict<BookingResponse>("Đã xảy ra lỗi khi thực hiện hoàn tiền.");
         }
     }
 
@@ -821,13 +917,13 @@ public class BookingService : BaseService, IBookingService
         {
             (BookingStatusConstants.Pending, BookingStatusConstants.Confirmed) => true,
             (BookingStatusConstants.Pending, BookingStatusConstants.Cancelled) => true,
-            
+
             (BookingStatusConstants.Confirmed, BookingStatusConstants.CheckedIn) => true,
             (BookingStatusConstants.Confirmed, BookingStatusConstants.Cancelled) => true,
             (BookingStatusConstants.Confirmed, BookingStatusConstants.NoShow) => true,
-            
+
             (BookingStatusConstants.CheckedIn, BookingStatusConstants.Completed) => true,
-            
+
             _ => false
         };
     }

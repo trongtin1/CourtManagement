@@ -4,8 +4,6 @@ export type Payment = {
   amount: number
   refundedAmount: number
   paymentMethod: string
-  paymentGateway: string
-  transactionID: string
   status: string
   note: string
   paymentDate: string
@@ -16,8 +14,6 @@ export type CreatePaymentRequest = {
   bookingID: string
   amount: number
   paymentMethod: string
-  paymentGateway?: string
-  transactionID?: string
   status?: string
   note?: string
   paymentDate: string

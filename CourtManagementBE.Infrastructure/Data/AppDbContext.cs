@@ -453,16 +453,21 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Payments>(e =>
         {
             e.HasKey(x => x.PaymentID);
-            e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
+            e.Property(x => x.BookingID).HasColumnType("uniqueidentifier").IsRequired(false);
+            e.Property(x => x.BookingGroupID).HasColumnType("int").IsRequired(false);
             e.Property(x => x.Amount).HasColumnType("decimal(18,2)");
             e.Property(x => x.RefundedAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.PaymentMethod).HasColumnType("varchar(30)");
-            e.Property(x => x.PaymentGateway).HasColumnType("varchar(30)");
-            e.Property(x => x.TransactionID).HasColumnType("varchar(100)");
             e.Property(x => x.Status).HasColumnType("varchar(20)");
             e.Property(x => x.Note).HasColumnType("nvarchar(300)");
+            
             e.HasIndex(x => x.BookingID);
-            e.HasIndex(x => x.TransactionID);
+            e.HasIndex(x => x.BookingGroupID);
+
+            e.HasOne(x => x.BookingGroup)
+                .WithMany()
+                .HasForeignKey(x => x.BookingGroupID)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ── Services ─────────────────────────────────────────────────────────

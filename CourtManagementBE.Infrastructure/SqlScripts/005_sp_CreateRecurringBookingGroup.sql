@@ -17,22 +17,29 @@ BEGIN
     SET DATEFIRST 7;
 
     DECLARE @BookingGroupID INT = 0;
+    DECLARE @SlotDurationMinutes INT = 60;
     SET @ErrorMessage = NULL;
+
+    SELECT @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+    FROM Facilities
+    WHERE FacilityID = @FacilityID;
 
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        -- 1. Thêm nhóm lịch định kỳ mới
         INSERT INTO BookingGroups (
             GroupType, CustomerID, FacilityID, TotalAmount, PaidAmount, Status, Note,
             CreatedDate, CreatedBy, ModifiedDate, ModifiedBy
         )
         VALUES (
-            'returning', @CustomerID, @FacilityID, 0, 0, 0, ISNULL(@Note, ''),
+            'returning', @CustomerID, @FacilityID, 0, 0, 'confirmed', ISNULL(@Note, ''),
             SYSDATETIMEOFFSET(), @CreatedBy, SYSDATETIMEOFFSET(), @CreatedBy
         );
 
         SET @BookingGroupID = SCOPE_IDENTITY();
 
+        -- 2. Thêm cấu hình lặp Recurring Configs
         INSERT INTO RecurringConfigs (
             BookingGroupID, CourtID, StartDate, EndDate, StartTime, EndTime, DaysOfWeek
         )
@@ -40,6 +47,7 @@ BEGIN
             @BookingGroupID, @CourtID, @StartDate, @EndDate, @StartTime, @EndTime, @DaysOfWeek
         );
 
+        -- 3. Xác định danh sách các ngày chơi
         CREATE TABLE #TargetDates (
             TargetDate DATE NOT NULL
         );
@@ -65,6 +73,7 @@ BEGIN
             THROW 50000, @ErrorMessage, 1;
         END;
 
+        -- 4. Kiểm tra trùng lịch của khung giờ trên sân đấu
         DECLARE @OverlappingDate DATE = NULL;
 
         SELECT TOP 1 @OverlappingDate = td.TargetDate
@@ -92,147 +101,133 @@ BEGIN
             THROW 50000, @ErrorMessage, 1;
         END;
 
+        -- 5. Phân tích khung giờ thành các slot dựa trên cấu hình SlotDurationMinutes để áp giá dịch vụ (Set-Based)
+        CREATE TABLE #HourlySlots (
+            StartTime TIME(7) NOT NULL,
+            EndTime TIME(7) NOT NULL
+        );
+
+        WITH HourlyCTE AS (
+            SELECT @StartTime AS StartTime, 
+                   CASE WHEN DATEADD(MINUTE, @SlotDurationMinutes, @StartTime) > @EndTime THEN @EndTime ELSE DATEADD(MINUTE, @SlotDurationMinutes, @StartTime) END AS EndTime
+            UNION ALL
+            SELECT EndTime, 
+                   CASE WHEN DATEADD(MINUTE, @SlotDurationMinutes, EndTime) > @EndTime THEN @EndTime ELSE DATEADD(MINUTE, @SlotDurationMinutes, EndTime) END
+            FROM HourlyCTE
+            WHERE EndTime < @EndTime
+        )
+        INSERT INTO #HourlySlots (StartTime, EndTime)
+        SELECT StartTime, EndTime FROM HourlyCTE;
+
+        -- 6. Tính giá tự động cho toàn bộ danh sách ngày lặp (Set-Based)
         CREATE TABLE #BookingPrices (
             TargetDate DATE NOT NULL,
             TotalPrice DECIMAL(18,2) NOT NULL
         );
 
-        DECLARE @LoopDate DATE;
+        INSERT INTO #BookingPrices (TargetDate, TotalPrice)
+        SELECT 
+            td.TargetDate,
+            ISNULL(SUM(ISNULL(COALESCE(cp1.Price, cp2.Price, dp1.Price, dp2.Price), 0)), 0) AS TotalPrice
+        FROM #TargetDates td
+        CROSS JOIN #HourlySlots hs
+        OUTER APPLY (
+            SELECT TOP 1 p.Price
+            FROM CourtPriceRules p
+            WHERE p.CourtID = @CourtID
+              AND p.IsActive = 1
+              AND p.SpecificDate = td.TargetDate
+              AND p.StartTime <= hs.StartTime
+              AND p.EndTime >= hs.EndTime
+            ORDER BY p.StartTime
+        ) cp1
+        OUTER APPLY (
+            SELECT TOP 1 p.Price
+            FROM CourtPriceRules p
+            WHERE p.CourtID = @CourtID
+              AND p.IsActive = 1
+              AND p.SpecificDate IS NULL
+              AND p.DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1)
+              AND p.StartTime <= hs.StartTime
+              AND p.EndTime >= hs.EndTime
+            ORDER BY p.StartTime
+        ) cp2
+        OUTER APPLY (
+            SELECT TOP 1 d.Price
+            FROM CourtDefaultPriceRules d
+            WHERE d.IsActive = 1
+              AND d.IsMapping = 1
+              AND d.SpecificDate = td.TargetDate
+              AND d.StartTime <= hs.StartTime
+              AND d.EndTime >= hs.EndTime
+            ORDER BY d.StartTime
+        ) dp1
+        OUTER APPLY (
+            SELECT TOP 1 d.Price
+            FROM CourtDefaultPriceRules d
+            WHERE d.IsActive = 1
+              AND d.IsMapping = 1
+              AND d.SpecificDate IS NULL
+              AND d.DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1)
+              AND d.StartTime <= hs.StartTime
+              AND d.EndTime >= hs.EndTime
+            ORDER BY d.StartTime
+        ) dp2
+        GROUP BY td.TargetDate;
 
-        DECLARE DateCursor CURSOR LOCAL FAST_FORWARD FOR
-            SELECT TargetDate
-            FROM #TargetDates
-            ORDER BY TargetDate;
+        -- 7. Sinh các ID đặt sân ngẫu nhiên và lưu trữ trước khi chèn (Set-Based)
+        CREATE TABLE #NewBookings (
+            BookingID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+            TargetDate DATE NOT NULL,
+            TotalPrice DECIMAL(18,2) NOT NULL
+        );
 
-        OPEN DateCursor;
-        FETCH NEXT FROM DateCursor INTO @LoopDate;
+        INSERT INTO #NewBookings (TargetDate, TotalPrice)
+        SELECT TargetDate, TotalPrice
+        FROM #BookingPrices;
 
-        WHILE @@FETCH_STATUS = 0
-        BEGIN
-            CREATE TABLE #TempSlots (
-                StartTime TIME(7) NOT NULL,
-                EndTime TIME(7) NOT NULL
-            );
+        -- Chèn dữ liệu vào bảng Bookings
+        INSERT INTO Bookings (
+            BookingID, CourtID, CustomerID, BookingDate, StartTime, EndTime,
+            TotalAmount, PaidAmount, Status, CancellationReason, Note, BookingGroupID,
+            CreatedDate, CreatedBy, ModifiedDate, ModifiedBy
+        )
+        SELECT 
+            nb.BookingID, 
+            @CourtID, 
+            @CustomerID, 
+            CAST(nb.TargetDate AS DATETIME),
+            @StartTime, 
+            @EndTime, 
+            nb.TotalPrice, 
+            0, 
+            'confirmed', 
+            N'',
+            N'[Đặt định kỳ] Nhóm ID: #' + CAST(@BookingGroupID AS NVARCHAR(20)),
+            @BookingGroupID,
+            SYSDATETIMEOFFSET(), 
+            @CreatedBy, 
+            SYSDATETIMEOFFSET(), 
+            @CreatedBy
+        FROM #NewBookings nb;
 
-            DECLARE @current TIME(7) = @StartTime;
+        -- Chèn dữ liệu vào bảng BookingSlots
+        INSERT INTO BookingSlots (
+            BookingID, CourtID, BookingDate, StartTime, EndTime
+        )
+        SELECT 
+            nb.BookingID, 
+            @CourtID, 
+            CAST(nb.TargetDate AS DATETIME), 
+            @StartTime, 
+            @EndTime
+        FROM #NewBookings nb;
 
-            WHILE @current < @EndTime
-            BEGIN
-                DECLARE @next TIME(7) = DATEADD(HOUR, 1, @current);
-
-                IF @next > @EndTime
-                    SET @next = @EndTime;
-
-                INSERT INTO #TempSlots (StartTime, EndTime)
-                VALUES (@current, @next);
-
-                SET @current = @next;
-            END;
-
-            DECLARE @loopDow INT = DATEPART(WEEKDAY, @LoopDate) - 1;
-            DECLARE @LoopTotalPrice DECIMAL(18,2) = 0;
-
-            SELECT @LoopTotalPrice = ISNULL(SUM(ISNULL(COALESCE(cp1.Price, cp2.Price, dp1.Price, dp2.Price), 0)), 0)
-            FROM #TempSlots ts
-            OUTER APPLY (
-                SELECT TOP 1 p.Price
-                FROM CourtPriceRules p
-                WHERE p.CourtID = @CourtID
-                  AND p.IsActive = 1
-                  AND p.SpecificDate = @LoopDate
-                  AND p.StartTime <= ts.StartTime
-                  AND p.EndTime >= ts.EndTime
-                ORDER BY p.StartTime
-            ) cp1
-            OUTER APPLY (
-                SELECT TOP 1 p.Price
-                FROM CourtPriceRules p
-                WHERE p.CourtID = @CourtID
-                  AND p.IsActive = 1
-                  AND p.SpecificDate IS NULL
-                  AND p.DayOfWeek = @loopDow
-                  AND p.StartTime <= ts.StartTime
-                  AND p.EndTime >= ts.EndTime
-                ORDER BY p.StartTime
-            ) cp2
-            OUTER APPLY (
-                SELECT TOP 1 d.Price
-                FROM CourtDefaultPriceRules d
-                WHERE d.IsActive = 1
-                  AND d.IsMapping = 1
-                  AND d.SpecificDate = @LoopDate
-                  AND d.StartTime <= ts.StartTime
-                  AND d.EndTime >= ts.EndTime
-                ORDER BY d.StartTime
-            ) dp1
-            OUTER APPLY (
-                SELECT TOP 1 d.Price
-                FROM CourtDefaultPriceRules d
-                WHERE d.IsActive = 1
-                  AND d.IsMapping = 1
-                  AND d.SpecificDate IS NULL
-                  AND d.DayOfWeek = @loopDow
-                  AND d.StartTime <= ts.StartTime
-                  AND d.EndTime >= ts.EndTime
-                ORDER BY d.StartTime
-            ) dp2;
-
-            INSERT INTO #BookingPrices (TargetDate, TotalPrice)
-            VALUES (@LoopDate, @LoopTotalPrice);
-
-            DROP TABLE #TempSlots;
-
-            FETCH NEXT FROM DateCursor INTO @LoopDate;
-        END;
-
-        CLOSE DateCursor;
-        DEALLOCATE DateCursor;
-
+        -- 8. Tính toán lại tổng tiền của cả nhóm
         DECLARE @TotalGroupAmount DECIMAL(18,2) = 0;
 
         SELECT @TotalGroupAmount = ISNULL(SUM(TotalPrice), 0)
         FROM #BookingPrices;
-
-        DECLARE @InsDate DATE;
-        DECLARE @InsPrice DECIMAL(18,2);
-
-        DECLARE InsCursor CURSOR LOCAL FAST_FORWARD FOR
-            SELECT TargetDate, TotalPrice
-            FROM #BookingPrices
-            ORDER BY TargetDate;
-
-        OPEN InsCursor;
-        FETCH NEXT FROM InsCursor INTO @InsDate, @InsPrice;
-
-        WHILE @@FETCH_STATUS = 0
-        BEGIN
-            DECLARE @BookingID UNIQUEIDENTIFIER = NEWID();
-
-            INSERT INTO Bookings (
-                BookingID, CourtID, CustomerID, BookingDate, StartTime, EndTime,
-                TotalAmount, PaidAmount, Status, CancellationReason, Note, BookingGroupID,
-                CreatedDate, CreatedBy, ModifiedDate, ModifiedBy
-            )
-            VALUES (
-                @BookingID, @CourtID, @CustomerID, CAST(@InsDate AS DATETIME),
-                @StartTime, @EndTime, @InsPrice, 0, 'confirmed', N'',
-                N'[Đặt định kỳ] Nhóm ID: #' + CAST(@BookingGroupID AS NVARCHAR(20)),
-                @BookingGroupID,
-                SYSDATETIMEOFFSET(), @CreatedBy, SYSDATETIMEOFFSET(), @CreatedBy
-            );
-
-            INSERT INTO BookingSlots (
-                BookingID, CourtID, BookingDate, StartTime, EndTime
-            )
-            VALUES (
-                @BookingID, @CourtID, CAST(@InsDate AS DATETIME), @StartTime, @EndTime
-            );
-
-            FETCH NEXT FROM InsCursor INTO @InsDate, @InsPrice;
-        END;
-
-        CLOSE InsCursor;
-        DEALLOCATE InsCursor;
 
         UPDATE BookingGroups
         SET TotalAmount = @TotalGroupAmount
@@ -241,30 +236,21 @@ BEGIN
         COMMIT TRANSACTION;
 
         DROP TABLE #TargetDates;
+        DROP TABLE #HourlySlots;
         DROP TABLE #BookingPrices;
+        DROP TABLE #NewBookings;
     END TRY
     BEGIN CATCH
-        IF CURSOR_STATUS('local', 'DateCursor') >= -1
-        BEGIN
-            CLOSE DateCursor;
-            DEALLOCATE DateCursor;
-        END;
-
-        IF CURSOR_STATUS('local', 'InsCursor') >= -1
-        BEGIN
-            CLOSE InsCursor;
-            DEALLOCATE InsCursor;
-        END;
-
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
 
         IF @ErrorMessage IS NULL
             SET @ErrorMessage = ERROR_MESSAGE();
 
-        IF OBJECT_ID('tempdb..#TempSlots') IS NOT NULL DROP TABLE #TempSlots;
+        IF OBJECT_ID('tempdb..#HourlySlots') IS NOT NULL DROP TABLE #HourlySlots;
         IF OBJECT_ID('tempdb..#TargetDates') IS NOT NULL DROP TABLE #TargetDates;
         IF OBJECT_ID('tempdb..#BookingPrices') IS NOT NULL DROP TABLE #BookingPrices;
+        IF OBJECT_ID('tempdb..#NewBookings') IS NOT NULL DROP TABLE #NewBookings;
 
         THROW 50000, @ErrorMessage, 1;
     END CATCH;

@@ -1524,7 +1524,10 @@ namespace CourtManagementBE.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("BookingID")
+                    b.Property<int?>("BookingGroupID")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("BookingID")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedDate")
@@ -1537,22 +1540,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PaymentGateway")
-                        .IsRequired()
-                        .HasColumnType("varchar(30)");
-
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasColumnType("varchar(30)");
-
-                    b.Property<int?>("PaymentMethodID")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PaymentStatusID")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("RefundReasonID")
-                        .HasColumnType("int");
 
                     b.Property<decimal>("RefundedAmount")
                         .HasColumnType("decimal(18,2)");
@@ -1561,15 +1551,11 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(20)");
 
-                    b.Property<string>("TransactionID")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
-
                     b.HasKey("PaymentID");
 
-                    b.HasIndex("BookingID");
+                    b.HasIndex("BookingGroupID");
 
-                    b.HasIndex("TransactionID");
+                    b.HasIndex("BookingID");
 
                     b.ToTable("Payments");
                 });
@@ -2160,6 +2146,16 @@ namespace CourtManagementBE.Migrations
                         .IsRequired();
 
                     b.Navigation("Court");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Payments", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.BookingGroups", "BookingGroup")
+                        .WithMany()
+                        .HasForeignKey("BookingGroupID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BookingGroup");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.RecurringConfigs", b =>

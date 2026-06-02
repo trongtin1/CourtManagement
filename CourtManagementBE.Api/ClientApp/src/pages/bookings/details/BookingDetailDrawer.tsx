@@ -387,7 +387,6 @@ export function BookingDetailDrawer({
         id: selectedBooking.bookingID,
         data: {
           amount: values.amount!,
-          paymentMethod: values.paymentMethod!,
           note: values.note || '',
         },
       },
@@ -822,12 +821,6 @@ export function BookingDetailDrawer({
           >
             <Select size="large">
               <Select.Option value="cash">💵 Tiền mặt (cash)</Select.Option>
-              <Select.Option value="bank_transfer">
-                🏦 Chuyển khoản (Bank Transfer)
-              </Select.Option>
-              <Select.Option value="qr_manual">
-                📱 Quét QR nội bộ (không gateway)
-              </Select.Option>
             </Select>
           </Form.Item>
 

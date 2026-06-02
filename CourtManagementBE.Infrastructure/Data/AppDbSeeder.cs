@@ -635,8 +635,6 @@ public static class AppDbSeeder
             BookingID = bookingId,
             Amount = courtPrice + serviceTotal,
             PaymentMethod = "cash",
-            PaymentGateway = "Cash",
-            TransactionID = $"SEED-{bookingDate:yyyyMMdd}-001",
             Status = "success",
             Note = "Thanh toán mẫu",
             PaymentDate = DateTime.Today,

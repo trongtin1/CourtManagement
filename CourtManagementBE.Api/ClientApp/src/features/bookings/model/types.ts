@@ -85,7 +85,6 @@ export type CancelBookingRequest = {
 
 export type PayBookingRequest = {
   amount: number
-  paymentMethod: string
   note?: string
 }
 

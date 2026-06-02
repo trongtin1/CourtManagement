@@ -8,4 +8,8 @@ public interface IBookingGroupRepository : IGenericRepository<BookingGroups>
     Task<string?> CreateRecurringBookingGroupAsync(
         int customerId, int facilityId, int courtId, DateTime startDate, DateTime endDate,
         TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string createdBy, string note);
+
+    Task<string?> UpdateRecurringBookingGroupAsync(
+        int bookingGroupId, int customerId, int facilityId, int courtId, DateTime startDate, DateTime endDate,
+        TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string modifiedBy, string note);
 }

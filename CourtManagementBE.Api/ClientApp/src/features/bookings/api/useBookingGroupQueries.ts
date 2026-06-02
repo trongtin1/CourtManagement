@@ -63,3 +63,15 @@ export const useDeleteBookingGroupMutation = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingGroupKeys.all }),
   })
 }
+
+export const usePayBookingGroupDepositMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { amount: number; note?: string } }) =>
+      bookingGroupApi.payDeposit(id, data),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: bookingGroupKeys.all })
+      qc.invalidateQueries({ queryKey: bookingGroupKeys.detail(id) })
+    },
+  })
+}

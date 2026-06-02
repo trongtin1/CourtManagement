@@ -1,6 +1,7 @@
 using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
+using CourtManagementBE.Application.Resources;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,7 +19,7 @@ public class BookingController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] QueryResource query)
+    public async Task<IActionResult> GetAll([FromQuery] BookingResource query)
     {
         var r = await _service.GetAll(query);
         return StatusCode((int)r.StatusCode, r);
@@ -98,6 +99,13 @@ public class BookingController : ControllerBase
     public async Task<IActionResult> Pay(Guid id, [FromBody] BookingPaymentRequest req)
     {
         var r = await _service.Pay(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpPost("{id}/refund")]
+    public async Task<IActionResult> Refund(Guid id, [FromBody] BookingRefundRequest req)
+    {
+        var r = await _service.Refund(id, req);
         return StatusCode((int)r.StatusCode, r);
     }
 

@@ -137,20 +137,16 @@ export function BookingGroupCreateDrawer({
       width={460}
       title={
         <div className="flex items-center gap-2 text-slate-800">
-          <ReloadOutlined className="text-teal-500" />
           <span className="font-bold text-base">Tạo Nhóm Đặt Sân Định Kỳ</span>
         </div>
       }
       extra={
         <Space>
-          <Button onClick={onClose} size="small">
-            Hủy
-          </Button>
           <Button
             type="primary"
             onClick={() => form.submit()}
             loading={createMutation.isPending}
-            size="small"
+            size="medium"
           >
             Lưu & Sinh Lịch
           </Button>

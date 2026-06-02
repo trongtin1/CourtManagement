@@ -27,6 +27,7 @@ export const bookingApi = {
   delete: (id: string) => apiDelete(`/booking/${id}`),
   updateStatus: (id: string, status: string) => apiPatch<Booking>(`/booking/${id}/status`, status),
   pay: (id: string, data: PayBookingRequest) => apiPost<Booking>(`/booking/${id}/pay`, data),
+  refund: (id: string, data: { amount: number; note?: string }) => apiPost<Booking>(`/booking/${id}/refund`, data),
   reschedule: (id: string, data: RescheduleBookingRequest) => apiPost<Booking>(`/booking/${id}/reschedule`, data),
   getHistory: (bookingId?: string) => apiGet<BookingHistoryResponse[]>('/booking/history', { bookingId }),
   getStatuses: () => apiGet<BookingStatusResponse[]>('/booking/statuses'),

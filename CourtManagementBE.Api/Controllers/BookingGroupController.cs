@@ -66,4 +66,11 @@ public class BookingGroupController : ControllerBase
         var r = await _service.Delete(id);
         return StatusCode((int)r.StatusCode, r);
     }
+
+    [HttpPost("{id}/pay-deposit")]
+    public async Task<IActionResult> PayDeposit(int id, [FromBody] BookingPaymentRequest req)
+    {
+        var r = await _service.PayDeposit(id, req);
+        return StatusCode((int)r.StatusCode, r);
+    }
 }

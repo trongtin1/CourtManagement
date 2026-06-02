@@ -13,4 +13,5 @@ public interface IBookingGroupService
     Task<Result<BookingGroupResponse>> Update(int id, BookingGroupRequest request);
     Task<Result<BookingGroupResponse>> Cancel(int id, string reason);
     Task<Result<bool>> Delete(int id);
+    Task<Result<BookingGroupResponse>> PayDeposit(int id, BookingPaymentRequest request);
 }

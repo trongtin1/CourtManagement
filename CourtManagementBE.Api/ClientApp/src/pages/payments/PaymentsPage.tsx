@@ -35,7 +35,6 @@ export function PaymentsPage() {
       !normalizedSearch ||
       payment.bookingID?.toLowerCase().includes(normalizedSearch) ||
       payment.paymentMethod?.toLowerCase().includes(normalizedSearch) ||
-      payment.transactionID?.toLowerCase().includes(normalizedSearch) ||
       payment.note?.toLowerCase().includes(normalizedSearch)
     const matchesStatus = !statusFilter || payment.status === statusFilter
 
@@ -56,7 +55,7 @@ export function PaymentsPage() {
           <Input.Search
             allowClear
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Tìm booking, giao dịch, ghi chú..."
+            placeholder="Tìm booking, phương thức, ghi chú..."
             style={{ width: 300 }}
             value={searchText}
           />

@@ -52,4 +52,42 @@ public class BookingGroupRepository : GenericRepository<BookingGroups>, IBooking
             }
         }
     }
+
+    public async Task<string?> UpdateRecurringBookingGroupAsync(
+        int bookingGroupId, int customerId, int facilityId, int courtId, DateTime startDate, DateTime endDate,
+        TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string modifiedBy, string note)
+    {
+        using (var command = _ctx.Database.GetDbConnection().CreateCommand())
+        {
+            command.CommandText = "dbo.sp_UpdateRecurringBookingGroup";
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.Add(new SqlParameter("@BookingGroupID", bookingGroupId));
+            command.Parameters.Add(new SqlParameter("@CustomerID", customerId));
+            command.Parameters.Add(new SqlParameter("@FacilityID", facilityId));
+            command.Parameters.Add(new SqlParameter("@CourtID", courtId));
+            command.Parameters.Add(new SqlParameter("@StartDate", startDate.Date));
+            command.Parameters.Add(new SqlParameter("@EndDate", endDate.Date));
+            command.Parameters.Add(new SqlParameter("@StartTime", startTime));
+            command.Parameters.Add(new SqlParameter("@EndTime", endTime));
+            command.Parameters.Add(new SqlParameter("@DaysOfWeek", daysOfWeek));
+            command.Parameters.Add(new SqlParameter("@ModifiedBy", modifiedBy));
+            command.Parameters.Add(new SqlParameter("@Note", note ?? (object)DBNull.Value));
+
+            var errorMessageParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output };
+            command.Parameters.Add(errorMessageParam);
+
+            try
+            {
+                await _ctx.Database.OpenConnectionAsync();
+                await command.ExecuteNonQueryAsync();
+
+                return errorMessageParam.Value != DBNull.Value ? (string)errorMessageParam.Value : null;
+            }
+            catch (SqlException ex)
+            {
+                return ex.Message;
+            }
+        }
+    }
 }

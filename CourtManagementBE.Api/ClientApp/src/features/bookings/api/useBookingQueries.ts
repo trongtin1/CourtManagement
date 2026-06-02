@@ -5,25 +5,43 @@ import { bookingServiceApi } from '@/features/bookings/api/bookingServiceApi'
 import { bookingComboApi } from '@/features/bookings/api/bookingComboApi'
 import { paymentKeys } from '@/features/payments/api/usePaymentQueries'
 import type { PaginationQuery } from '@/types/api'
-import type { CreateBookingRequest, UpdateBookingRequest, CancelBookingRequest, PayBookingRequest, RescheduleBookingRequest, CreateBookingServiceRequest, UpdateBookingServiceRequest, BulkUpdateBookingServiceItemRequest, CreateBookingComboRequest, UpdateBookingComboRequest, BulkUpdateBookingComboItemRequest } from '../model/types'
+import type {
+  CreateBookingRequest,
+  UpdateBookingRequest,
+  CancelBookingRequest,
+  PayBookingRequest,
+  RescheduleBookingRequest,
+  CreateBookingServiceRequest,
+  UpdateBookingServiceRequest,
+  BulkUpdateBookingServiceItemRequest,
+  CreateBookingComboRequest,
+  UpdateBookingComboRequest,
+  BulkUpdateBookingComboItemRequest,
+} from '../model/types'
+import type { BookingResource } from '../resources/bookingResource'
 
 export const bookingKeys = {
   all: ['bookings'] as const,
   list: (params?: PaginationQuery) => [...bookingKeys.all, 'list', params] as const,
   byDate: (date: string) => [...bookingKeys.all, 'date', date] as const,
   detail: (id: string) => [...bookingKeys.all, 'detail', id] as const,
-  bookedSlots: (courtId: number, date: string) => [...bookingKeys.all, 'bookedSlots', courtId, date] as const,
-  slotsByBooking: (bookingId: string) => [...bookingKeys.all, 'slots', bookingId] as const,
-  servicesByBooking: (bookingId: string) => [...bookingKeys.all, 'services', bookingId] as const,
-  combosByBooking: (bookingId: string) => [...bookingKeys.all, 'combos', bookingId] as const,
+  bookedSlots: (courtId: number, date: string) =>
+    [...bookingKeys.all, 'bookedSlots', courtId, date] as const,
+  slotsByBooking: (bookingId: string) =>
+    [...bookingKeys.all, 'slots', bookingId] as const,
+  servicesByBooking: (bookingId: string) =>
+    [...bookingKeys.all, 'services', bookingId] as const,
+  combosByBooking: (bookingId: string) =>
+    [...bookingKeys.all, 'combos', bookingId] as const,
   slotsByDate: (date: string) => [...bookingKeys.all, 'slotsByDate', date] as const,
   statuses: () => [...bookingKeys.all, 'statuses'] as const,
 }
 
-export const useBookingsQuery = (params?: PaginationQuery) => {
+export const useGroupBookingsQuery = (params?: BookingResource) => {
   return useQuery({
-    queryKey: bookingKeys.list(params),
-    queryFn: () => bookingApi.getAll(params)
+    queryKey: [...bookingKeys.all, 'groupList', params],
+    queryFn: () => bookingApi.getAll(params),
+    enabled: params?.bookingGroupID !== undefined,
   })
 }
 
@@ -71,7 +89,7 @@ export const useBookingQuery = (id: string) => {
   return useQuery({
     queryKey: bookingKeys.detail(id),
     queryFn: () => bookingApi.getById(id),
-    enabled: !!id
+    enabled: !!id,
   })
 }
 
@@ -86,7 +104,8 @@ export const useCreateBookingMutation = () => {
 export const useUpdateBookingMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateBookingRequest }) => bookingApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateBookingRequest }) =>
+      bookingApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
   })
 }
@@ -94,7 +113,8 @@ export const useUpdateBookingMutation = () => {
 export const useCancelBookingMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CancelBookingRequest }) => bookingApi.cancel(id, data),
+    mutationFn: ({ id, data }: { id: string; data: CancelBookingRequest }) =>
+      bookingApi.cancel(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
   })
 }
@@ -110,7 +130,8 @@ export const useDeleteBookingMutation = () => {
 export const useUpdateBookingStatusMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => bookingApi.updateStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      bookingApi.updateStatus(id, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
   })
 }
@@ -118,7 +139,21 @@ export const useUpdateBookingStatusMutation = () => {
 export const usePayBookingMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: PayBookingRequest }) => bookingApi.pay(id, data),
+    mutationFn: ({ id, data }: { id: string; data: PayBookingRequest }) =>
+      bookingApi.pay(id, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: bookingKeys.all })
+      qc.invalidateQueries({ queryKey: paymentKeys.all })
+      qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.id) })
+    },
+  })
+}
+
+export const useRefundBookingMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { amount: number; note?: string } }) =>
+      bookingApi.refund(id, data),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
       qc.invalidateQueries({ queryKey: paymentKeys.all })
@@ -130,7 +165,8 @@ export const usePayBookingMutation = () => {
 export const useRescheduleBookingMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: RescheduleBookingRequest }) => bookingApi.reschedule(id, data),
+    mutationFn: ({ id, data }: { id: string; data: RescheduleBookingRequest }) =>
+      bookingApi.reschedule(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
   })
 }
@@ -148,7 +184,9 @@ export const useCreateBookingServiceMutation = () => {
     mutationFn: (data: CreateBookingServiceRequest) => bookingServiceApi.create(data),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
-      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+      qc.invalidateQueries({
+        queryKey: bookingKeys.servicesByBooking(variables.bookingID),
+      })
     },
   })
 }
@@ -156,10 +194,19 @@ export const useCreateBookingServiceMutation = () => {
 export const useUpdateBookingServiceMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; bookingID: string; data: UpdateBookingServiceRequest }) => bookingServiceApi.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number
+      bookingID: string
+      data: UpdateBookingServiceRequest
+    }) => bookingServiceApi.update(id, data),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
-      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+      qc.invalidateQueries({
+        queryKey: bookingKeys.servicesByBooking(variables.bookingID),
+      })
     },
   })
 }
@@ -167,10 +214,13 @@ export const useUpdateBookingServiceMutation = () => {
 export const useDeleteBookingServiceMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id }: { id: number; bookingID: string }) => bookingServiceApi.delete(id),
+    mutationFn: ({ id }: { id: number; bookingID: string }) =>
+      bookingServiceApi.delete(id),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
-      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+      qc.invalidateQueries({
+        queryKey: bookingKeys.servicesByBooking(variables.bookingID),
+      })
     },
   })
 }
@@ -178,12 +228,19 @@ export const useDeleteBookingServiceMutation = () => {
 export const useBulkUpdateBookingServiceMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ bookingID, data }: { bookingID: string; data: BulkUpdateBookingServiceItemRequest[] }) =>
-      bookingServiceApi.bulkUpdate(bookingID, data),
+    mutationFn: ({
+      bookingID,
+      data,
+    }: {
+      bookingID: string
+      data: BulkUpdateBookingServiceItemRequest[]
+    }) => bookingServiceApi.bulkUpdate(bookingID, data),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
       qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
-      qc.invalidateQueries({ queryKey: bookingKeys.servicesByBooking(variables.bookingID) })
+      qc.invalidateQueries({
+        queryKey: bookingKeys.servicesByBooking(variables.bookingID),
+      })
     },
   })
 }
@@ -211,7 +268,14 @@ export const useCreateBookingComboMutation = () => {
 export const useUpdateBookingComboMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; bookingID: string; data: UpdateBookingComboRequest }) => bookingComboApi.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number
+      bookingID: string
+      data: UpdateBookingComboRequest
+    }) => bookingComboApi.update(id, data),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
       qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
@@ -235,8 +299,13 @@ export const useDeleteBookingComboMutation = () => {
 export const useBulkUpdateBookingComboMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ bookingID, data }: { bookingID: string; data: BulkUpdateBookingComboItemRequest[] }) =>
-      bookingComboApi.bulkUpdate(bookingID, data),
+    mutationFn: ({
+      bookingID,
+      data,
+    }: {
+      bookingID: string
+      data: BulkUpdateBookingComboItemRequest[]
+    }) => bookingComboApi.bulkUpdate(bookingID, data),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: bookingKeys.all })
       qc.invalidateQueries({ queryKey: bookingKeys.detail(variables.bookingID) })
@@ -244,4 +313,3 @@ export const useBulkUpdateBookingComboMutation = () => {
     },
   })
 }
-

@@ -13,4 +13,6 @@ export const bookingGroupApi = {
   update: (id: number, data: CreateBookingGroupRequest) => apiPut<BookingGroup>(`/bookinggroup/${id}`, data),
   cancel: (id: number, reason: string) => apiPatch<BookingGroup>(`/bookinggroup/${id}/cancel`, reason),
   delete: (id: number) => apiDelete(`/bookinggroup/${id}`),
+  payDeposit: (id: number, data: { amount: number; note?: string }) =>
+    apiPost<BookingGroup>(`/bookinggroup/${id}/pay-deposit`, data),
 }
