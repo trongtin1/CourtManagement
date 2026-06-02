@@ -2,18 +2,13 @@ import { Drawer, Button, Tag, Divider, Descriptions, Timeline, Spin } from 'antd
 import {
   CloseOutlined,
   ClockCircleOutlined,
-  TeamOutlined,
   CalendarOutlined,
   DollarOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
-import type {
-  BookingGroup,
-  BookingGroupStatus,
-  BookingGroupType,
-} from '@/features/bookings/model/types'
+import type { BookingGroup, BookingGroupStatus } from '@/features/bookings/model/types'
 import { formatCompactCurrency } from '@/utils/format'
 import { useBookingGroupQuery } from '@/features/bookings/api/useBookingGroupQueries'
 
@@ -28,12 +23,6 @@ const STATUS_MAP: Record<BookingGroupStatus, { label: string; color: string }> =
   Paused: { label: 'Tạm dừng', color: 'orange' },
   Cancelled: { label: 'Đã hủy', color: 'red' },
   Completed: { label: 'Hoàn thành', color: 'default' },
-}
-
-const GROUP_TYPE_MAP: Record<BookingGroupType, string> = {
-  recurring: 'Lịch định kỳ',
-  tournament: 'Giải đấu',
-  corporate: 'Doanh nghiệp',
 }
 
 const DAY_MAP: Record<string, string> = {
@@ -98,11 +87,10 @@ export function BookingGroupDetailDrawer({
             </div>
             <div className="flex flex-col gap-1.5 pr-9">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                {detail.groupType === 'recurring' ? <ReloadOutlined /> : <TeamOutlined />}
-                &nbsp;{GROUP_TYPE_MAP[detail.groupType] ?? detail.groupType}
+                <ReloadOutlined /> Lịch định kỳ
               </div>
               <h2 className="m-0 text-lg font-bold text-slate-900 leading-tight">
-                {detail.groupName}
+                Nhóm #{detail.bookingGroupID}
               </h2>
               <Tag
                 color={statusMeta?.color}
@@ -169,11 +157,6 @@ export function BookingGroupDetailDrawer({
               {detail.customerID && (
                 <Descriptions.Item label="Khách hàng">
                   #{detail.customerID}
-                </Descriptions.Item>
-              )}
-              {detail.comboID && (
-                <Descriptions.Item label="Combo áp dụng">
-                  #{detail.comboID}
                 </Descriptions.Item>
               )}
               {detail.note && (
@@ -276,24 +259,6 @@ export function BookingGroupDetailDrawer({
                       </div>
                       <div className="text-sm font-bold text-slate-800">
                         {formatCompactCurrency(detail.paidAmount)}
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  color: debtAmount > 0 ? 'red' : 'green',
-                  children: (
-                    <div>
-                      <div className="text-xs font-medium text-slate-500 mb-0.5">
-                        {debtAmount > 0 ? 'Còn nợ' : 'Đã thanh toán đủ'}
-                      </div>
-                      <div
-                        className="text-sm font-bold text-slate-800"
-                        style={{ color: debtAmount > 0 ? '#ef4444' : '#10b981' }}
-                      >
-                        {debtAmount > 0
-                          ? `– ${formatCompactCurrency(debtAmount)}`
-                          : '✓ Đầy đủ'}
                       </div>
                     </div>
                   ),

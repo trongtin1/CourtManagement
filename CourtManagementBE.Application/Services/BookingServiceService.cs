@@ -76,7 +76,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         var oldTotalAmount = entity.TotalAmount;
         _mapper.Map(request, entity);
-        
+
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
         entity.TotalAmount = entity.UnitPrice * entity.Quantity - entity.DiscountAmount;
@@ -100,135 +100,24 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         // Check for duplicates in requests
         var requestIds = requests.Select(x => x.BookingServiceID).Where(id => id > 0).ToList();
-        if (requestIds.Count != requestIds.Distinct().Count()) 
+        if (requestIds.Count != requestIds.Distinct().Count())
             return BadRequest<List<BookingServiceResponse>>("Danh sách cập nhật có dịch vụ booking bị trùng.");
 
         var requestServiceIds = requests.Select(x => x.ServiceID).Where(id => id > 0).ToList();
         if (requestServiceIds.Count != requestServiceIds.Distinct().Count())
             return BadRequest<List<BookingServiceResponse>>("Danh sách cập nhật có loại dịch vụ bị trùng.");
 
-        await _unitOfWork.BeginTransactionAsync();
-        try
+        var modifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
+        var errorMessage = await _unitOfWork.IBookingServiceRepository.BulkUpdateBookingServicesAsync(bookingId, modifiedBy, requests);
+
+        if (!string.IsNullOrEmpty(errorMessage))
         {
-            // Load existing entities for this booking
-            var existingEntities = await _unitOfWork.IBookingServiceRepository.FindList(
-                x => x.BookingID == bookingId,
-                disableTracking: false);
-
-            // Group by ServiceID to track total stock quantity differences
-            var stockDiffs = new Dictionary<int, int>();
-
-            // 1. Add new items to stock diff
-            foreach (var req in requests.Where(r => r.BookingServiceID <= 0))
-            {
-                if (!stockDiffs.ContainsKey(req.ServiceID)) stockDiffs[req.ServiceID] = 0;
-                stockDiffs[req.ServiceID] += req.Quantity;
-            }
-
-            // 2. Add existing items changes/deletions to stock diff
-            foreach (var entity in existingEntities)
-            {
-                var req = requests.FirstOrDefault(r => r.BookingServiceID == entity.BookingServiceID);
-                if (req != null)
-                {
-                    if (!stockDiffs.ContainsKey(entity.ServiceID)) stockDiffs[entity.ServiceID] = 0;
-                    stockDiffs[entity.ServiceID] += (req.Quantity - entity.Quantity);
-                }
-                else
-                {
-                    if (!stockDiffs.ContainsKey(entity.ServiceID)) stockDiffs[entity.ServiceID] = 0;
-                    stockDiffs[entity.ServiceID] -= entity.Quantity;
-                }
-            }
-
-            // Validate and update stock
-            foreach (var diff in stockDiffs.Where(x => x.Value != 0))
-            {
-                var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == diff.Key, disableTracking: false);
-                if (service is null) continue;
-                if (!service.IsTrackStock) continue;
-
-                if (diff.Value > 0 && service.StockQuantity < diff.Value)
-                {
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return BadRequest<List<BookingServiceResponse>>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).");
-                }
-
-                service.StockQuantity -= diff.Value;
-                _unitOfWork.IServiceRepository.Update(service);
-            }
-
-            var totalDiff = 0m;
-            var requestIdsSet = requestIds.ToHashSet();
-
-            // 3. Process Deletions
-            var entitiesToDelete = existingEntities.Where(e => !requestIdsSet.Contains(e.BookingServiceID)).ToList();
-            foreach (var entity in entitiesToDelete)
-            {
-                totalDiff -= entity.TotalAmount;
-                _unitOfWork.IBookingServiceRepository.Remove(entity);
-            }
-
-            // 4. Process Updates
-            foreach (var entity in existingEntities.Where(e => requestIdsSet.Contains(e.BookingServiceID)))
-            {
-                var req = requests.First(r => r.BookingServiceID == entity.BookingServiceID);
-                var oldTotalAmount = entity.TotalAmount;
-
-                entity.Quantity = req.Quantity;
-                entity.UnitPrice = req.UnitPrice;
-                entity.DiscountAmount = req.DiscountAmount;
-                entity.Status = req.Status;
-                entity.TotalAmount = req.UnitPrice * req.Quantity - req.DiscountAmount;
-                entity.ModifiedDate = DateTimeOffset.UtcNow;
-                entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-
-                totalDiff += entity.TotalAmount - oldTotalAmount;
-                _unitOfWork.IBookingServiceRepository.Update(entity);
-            }
-
-            // 5. Process Additions
-            foreach (var req in requests.Where(r => r.BookingServiceID <= 0))
-            {
-                var newEntity = new BookingServices
-                {
-                    BookingID = bookingId,
-                    ServiceID = req.ServiceID,
-                    Quantity = req.Quantity,
-                    UnitPrice = req.UnitPrice,
-                    DiscountAmount = req.DiscountAmount,
-                    Status = req.Status,
-                    TotalAmount = req.UnitPrice * req.Quantity - req.DiscountAmount,
-                    CreatedDate = DateTimeOffset.UtcNow,
-                    CreatedBy = _currentUser?.UserId?.ToString() ?? string.Empty,
-                    ModifiedDate = DateTimeOffset.UtcNow,
-                    ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty
-                };
-
-                totalDiff += newEntity.TotalAmount;
-                await _unitOfWork.IBookingServiceRepository.Add(newEntity);
-            }
-
-            // 6. Update Booking total amount
-            var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == bookingId, disableTracking: false);
-            if (booking != null)
-            {
-                booking.TotalAmount += totalDiff;
-                booking.ModifiedDate = DateTimeOffset.UtcNow;
-                _unitOfWork.IBookingRepository.Update(booking);
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
-
-            var finalEntities = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == bookingId);
-            return Success(_mapper.Map<List<BookingServiceResponse>>(finalEntities), "Cập nhật dịch vụ booking thành công.");
+            return BadRequest<List<BookingServiceResponse>>(errorMessage);
         }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
-        }
+
+        // Load the updated list of services for return
+        var finalEntities = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == bookingId);
+        return Success(_mapper.Map<List<BookingServiceResponse>>(finalEntities), "Cập nhật dịch vụ booking thành công.");
     }
 
     public async Task<Result<bool>> Delete(int id)

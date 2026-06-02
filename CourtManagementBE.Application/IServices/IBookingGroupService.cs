@@ -9,7 +9,7 @@ public interface IBookingGroupService
     Task<Result<PageList<BookingGroupResponse>>> GetAll(QueryResource query);
     Task<Result<List<BookingGroupResponse>>> GetByCustomer(int customerId);
     Task<Result<BookingGroupResponse>> GetById(int id);
-    Task<Result<BookingGroupResponse>> Create(BookingGroupRequest request);
+    Task<Result<string>> Create(BookingGroupRequest request);
     Task<Result<BookingGroupResponse>> Update(int id, BookingGroupRequest request);
     Task<Result<BookingGroupResponse>> Cancel(int id, string reason);
     Task<Result<bool>> Delete(int id);

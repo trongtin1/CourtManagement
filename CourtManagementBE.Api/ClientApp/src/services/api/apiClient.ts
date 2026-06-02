@@ -10,10 +10,7 @@ export type AbortableRequest<T> = {
   signal: AbortSignal
 }
 
-/**
- * Generic CRUD helpers that unwrap the BE Result<T> envelope.
- * Every BE response has shape: { statusCode, isSuccess, message, data }
- */
+
 export async function apiGet<T>(
   url: string,
   params?: Record<string, unknown>,

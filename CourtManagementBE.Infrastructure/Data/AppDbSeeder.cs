@@ -627,7 +627,6 @@ public static class AppDbSeeder
             UnitPrice = servicePrice,
             DiscountAmount = 0,
             TotalAmount = serviceTotal,
-            Status = "confirmed",
             CreatedBy = AdminLogin,
             ModifiedBy = AdminLogin,
         });

@@ -19,8 +19,14 @@ public interface ICourtLockedSlotRepository : IGenericRepository<CourtLockedSlot
 public interface ICustomerRepository : IGenericRepository<Customers> { }
 public interface IBookingRepository : IGenericRepository<Bookings> { }
 public interface IBookingSlotRepository : IGenericRepository<BookingSlots> { }
-public interface IBookingServiceRepository : IGenericRepository<BookingServices> { }
-public interface IBookingComboRepository : IGenericRepository<BookingCombos> { }
+public interface IBookingServiceRepository : IGenericRepository<BookingServices>
+{
+    Task<string?> BulkUpdateBookingServicesAsync(Guid bookingId, string modifiedBy, List<BookingServiceBulkUpdateItemRequest> requests);
+}
+public interface IBookingComboRepository : IGenericRepository<BookingCombos>
+{
+    Task<string?> BulkUpdateBookingCombosAsync(Guid bookingId, string modifiedBy, List<BookingComboBulkUpdateItemRequest> requests);
+}
 public interface IPaymentRepository : IGenericRepository<Payments> { }
 public interface IServiceRepository : IGenericRepository<Services> { }
 public interface ICourtAreaMappingRepository : IGenericRepository<CourtAreaMapping> { }
@@ -38,7 +44,6 @@ public interface ICancellationReasonRepository : IGenericRepository<Cancellation
 public interface IRefundReasonRepository : IGenericRepository<RefundReasons> { }
 public interface IComboRepository : IGenericRepository<Combos> { }
 public interface IComboServiceRepository : IGenericRepository<ComboServices> { }
-public interface IBookingGroupRepository : IGenericRepository<BookingGroups> { }
 public interface IRecurringConfigRepository : IGenericRepository<RecurringConfigs> { }
 public interface IUnitConversionRepository : IGenericRepository<UnitConversions> { }
 public interface IAuditLogRepository : IGenericRepository<AuditLog> { }

@@ -54,7 +54,7 @@ public class BookingComboService : BaseService, IBookingComboService
 
         var oldTotalAmount = entity.TotalAmount;
         _mapper.Map(request, entity);
-        
+
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
         entity.TotalAmount = entity.UnitPrice * entity.Quantity - entity.DiscountAmount;
@@ -78,98 +78,27 @@ public class BookingComboService : BaseService, IBookingComboService
 
         // Check for duplicates in requests
         var requestIds = requests.Select(x => x.BookingComboID).Where(id => id > 0).ToList();
-        if (requestIds.Count != requestIds.Distinct().Count()) 
+        if (requestIds.Count != requestIds.Distinct().Count())
             return BadRequest<List<BookingComboResponse>>("Danh sách cập nhật có combo booking bị trùng.");
 
         var requestComboIds = requests.Select(x => x.ComboID).Where(id => id > 0).ToList();
         if (requestComboIds.Count != requestComboIds.Distinct().Count())
             return BadRequest<List<BookingComboResponse>>("Danh sách cập nhật có loại combo bị trùng.");
 
-        await _unitOfWork.BeginTransactionAsync();
-        try
+        var modifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
+        var errorMessage = await _unitOfWork.IBookingComboRepository.BulkUpdateBookingCombosAsync(bookingId, modifiedBy, requests);
+
+        if (!string.IsNullOrEmpty(errorMessage))
         {
-            // Load existing entities for this booking
-            var existingEntities = await _unitOfWork.IBookingComboRepository.FindList(
-                x => x.BookingID == bookingId,
-                disableTracking: false);
-
-            var totalDiff = 0m;
-            var requestIdsSet = requestIds.ToHashSet();
-
-            // 1. Process Deletions
-            var entitiesToDelete = existingEntities.Where(e => !requestIdsSet.Contains(e.BookingComboID)).ToList();
-            foreach (var entity in entitiesToDelete)
-            {
-                totalDiff -= entity.TotalAmount;
-                _unitOfWork.IBookingComboRepository.Remove(entity);
-            }
-
-            // 2. Process Updates
-            foreach (var entity in existingEntities.Where(e => requestIdsSet.Contains(e.BookingComboID)))
-            {
-                var req = requests.First(r => r.BookingComboID == entity.BookingComboID);
-                var oldTotalAmount = entity.TotalAmount;
-
-                entity.Quantity = req.Quantity;
-                entity.UnitPrice = req.UnitPrice;
-                entity.DiscountAmount = req.DiscountAmount;
-                entity.Status = req.Status;
-                entity.TotalAmount = req.UnitPrice * req.Quantity - req.DiscountAmount;
-                entity.ModifiedDate = DateTimeOffset.UtcNow;
-                entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-
-                totalDiff += entity.TotalAmount - oldTotalAmount;
-                _unitOfWork.IBookingComboRepository.Update(entity);
-            }
-
-            // 3. Process Additions
-            var addedEntities = new List<BookingCombos>();
-            foreach (var req in requests.Where(r => r.BookingComboID <= 0))
-            {
-                var newEntity = new BookingCombos
-                {
-                    BookingID = bookingId,
-                    ComboID = req.ComboID,
-                    Quantity = req.Quantity,
-                    UnitPrice = req.UnitPrice,
-                    DiscountAmount = req.DiscountAmount,
-                    Status = req.Status,
-                    TotalAmount = req.UnitPrice * req.Quantity - req.DiscountAmount,
-                    CreatedDate = DateTimeOffset.UtcNow,
-                    CreatedBy = _currentUser?.UserId?.ToString() ?? string.Empty,
-                    ModifiedDate = DateTimeOffset.UtcNow,
-                    ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty
-                };
-
-                totalDiff += newEntity.TotalAmount;
-                await _unitOfWork.IBookingComboRepository.Add(newEntity);
-                addedEntities.Add(newEntity);
-            }
-
-            // 4. Update Booking total amount
-            var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == bookingId, disableTracking: false);
-            if (booking != null)
-            {
-                booking.TotalAmount += totalDiff;
-                booking.ModifiedDate = DateTimeOffset.UtcNow;
-                _unitOfWork.IBookingRepository.Update(booking);
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
-
-            // Load updated list of combos for return
-            var updatedEntities = await _unitOfWork.IBookingComboRepository.FindList(
-                x => x.BookingID == bookingId,
-                disableTracking: true);
-
-            return Success(_mapper.Map<List<BookingComboResponse>>(updatedEntities), "Cập nhật hàng loạt combo booking thành công.");
+            return BadRequest<List<BookingComboResponse>>(errorMessage);
         }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
-        }
+
+        // Load updated list of combos for return
+        var updatedEntities = await _unitOfWork.IBookingComboRepository.FindList(
+            x => x.BookingID == bookingId,
+            disableTracking: true);
+
+        return Success(_mapper.Map<List<BookingComboResponse>>(updatedEntities), "Cập nhật hàng loạt combo booking thành công.");
     }
 
     public async Task<Result<bool>> Delete(int id)

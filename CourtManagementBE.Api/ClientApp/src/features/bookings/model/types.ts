@@ -1,6 +1,6 @@
 export type BookingStatusValue = string
 export type BookingGroupStatus = 'Active' | 'Paused' | 'Cancelled' | 'Completed'
-export type BookingGroupType = 'recurring' | 'tournament' | 'corporate'
+export type BookingGroupType = 'returning'
 
 export type Booking = {
   bookingID: string
@@ -27,8 +27,6 @@ export type BookingGroup = {
   groupType: BookingGroupType
   customerID?: number | null
   facilityID?: number | null
-  comboID?: number | null
-  groupName: string
   totalAmount: number
   paidAmount: number
   status: BookingGroupStatus
@@ -105,8 +103,6 @@ export type CreateBookingGroupRequest = {
   groupType: BookingGroupType
   customerID?: number | null
   facilityID?: number | null
-  comboID?: number | null
-  groupName: string
   totalAmount?: number
   paidAmount?: number
   status?: string
@@ -133,7 +129,6 @@ export type BookingService = {
   unitPrice: number
   discountAmount: number
   totalAmount: number
-  status: string
   createdDate: string
 }
 
@@ -145,7 +140,6 @@ export type BookingCombo = {
   unitPrice: number
   discountAmount: number
   totalAmount: number
-  status: string
   createdDate: string
 }
 
@@ -155,14 +149,12 @@ export type CreateBookingComboRequest = {
   quantity: number
   unitPrice?: number
   discountAmount?: number
-  status?: string
 }
 
 export type UpdateBookingComboRequest = {
   quantity: number
   unitPrice?: number
   discountAmount?: number
-  status?: string
 }
 
 export type BulkUpdateBookingComboItemRequest = {
@@ -171,7 +163,6 @@ export type BulkUpdateBookingComboItemRequest = {
   quantity: number
   unitPrice: number
   discountAmount?: number
-  status?: string
 }
 
 export type CreateBookingServiceRequest = {
@@ -180,14 +171,12 @@ export type CreateBookingServiceRequest = {
   quantity: number
   unitPrice?: number
   discountAmount?: number
-  status?: string
 }
 
 export type UpdateBookingServiceRequest = {
   quantity: number
   unitPrice?: number
   discountAmount?: number
-  status?: string
 }
 
 export type BulkUpdateBookingServiceItemRequest = {
@@ -196,7 +185,6 @@ export type BulkUpdateBookingServiceItemRequest = {
   quantity: number
   unitPrice: number
   discountAmount?: number
-  status?: string
 }
 
 export type BookingSlot = {

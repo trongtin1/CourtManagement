@@ -17,8 +17,13 @@ import dayjs from 'dayjs'
 import { useCreateBookingGroupMutation } from '@/features/bookings/api/useBookingGroupQueries'
 import { useCourtsQuery } from '@/features/courts/api/useCourtQueries'
 import { useCustomersQuery } from '@/features/customers/api/useCustomerQueries'
-import { useCombosQuery } from '@/features/combos/api/useComboQueries'
-import type { BookingGroupType, CreateBookingGroupRequest } from '@/features/bookings/model/types'
+import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { getDisabledTime } from '@/utils/format'
+import { toApiError } from '@/utils/errors'
+import type {
+  BookingGroupType,
+  CreateBookingGroupRequest,
+} from '@/features/bookings/model/types'
 
 interface BookingGroupCreateDrawerProps {
   open: boolean
@@ -27,9 +32,7 @@ interface BookingGroupCreateDrawerProps {
 }
 
 interface FormValues {
-  groupName: string
   customerID?: number | null
-  comboID?: number | null
   courtID?: number
   dateRange?: [dayjs.Dayjs, dayjs.Dayjs]
   timeRange?: [dayjs.Dayjs, dayjs.Dayjs]
@@ -60,14 +63,13 @@ export function BookingGroupCreateDrawer({
   // Queries
   const { data: courtsData } = useCourtsQuery({ page: 1, pageSize: 100 })
   const { data: customersData } = useCustomersQuery({ page: 1, pageSize: 100 })
-  const { data: combosData } = useCombosQuery()
+  const { data: facility } = useFacilityQuery(facilityId)
 
   const courts = courtsData?.items ?? []
   const customers = customersData?.items ?? []
-  const combos = combosData?.items ?? []
 
   // Component States
-  const [groupType, setGroupType] = useState<BookingGroupType>('recurring')
+  const groupType: BookingGroupType = 'returning'
   const [selectedDays, setSelectedDays] = useState<string[]>([])
 
   const toggleDay = (dayValue: string) => {
@@ -77,7 +79,7 @@ export function BookingGroupCreateDrawer({
   }
 
   const handleFinish = async (values: FormValues) => {
-    if (groupType === 'recurring') {
+    if (groupType === 'returning') {
       if (selectedDays.length === 0) {
         message.warning('Vui lòng chọn ít nhất một ngày lặp trong tuần.')
         return
@@ -95,17 +97,15 @@ export function BookingGroupCreateDrawer({
     try {
       const payload: CreateBookingGroupRequest = {
         groupType,
-        groupName: values.groupName,
         customerID: values.customerID || null,
         facilityID: facilityId,
-        comboID: values.comboID || null,
         totalAmount: values.totalAmount || 0,
         paidAmount: values.paidAmount || 0,
         status: 'Active',
         note: values.note || '',
       }
 
-      if (groupType === 'recurring') {
+      if (groupType === 'returning') {
         const [startDate, endDate] = values.dateRange!
         const [startTime, endTime] = values.timeRange!
 
@@ -119,18 +119,14 @@ export function BookingGroupCreateDrawer({
         }
       }
 
-      await createMutation.mutateAsync(payload)
-      message.success('Đã tạo nhóm đặt sân và sinh lịch thành công!')
+      const successMessage = await createMutation.mutateAsync(payload)
+      message.success(successMessage)
       form.resetFields()
       setSelectedDays([])
       onClose()
     } catch (err) {
       console.error(err)
-      const errMsg =
-        err instanceof Error
-          ? err.message
-          : 'Không thể tạo nhóm đặt sân. Vui lòng kiểm tra lại xung đột lịch.'
-      message.error(errMsg)
+      message.error(toApiError(err).message)
     }
   }
 
@@ -166,34 +162,11 @@ export function BookingGroupCreateDrawer({
         layout="vertical"
         onFinish={handleFinish}
         initialValues={{
-          groupType: 'recurring',
+          groupType: 'returning',
           totalAmount: 0,
           paidAmount: 0,
         }}
       >
-        {/* Loại đặt sân */}
-        <Form.Item label="Loại nhóm đặt sân" required>
-          <Select
-            value={groupType}
-            onChange={(val) => setGroupType(val as BookingGroupType)}
-            options={[
-              { label: 'Định kỳ hàng tuần', value: 'recurring' },
-              { label: 'Sự kiện / Giải đấu', value: 'tournament' },
-              { label: 'Lịch Doanh nghiệp', value: 'corporate' },
-            ]}
-            className="w-full"
-          />
-        </Form.Item>
-
-        {/* Tên nhóm */}
-        <Form.Item
-          label="Tên nhóm / Tên giải"
-          name="groupName"
-          rules={[{ required: true, message: 'Vui lòng nhập tên nhóm' }]}
-        >
-          <Input placeholder="Ví dụ: CLB lông thủ thứ 7, Giải đấu hè 2026..." />
-        </Form.Item>
-
         {/* Khách hàng */}
         <Form.Item label="Khách hàng đại diện" name="customerID">
           <Select
@@ -208,20 +181,8 @@ export function BookingGroupCreateDrawer({
           />
         </Form.Item>
 
-        {/* Combo */}
-        <Form.Item label="Áp dụng Gói Combo" name="comboID">
-          <Select
-            placeholder="Chọn combo (nếu có)..."
-            allowClear
-            options={combos.map((c) => ({
-              label: `${c.comboName} (${c.durationHours}h chơi - ${c.comboPrice.toLocaleString()}đ)`,
-              value: c.comboID,
-            }))}
-          />
-        </Form.Item>
-
         {/* Khung giờ định kỳ */}
-        {groupType === 'recurring' && (
+        {groupType === 'returning' && (
           <div className="border border-slate-100 bg-slate-50/50 rounded-xl p-4 mb-4">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
               Cấu hình đặt lịch định kỳ
@@ -296,34 +257,28 @@ export function BookingGroupCreateDrawer({
             >
               <TimePicker.RangePicker
                 format="HH:mm"
-                minuteStep={30}
+                minuteStep={facility?.slotDurationMinutes as undefined}
                 className="w-full"
                 placeholder={['Từ giờ', 'Đến giờ']}
+                disabledTime={getDisabledTime(
+                  facility?.openingTime,
+                  facility?.closingTime,
+                )}
               />
             </Form.Item>
           </div>
         )}
 
         {/* Tài chính */}
-        <div className="grid grid-cols-2 gap-4">
-          <Form.Item label="Tổng tiền dự tính" name="totalAmount">
-            <InputNumber<number>
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(value) => Number(value?.replace(/,/g, '') || 0)}
-              className="w-full"
-              addonAfter="đ"
-              min={0}
-            />
-          </Form.Item>
-          <Form.Item label="Đã thanh toán trước" name="paidAmount">
-            <InputNumber<number>
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(value) => Number(value?.replace(/,/g, '') || 0)}
-              className="w-full"
-              min={0}
-            />
-          </Form.Item>
-        </div>
+        <Form.Item label="Đã thanh toán trước" name="paidAmount">
+          <InputNumber<number>
+            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={(value) => Number(value?.replace(/,/g, '') || 0)}
+            className="w-full"
+            addonAfter="đ"
+            min={0}
+          />
+        </Form.Item>
 
         {/* Ghi chú */}
         <Form.Item label="Ghi chú" name="note">

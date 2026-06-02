@@ -6,14 +6,11 @@ public class BookingGroupResponse
     public string GroupType { get; set; } = string.Empty;
     public int? CustomerID { get; set; }
     public int? FacilityID { get; set; }
-    public int? ComboID { get; set; }
-    public string GroupName { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string Note { get; set; } = string.Empty;
     public DateTimeOffset CreatedDate { get; set; }
-
     public RecurringConfigResponse? RecurringConfig { get; set; }
 }
 

@@ -6,8 +6,6 @@ import {
   StopOutlined,
   DeleteOutlined,
   CalendarOutlined,
-  ClockCircleOutlined,
-  TeamOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
@@ -17,11 +15,7 @@ import {
   useCancelBookingGroupMutation,
   useDeleteBookingGroupMutation,
 } from '@/features/bookings/api/useBookingGroupQueries'
-import type {
-  BookingGroup,
-  BookingGroupStatus,
-  BookingGroupType,
-} from '@/features/bookings/model/types'
+import type { BookingGroup, BookingGroupStatus } from '@/features/bookings/model/types'
 import { formatCompactCurrency } from '@/utils/format'
 
 import { BookingGroupCreateDrawer } from './BookingGroupCreateDrawer'
@@ -37,13 +31,6 @@ const STATUS_MAP: Record<BookingGroupStatus, { label: string; color: string }> =
   Cancelled: { label: 'Đã hủy', color: 'red' },
   Completed: { label: 'Hoàn thành', color: 'default' },
 }
-
-const GROUP_TYPE_MAP: Record<BookingGroupType, { label: string; icon: React.ReactNode }> =
-  {
-    recurring: { label: 'Định kỳ', icon: <ClockCircleOutlined /> },
-    tournament: { label: 'Giải đấu', icon: <TeamOutlined /> },
-    corporate: { label: 'Doanh nghiệp', icon: <TeamOutlined /> },
-  }
 
 const DAY_LABELS: Record<string, string> = {
   '1': 'T2',
@@ -76,7 +63,7 @@ export function BookingGroupsTab({ facilityId }: BookingGroupsTabProps) {
   const filtered = groups.filter((g) => {
     const matchSearch =
       !search ||
-      g.groupName.toLowerCase().includes(search.toLowerCase()) ||
+      g.note.toLowerCase().includes(search.toLowerCase()) ||
       String(g.bookingGroupID).includes(search)
     const matchStatus = statusFilter === 'All' || g.status === statusFilter
     return matchSearch && matchStatus
@@ -103,7 +90,7 @@ export function BookingGroupsTab({ facilityId }: BookingGroupsTabProps) {
   const columns: ColumnsType<BookingGroup> = [
     {
       key: 'groupName',
-      title: 'Tên nhóm',
+      title: 'Mã nhóm',
       render: (_, record) => (
         <div
           className="flex flex-col gap-px cursor-pointer group"
@@ -113,28 +100,15 @@ export function BookingGroupsTab({ facilityId }: BookingGroupsTabProps) {
           }}
         >
           <span className="text-[13px] font-semibold text-slate-800 leading-tight group-hover:text-blue-500 group-hover:underline group-hover:underline-offset-2">
-            {record.groupName}
+            Nhóm #{record.bookingGroupID}
           </span>
           <span className="text-[11px] text-slate-400 font-medium font-mono">
-            #{record.bookingGroupID}
+            Ghi chú: {record.note || 'Không có'}
           </span>
         </div>
       ),
     },
-    {
-      key: 'groupType',
-      title: 'Loại',
-      width: 130,
-      render: (_, record) => {
-        const meta = GROUP_TYPE_MAP[record.groupType]
-        return (
-          <span className="inline-flex items-center gap-1.25 text-[12px] font-medium text-slate-500">
-            {meta?.icon}
-            {meta?.label ?? record.groupType}
-          </span>
-        )
-      },
-    },
+
     {
       key: 'status',
       title: 'Trạng thái',

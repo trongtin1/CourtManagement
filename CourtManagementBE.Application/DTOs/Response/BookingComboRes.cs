@@ -9,6 +9,5 @@ public class BookingComboResponse
     public decimal UnitPrice { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal TotalAmount { get; set; }
-    public string Status { get; set; } = string.Empty;
     public DateTimeOffset CreatedDate { get; set; }
 }

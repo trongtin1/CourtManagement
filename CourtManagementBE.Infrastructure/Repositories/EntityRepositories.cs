@@ -53,11 +53,6 @@ public class BookingRepository : GenericRepository<Bookings>, IBookingRepository
 public class BookingSlotRepository : GenericRepository<BookingSlots>, IBookingSlotRepository
 { public BookingSlotRepository(AppDbContext ctx) : base(ctx) { } }
 
-public class BookingServiceRepository : GenericRepository<BookingServices>, IBookingServiceRepository
-{ public BookingServiceRepository(AppDbContext ctx) : base(ctx) { } }
-
-public class BookingComboRepository : GenericRepository<BookingCombos>, IBookingComboRepository
-{ public BookingComboRepository(AppDbContext ctx) : base(ctx) { } }
 
 public class PaymentRepository : GenericRepository<Payments>, IPaymentRepository
 { public PaymentRepository(AppDbContext ctx) : base(ctx) { } }
@@ -99,8 +94,6 @@ public class ComboRepository : GenericRepository<Combos>, IComboRepository
 { public ComboRepository(AppDbContext ctx) : base(ctx) { } }
 public class ComboServiceRepository : GenericRepository<ComboServices>, IComboServiceRepository
 { public ComboServiceRepository(AppDbContext ctx) : base(ctx) { } }
-public class BookingGroupRepository : GenericRepository<BookingGroups>, IBookingGroupRepository
-{ public BookingGroupRepository(AppDbContext ctx) : base(ctx) { } }
 public class RecurringConfigRepository : GenericRepository<RecurringConfigs>, IRecurringConfigRepository
 { public RecurringConfigRepository(AppDbContext ctx) : base(ctx) { } }
 

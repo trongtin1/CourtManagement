@@ -204,7 +204,6 @@ public class BookingService : BaseService, IBookingService
                 UnitPrice = combo.ComboPrice,
                 DiscountAmount = 0,
                 TotalAmount = lineTotal,
-                Status = "active",
                 CreatedDate = DateTimeOffset.UtcNow,
                 ModifiedDate = DateTimeOffset.UtcNow
             });
@@ -255,7 +254,6 @@ public class BookingService : BaseService, IBookingService
                 UnitPrice = price.Value,
                 DiscountAmount = 0,
                 TotalAmount = lineTotal,
-                Status = "active",
                 CreatedDate = DateTimeOffset.UtcNow,
                 ModifiedDate = DateTimeOffset.UtcNow
             });
@@ -395,6 +393,15 @@ public class BookingService : BaseService, IBookingService
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền cập nhật booking này.");
 
         if (entity.Status == newStatus) return Success(_mapper.Map<BookingResponse>(entity));
+
+        // Ràng buộc quy tắc chuyển đổi trạng thái vòng đời Booking (State Machine Guard)
+        if (!IsValidTransition(entity.Status, newStatus))
+        {
+            var oldStatusEntity = await _unitOfWork.IBookingStatusRepository.FindFirst(x => x.Code == entity.Status);
+            string oldName = oldStatusEntity?.StatusName ?? entity.Status;
+            string newName = statusEntity.StatusName;
+            return BadRequest<BookingResponse>($"Không thể chuyển đổi trạng thái đặt sân từ '{oldName}' sang '{newName}'.");
+        }
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -623,7 +630,7 @@ public class BookingService : BaseService, IBookingService
         var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
         decimal serviceTotal = bookingServices.Sum(x => x.TotalAmount);
 
-        var bookingCombos = await _unitOfWork.IBookingComboRepository.FindList(x => x.BookingID == id && x.Status == "active");
+        var bookingCombos = await _unitOfWork.IBookingComboRepository.FindList(x => x.BookingID == id);
         if (bookingCombos.Any())
         {
             var firstBookingCombo = bookingCombos.First();
@@ -811,5 +818,22 @@ public class BookingService : BaseService, IBookingService
             CreatedAt = DateTimeOffset.UtcNow
         };
         await _unitOfWork.IBookingHistoryRepository.Add(log);
+    }
+
+    private static bool IsValidTransition(string currentStatus, string newStatus)
+    {
+        return (currentStatus, newStatus) switch
+        {
+            (BookingStatusConstants.Pending, BookingStatusConstants.Confirmed) => true,
+            (BookingStatusConstants.Pending, BookingStatusConstants.Cancelled) => true,
+            
+            (BookingStatusConstants.Confirmed, BookingStatusConstants.CheckedIn) => true,
+            (BookingStatusConstants.Confirmed, BookingStatusConstants.Cancelled) => true,
+            (BookingStatusConstants.Confirmed, BookingStatusConstants.NoShow) => true,
+            
+            (BookingStatusConstants.CheckedIn, BookingStatusConstants.Completed) => true,
+            
+            _ => false
+        };
     }
 }

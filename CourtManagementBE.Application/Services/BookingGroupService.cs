@@ -50,54 +50,39 @@ public class BookingGroupService : BaseService, IBookingGroupService
         return Success(_mapper.Map<BookingGroupResponse>(entity));
     }
 
-    public async Task<Result<BookingGroupResponse>> Create(BookingGroupRequest request)
+    public async Task<Result<string>> Create(BookingGroupRequest request)
     {
         if (request.FacilityID.HasValue && !CanAccessFacility(request.FacilityID.Value))
-            return Unauthorized<BookingGroupResponse>("Bạn không có quyền thao tác trên cơ sở này.");
+            return Unauthorized<string>("Bạn không có quyền thao tác trên cơ sở này.");
 
-        var entity = _mapper.Map<BookingGroups>(request);
-        entity.CreatedDate = DateTimeOffset.UtcNow;
-        entity.ModifiedDate = DateTimeOffset.UtcNow;
-        entity.CreatedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-        entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-
-        await _unitOfWork.BeginTransactionAsync();
-        try
+        if (request.RecurringConfig is null)
         {
-            await _unitOfWork.IBookingGroupRepository.Add(entity);
-            await _unitOfWork.SaveChangesAsync();
-
-            // Nếu là dạng lịch định kỳ, lưu thêm RecurringConfig và tự động sinh Bookings
-            if (request.GroupType.Equals("recurring", StringComparison.OrdinalIgnoreCase) && request.RecurringConfig is not null)
-            {
-                var config = _mapper.Map<RecurringConfigs>(request.RecurringConfig);
-                config.BookingGroupID = entity.BookingGroupID;
-                await _unitOfWork.IRecurringConfigRepository.Add(config);
-                await _unitOfWork.SaveChangesAsync();
-
-                // Sinh các bookings con và check trùng lịch
-                var generateResult = await GenerateBookingsForRecurringConfig(entity, config);
-                if (!generateResult.IsSuccess)
-                {
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return BadRequest<BookingGroupResponse>(generateResult.Message);
-                }
-            }
-
-            await _unitOfWork.CommitTransactionAsync();
-
-            // Tải lại thực thể đầy đủ để trả về
-            var resultEntity = await _unitOfWork.IBookingGroupRepository.FindFirst(
-                x => x.BookingGroupID == entity.BookingGroupID,
-                include: q => q.Include(x => x.RecurringConfig!));
-
-            return Success(_mapper.Map<BookingGroupResponse>(resultEntity));
+            return BadRequest<string>("Thiếu cấu hình lịch định kỳ.");
         }
-        catch
+
+        var createdBy = _currentUser?.UserId?.ToString() ?? "system";
+        var startDate = request.RecurringConfig.StartDate.ToDateTime(TimeOnly.MinValue);
+        var endDate = request.RecurringConfig.EndDate.ToDateTime(TimeOnly.MinValue);
+
+        var errorMessage = await _unitOfWork.IBookingGroupRepository.CreateRecurringBookingGroupAsync(
+            request.CustomerID ?? 0,
+            request.FacilityID ?? 0,
+            request.RecurringConfig.CourtID,
+            startDate,
+            endDate,
+            request.RecurringConfig.StartTime,
+            request.RecurringConfig.EndTime,
+            request.RecurringConfig.DaysOfWeek,
+            createdBy,
+            request.Note
+        );
+
+        if (!string.IsNullOrEmpty(errorMessage))
         {
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
+            return BadRequest<string>(errorMessage);
         }
+
+        return Created<string>("Tạo nhóm đặt sân thành công.");
     }
 
     public async Task<Result<BookingGroupResponse>> Update(int id, BookingGroupRequest request)
@@ -109,6 +94,8 @@ public class BookingGroupService : BaseService, IBookingGroupService
         if (entity is null) return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân.");
         if (entity.FacilityID.HasValue && !CanAccessFacility(entity.FacilityID.Value))
             return Unauthorized<BookingGroupResponse>("Bạn không có quyền cập nhật nhóm đặt sân này.");
+        if (request.RecurringConfig is null)
+            return BadRequest<BookingGroupResponse>("Thiếu cấu hình lịch định kỳ.");
 
         _mapper.Map(request, entity);
         entity.ModifiedDate = DateTimeOffset.UtcNow;
@@ -119,53 +106,44 @@ public class BookingGroupService : BaseService, IBookingGroupService
         {
             _unitOfWork.IBookingGroupRepository.Update(entity);
 
-            // Nếu là dạng lịch định kỳ và thay đổi cấu hình
-            if (request.GroupType.Equals("recurring", StringComparison.OrdinalIgnoreCase) && request.RecurringConfig is not null)
+            // 1. Xóa toàn bộ booking tương lai chưa thanh toán/hoàn thành của nhóm này trước khi sinh lại
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)).ToDateTime(TimeOnly.MinValue);
+            var existingBookings = await _unitOfWork.IBookingRepository.FindList(x =>
+                x.BookingGroupID == entity.BookingGroupID &&
+                x.BookingDate >= today &&
+                x.Status != BookingStatusConstants.Cancelled &&
+                x.Status != BookingStatusConstants.Completed);
+
+            foreach (var b in existingBookings)
             {
-                // 1. Xóa toàn bộ booking tương lai chưa thanh toán/hoàn thành của nhóm này trước khi sinh lại
-                var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)).ToDateTime(TimeOnly.MinValue);
-                var existingBookings = await _unitOfWork.IBookingRepository.FindList(x =>
-                    x.BookingGroupID == entity.BookingGroupID &&
-                    x.BookingDate >= today &&
-                    x.Status != BookingStatusConstants.Cancelled &&
-                    x.Status != BookingStatusConstants.Completed);
-
-                foreach (var b in existingBookings)
-                {
-                    var slots = await _unitOfWork.IBookingSlotRepository.FindList(s => s.BookingID == b.BookingID);
-                    if (slots.Count > 0) _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
-                    _unitOfWork.IBookingRepository.Remove(b);
-                }
-                await _unitOfWork.SaveChangesAsync();
-
-                // 2. Cập nhật cấu hình lặp
-                RecurringConfigs config;
-                if (entity.RecurringConfig is not null)
-                {
-                    _mapper.Map(request.RecurringConfig, entity.RecurringConfig);
-                    _unitOfWork.IRecurringConfigRepository.Update(entity.RecurringConfig);
-                    config = entity.RecurringConfig;
-                }
-                else
-                {
-                    config = _mapper.Map<RecurringConfigs>(request.RecurringConfig);
-                    config.BookingGroupID = entity.BookingGroupID;
-                    await _unitOfWork.IRecurringConfigRepository.Add(config);
-                }
-                await _unitOfWork.SaveChangesAsync();
-
-                // 3. Sinh lịch mới và kiểm tra trùng
-                var generateResult = await GenerateBookingsForRecurringConfig(entity, config);
-                if (!generateResult.IsSuccess)
-                {
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return BadRequest<BookingGroupResponse>(generateResult.Message);
-                }
+                var slots = await _unitOfWork.IBookingSlotRepository.FindList(s => s.BookingID == b.BookingID);
+                if (slots.Count > 0) _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+                _unitOfWork.IBookingRepository.Remove(b);
             }
-            else if (!request.GroupType.Equals("recurring", StringComparison.OrdinalIgnoreCase) && entity.RecurringConfig is not null)
+            await _unitOfWork.SaveChangesAsync();
+
+            // 2. Cập nhật cấu hình lặp
+            RecurringConfigs config;
+            if (entity.RecurringConfig is not null)
             {
-                // Xóa cấu hình lặp cũ nếu chuyển loại nhóm khác
-                _unitOfWork.IRecurringConfigRepository.Remove(entity.RecurringConfig);
+                _mapper.Map(request.RecurringConfig, entity.RecurringConfig);
+                _unitOfWork.IRecurringConfigRepository.Update(entity.RecurringConfig);
+                config = entity.RecurringConfig;
+            }
+            else
+            {
+                config = _mapper.Map<RecurringConfigs>(request.RecurringConfig);
+                config.BookingGroupID = entity.BookingGroupID;
+                await _unitOfWork.IRecurringConfigRepository.Add(config);
+            }
+            await _unitOfWork.SaveChangesAsync();
+
+            // 3. Sinh lịch mới và kiểm tra trùng
+            var generateResult = await GenerateBookingsForRecurringConfig(entity, config);
+            if (!generateResult.IsSuccess)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return BadRequest<BookingGroupResponse>(generateResult.Message);
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -340,6 +318,21 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 }
             }
 
+            // Tính toán giá tiền thực tế cho buổi đặt này theo các slot
+            var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(config.CourtID, targetDateTime);
+            decimal bookingTotalAmount = 0;
+            var matchedSlots = availability.Where(x =>
+                TimeSpan.TryParse(x.StartTime, out var slotStart) &&
+                TimeSpan.TryParse(x.EndTime, out var slotEnd) &&
+                TrimToSecond(slotStart) >= TrimToSecond(config.StartTime) &&
+                TrimToSecond(slotEnd) <= TrimToSecond(config.EndTime)
+            ).ToList();
+
+            if (matchedSlots.Count > 0)
+            {
+                bookingTotalAmount = matchedSlots.Sum(s => s.Price);
+            }
+
             var bookingId = Guid.NewGuid();
             var booking = new Bookings
             {
@@ -351,8 +344,8 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 StartTime = config.StartTime,
                 EndTime = config.EndTime,
                 Status = BookingStatusConstants.Confirmed,
-                Note = $"[Đặt định kỳ] Nhóm: {group.GroupName}",
-                TotalAmount = 0,
+                Note = $"[Đặt định kỳ] Nhóm ID: #{group.BookingGroupID}",
+                TotalAmount = bookingTotalAmount,
                 CreatedDate = DateTimeOffset.UtcNow,
                 ModifiedDate = DateTimeOffset.UtcNow,
                 CreatedBy = _currentUser?.UserId?.ToString() ?? "system",
@@ -379,10 +372,18 @@ public class BookingGroupService : BaseService, IBookingGroupService
         }
 
         await _unitOfWork.IBookingSlotRepository.AddRange(newSlots);
+
+        // Tự động tính toán tổng tiền cho Nhóm Đặt Sân dựa trên các booking thực tế được sinh ra
+        group.TotalAmount = newBookings.Sum(x => x.TotalAmount);
+        _unitOfWork.IBookingGroupRepository.Update(group);
+
         await _unitOfWork.SaveChangesAsync();
 
         return Success(true);
     }
+
+    private static TimeSpan TrimToSecond(TimeSpan value)
+        => new(value.Days, value.Hours, value.Minutes, value.Seconds);
 
     private static HashSet<int> ParseDaysOfWeek(string daysOfWeek)
     {

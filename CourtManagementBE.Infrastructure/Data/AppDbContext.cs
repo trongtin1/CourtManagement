@@ -333,7 +333,7 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.BookingDate);
 
             e.HasOne(x => x.BookingGroup)
-                .WithMany(x => x.Bookings)
+                .WithMany()
                 .HasForeignKey(x => x.BookingGroupID)
                 .OnDelete(DeleteBehavior.SetNull);
 
@@ -373,7 +373,6 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.BookingGroupID);
             e.Property(x => x.GroupType).HasColumnType("varchar(30)").IsRequired();
-            e.Property(x => x.GroupName).HasColumnType("nvarchar(200)").IsRequired();
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.Status)
@@ -397,11 +396,6 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.Facility)
                 .WithMany()
                 .HasForeignKey(x => x.FacilityID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            e.HasOne(x => x.Combo)
-                .WithMany()
-                .HasForeignKey(x => x.ComboID)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

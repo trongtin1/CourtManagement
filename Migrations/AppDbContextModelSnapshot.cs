@@ -230,10 +230,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -255,9 +251,6 @@ namespace CourtManagementBE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingGroupID"));
 
-                    b.Property<int?>("ComboID")
-                        .HasColumnType("int");
-
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
@@ -270,10 +263,6 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<int?>("FacilityID")
                         .HasColumnType("int");
-
-                    b.Property<string>("GroupName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("GroupType")
                         .IsRequired()
@@ -301,8 +290,6 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("BookingGroupID");
-
-                    b.HasIndex("ComboID");
 
                     b.HasIndex("CustomerID");
 
@@ -387,10 +374,6 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<int>("ServiceID")
                         .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -2033,11 +2016,6 @@ namespace CourtManagementBE.Migrations
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
                 {
-                    b.HasOne("CourtManagementBE.Domain.Entities.Combos", "Combo")
-                        .WithMany()
-                        .HasForeignKey("ComboID")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("CourtManagementBE.Domain.Entities.Customers", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerID")
@@ -2047,8 +2025,6 @@ namespace CourtManagementBE.Migrations
                         .WithMany()
                         .HasForeignKey("FacilityID")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Combo");
 
                     b.Navigation("Customer");
 
@@ -2087,7 +2063,7 @@ namespace CourtManagementBE.Migrations
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Bookings", b =>
                 {
                     b.HasOne("CourtManagementBE.Domain.Entities.BookingGroups", "BookingGroup")
-                        .WithMany("Bookings")
+                        .WithMany()
                         .HasForeignKey("BookingGroupID")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -2259,8 +2235,6 @@ namespace CourtManagementBE.Migrations
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.BookingGroups", b =>
                 {
-                    b.Navigation("Bookings");
-
                     b.Navigation("RecurringConfig");
                 });
 

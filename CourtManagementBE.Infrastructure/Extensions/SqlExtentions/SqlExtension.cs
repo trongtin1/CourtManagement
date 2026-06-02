@@ -20,6 +20,36 @@ namespace CourtManagementBE.Infrastructure.Extensions.SqlExtentions
             return data;
         }
 
+        public static DataTable ToDataTable<T>(this IEnumerable<T> items, Action<DataRow, T>? customMap = null)
+        {
+            DataTable dt = new();
+            PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (PropertyInfo prop in properties)
+            {
+                Type propType = prop.PropertyType;
+                if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    propType = Nullable.GetUnderlyingType(propType)!;
+                }
+                dt.Columns.Add(prop.Name, propType);
+            }
+
+            foreach (T item in items)
+            {
+                DataRow row = dt.NewRow();
+                foreach (PropertyInfo prop in properties)
+                {
+                    row[prop.Name] = prop.GetValue(item) ?? DBNull.Value;
+                }
+
+                customMap?.Invoke(row, item);
+                dt.Rows.Add(row);
+            }
+
+            return dt;
+        }
+
         public static List<dynamic> ToDynamic(DataTable dt)
         {
             var numericTypes = new[] { typeof(Byte), typeof(Decimal), typeof(Double),
