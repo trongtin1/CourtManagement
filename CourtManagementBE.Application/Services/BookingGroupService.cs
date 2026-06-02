@@ -341,8 +341,6 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 CustomerID = group.CustomerID ?? 0,
                 BookingGroupID = group.BookingGroupID,
                 BookingDate = targetDateTime,
-                StartTime = config.StartTime,
-                EndTime = config.EndTime,
                 Status = BookingStatusConstants.Confirmed,
                 Note = $"[Đặt định kỳ] Nhóm ID: #{group.BookingGroupID}",
                 TotalAmount = bookingTotalAmount,

@@ -318,8 +318,6 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.BookingID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
-            e.Property(x => x.StartTime).HasColumnType("time(7)").IsRequired();
-            e.Property(x => x.EndTime).HasColumnType("time(7)").IsRequired();
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
             e.Property(x => x.Status)

@@ -12,10 +12,6 @@ public class Bookings
     public int CustomerID { get; set; }
     public DateTime BookingDate { get; set; }
 
-    // 🆕 Giờ bắt đầu/kết thúc trực tiếp tại Booking để tối ưu hiệu năng
-    public TimeSpan StartTime { get; set; }
-    public TimeSpan EndTime { get; set; }
-
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; } = 0;
 

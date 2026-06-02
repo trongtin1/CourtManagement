@@ -494,9 +494,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<int>("CustomerID")
                         .HasColumnType("int");
 
-                    b.Property<TimeSpan>("EndTime")
-                        .HasColumnType("time(7)");
-
                     b.Property<string>("ModifiedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -512,9 +509,6 @@ namespace CourtManagementBE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(18,2)")
                         .HasDefaultValue(0m);
-
-                    b.Property<TimeSpan>("StartTime")
-                        .HasColumnType("time(7)");
 
                     b.Property<string>("Status")
                         .IsRequired()

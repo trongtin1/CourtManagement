@@ -14,8 +14,6 @@ export type Booking = {
   cancellationReason: string
   cancelledAt: string | null
   createdDate: string
-  startTime?: string
-  endTime?: string
   paidAmount?: number
   bookingSlots?: BookingSlot[]
   bookingServices?: BookingService[]

@@ -660,8 +660,8 @@ public class BookingService : BaseService, IBookingService
         {
             var oldCourtId = booking.CourtID;
             var oldBookingDate = booking.BookingDate;
-            var oldStartTime = booking.StartTime;
-            var oldEndTime = booking.EndTime;
+            var oldStartTime = myOldSlots.Count > 0 ? myOldSlots.Min(x => x.StartTime) : TimeSpan.Zero;
+            var oldEndTime = myOldSlots.Count > 0 ? myOldSlots.Max(x => x.EndTime) : TimeSpan.Zero;
             var oldTotalAmount = booking.TotalAmount;
 
             if (myOldSlots.Count > 0)
@@ -673,8 +673,6 @@ public class BookingService : BaseService, IBookingService
 
             booking.CourtID = request.CourtID;
             booking.BookingDate = bookingDate;
-            booking.StartTime = requestedSlot.StartTime;
-            booking.EndTime = requestedSlot.EndTime;
             booking.TotalAmount = courtTotal + serviceTotal;
             booking.ModifiedDate = DateTimeOffset.UtcNow;
 
@@ -685,8 +683,8 @@ public class BookingService : BaseService, IBookingService
                 bookingId: id,
                 action: "RESCHEDULE",
                 oldValue: $"CourtID: {oldCourtId}, Date: {oldBookingDate:yyyy-MM-dd}, Time: {oldStartTime}-{oldEndTime}, Price: {oldTotalAmount}",
-                newValue: $"CourtID: {booking.CourtID}, Date: {booking.BookingDate:yyyy-MM-dd}, Time: {booking.StartTime}-{booking.EndTime}, Price: {booking.TotalAmount}",
-                note: $"Dời lịch đặt sân sang sân {booking.CourtID} ngày {booking.BookingDate:yyyy-MM-dd} từ {booking.StartTime} đến {booking.EndTime}"
+                newValue: $"CourtID: {booking.CourtID}, Date: {booking.BookingDate:yyyy-MM-dd}, Time: {requestedSlot.StartTime}-{requestedSlot.EndTime}, Price: {booking.TotalAmount}",
+                note: $"Dời lịch đặt sân sang sân {booking.CourtID} ngày {booking.BookingDate:yyyy-MM-dd} từ {requestedSlot.StartTime} đến {requestedSlot.EndTime}"
             );
 
             await _unitOfWork.SaveChangesAsync();
