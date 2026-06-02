@@ -342,7 +342,6 @@ public class BookingService : BaseService, IBookingService
 
         entity.Status = BookingStatusConstants.Cancelled;
         entity.CancellationReason = request.CancellationReason;
-        entity.CancelledAt = DateTimeOffset.UtcNow;
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
 
@@ -413,7 +412,6 @@ public class BookingService : BaseService, IBookingService
             // Nếu chuyển sang Cancelled, dọn dẹp slots và hoàn trả kho
             if (newStatus == BookingStatusConstants.Cancelled)
             {
-                entity.CancelledAt = DateTimeOffset.UtcNow;
                 var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
                 if (slots.Count > 0)
                 {

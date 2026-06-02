@@ -25,7 +25,6 @@ public class Bookings
     public int? BookingGroupID { get; set; } // FK tới BookingGroups (null nếu đặt lẻ)
 
     public string Note { get; set; } = string.Empty;
-    public DateTimeOffset? CancelledAt { get; set; }
     public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
     public DateTimeOffset ModifiedDate { get; set; } = DateTimeOffset.UtcNow;

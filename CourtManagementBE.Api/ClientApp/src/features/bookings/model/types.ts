@@ -12,7 +12,6 @@ export type Booking = {
   status: BookingStatusValue
   note: string
   cancellationReason: string
-  cancelledAt: string | null
   createdDate: string
   paidAmount?: number
   bookingSlots?: BookingSlot[]

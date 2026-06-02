@@ -191,7 +191,6 @@ public class BookingGroupService : BaseService, IBookingGroupService
             {
                 booking.Status = BookingStatusConstants.Cancelled;
                 booking.CancellationReason = $"Hủy theo nhóm đặt sân: {reason}";
-                booking.CancelledAt = DateTimeOffset.UtcNow;
                 booking.ModifiedDate = DateTimeOffset.UtcNow;
                 booking.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
 

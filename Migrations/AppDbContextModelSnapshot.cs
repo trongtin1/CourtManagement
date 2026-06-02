@@ -478,9 +478,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<int?>("CancellationReasonID")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<int>("CourtID")
                         .HasColumnType("int");
 
