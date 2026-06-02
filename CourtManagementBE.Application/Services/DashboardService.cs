@@ -16,13 +16,13 @@ public class DashboardService : BaseService, IDashboardService
 
     public async Task<Result<DashboardSummaryResponse>> GetSummary()
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var courtIds = await GetScopedCourtIds();
 
         var activeBookings = await _unitOfWork.IBookingRepository.Count(
             x => x.Status != BookingStatusConstants.Cancelled && courtIds.Contains(x.CourtID));
         var bookingsToday = await _unitOfWork.IBookingRepository.Count(
-            x => x.BookingDate.Date == today && courtIds.Contains(x.CourtID));
+            x => x.BookingDate == today && courtIds.Contains(x.CourtID));
         var registeredUsers = _currentUser?.IsSuperAdmin == true
             ? await _unitOfWork.IAuthRepository.Count(_ => true)
             : await _unitOfWork.IAuthRepository.Count(x => x.FacilityID == WorkingFacilityId);

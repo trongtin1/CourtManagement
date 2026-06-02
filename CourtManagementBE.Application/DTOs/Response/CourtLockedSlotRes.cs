@@ -5,7 +5,7 @@ public class CourtLockedSlotResponse
     public int CourtLockedSlotID { get; set; }
     public int CourtID { get; set; }
     public int? DayOfWeek { get; set; }
-    public DateTime? SpecificDate { get; set; }
+    public DateOnly? SpecificDate { get; set; }
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
     public bool IsWeekly { get; set; }

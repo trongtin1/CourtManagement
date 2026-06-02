@@ -30,8 +30,8 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
         if (!await CanAccessCourt(courtId))
             return Unauthorized<List<CourtLockedSlotResponse>>("Bạn không có quyền truy cập sân này.");
 
-        DateTime? dateOnly = targetDate?.Date;
-        int? dayOfWeek = dateOnly.HasValue ? (int)dateOnly.Value.DayOfWeek : null;
+        DateOnly? dateOnly = targetDate.HasValue ? DateOnly.FromDateTime(targetDate.Value) : null;
+        int? dayOfWeek = targetDate.HasValue ? (int)targetDate.Value.DayOfWeek : null;
 
         var list = await _unitOfWork.ICourtLockedSlotRepository.FindList(x =>
             x.CourtID == courtId
@@ -47,8 +47,8 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
         if (!await CanAccessCourt(courtId))
             return Unauthorized<List<CourtLockedSlotResponse>>("Bạn không có quyền truy cập sân này.");
 
-        var date = targetDate.Date;
-        var day = (int)date.DayOfWeek;
+        var date = DateOnly.FromDateTime(targetDate);
+        var day = (int)targetDate.DayOfWeek;
 
         var list = await _unitOfWork.ICourtLockedSlotRepository.FindList(x =>
             x.CourtID == courtId
@@ -142,10 +142,6 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
         else
         {
             request.DayOfWeek = null;
-            if (request.SpecificDate.HasValue)
-            {
-                request.SpecificDate = request.SpecificDate.Value.Date;
-            }
         }
     }
 
@@ -177,13 +173,15 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
 
     private async Task<Result<CourtLockedSlotResponse>?> ValidateOverlap(CourtLockedSlotRequest request, int? excludeId = null)
     {
+        var requestSpecificDateOnly = request.SpecificDate;
+
         var overlaps = await _unitOfWork.ICourtLockedSlotRepository.FindList(x =>
             x.CourtID == request.CourtID
             && (!excludeId.HasValue || x.CourtLockedSlotID != excludeId.Value)
             && x.IsWeekly == request.IsWeekly
             && (
                 (request.IsWeekly && x.DayOfWeek == request.DayOfWeek)
-                || (!request.IsWeekly && x.SpecificDate == request.SpecificDate)
+                || (!request.IsWeekly && x.SpecificDate == requestSpecificDateOnly)
             )
             && x.StartTime < request.EndTime
             && x.EndTime > request.StartTime);

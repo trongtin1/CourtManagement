@@ -390,8 +390,8 @@ namespace CourtManagementBE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
-                    b.Property<DateTime>("BookingDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("BookingDate")
+                        .HasColumnType("date");
 
                     b.Property<Guid>("BookingID")
                         .HasColumnType("uniqueidentifier");
@@ -465,8 +465,8 @@ namespace CourtManagementBE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("BookingDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("BookingDate")
+                        .HasColumnType("date");
 
                     b.Property<int?>("BookingGroupID")
                         .HasColumnType("int");
@@ -967,7 +967,7 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<DateTime?>("SpecificDate")
+                    b.Property<DateOnly?>("SpecificDate")
                         .HasColumnType("date");
 
                     b.Property<TimeSpan>("StartTime")
@@ -1420,6 +1420,12 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<int>("SlotDurationMinutes")
                         .HasColumnType("int");
+
+                    b.Property<string>("Timezone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Asia/Ho_Chi_Minh");
 
                     b.HasKey("FacilityID");
 

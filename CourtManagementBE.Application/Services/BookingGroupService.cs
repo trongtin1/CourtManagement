@@ -107,7 +107,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
             _unitOfWork.IBookingGroupRepository.Update(entity);
 
             // 1. Xóa toàn bộ booking tương lai chưa thanh toán/hoàn thành của nhóm này trước khi sinh lại
-            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)).ToDateTime(TimeOnly.MinValue);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
             var existingBookings = await _unitOfWork.IBookingRepository.FindList(x =>
                 x.BookingGroupID == entity.BookingGroupID &&
                 x.BookingDate >= today &&
@@ -301,7 +301,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
             // Truy vấn slot trùng giờ trên cùng một CourtID tại ngày này
             var overlappingSlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
                 x.CourtID == config.CourtID &&
-                x.BookingDate.Date == targetDateTime.Date &&
+                x.BookingDate == targetDate &&
                 x.StartTime < config.EndTime &&
                 x.EndTime > config.StartTime
             );
@@ -340,7 +340,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 CourtID = config.CourtID,
                 CustomerID = group.CustomerID ?? 0,
                 BookingGroupID = group.BookingGroupID,
-                BookingDate = targetDateTime,
+                BookingDate = targetDate,
                 Status = BookingStatusConstants.Confirmed,
                 Note = $"[Đặt định kỳ] Nhóm ID: #{group.BookingGroupID}",
                 TotalAmount = bookingTotalAmount,
@@ -354,7 +354,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
             {
                 BookingID = bookingId,
                 CourtID = config.CourtID,
-                BookingDate = targetDateTime,
+                BookingDate = targetDate,
                 StartTime = config.StartTime,
                 EndTime = config.EndTime
             };

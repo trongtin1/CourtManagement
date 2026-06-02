@@ -583,7 +583,7 @@ public static class AppDbSeeder
             return;
         }
 
-        var bookingDate = DateTime.Today.AddDays(1);
+        var bookingDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
         var court = courts.OrderBy(x => x.SortOrder).First();
         var startTime = new TimeSpan(6, 0, 0);
         var endTime = new TimeSpan(8, 0, 0);

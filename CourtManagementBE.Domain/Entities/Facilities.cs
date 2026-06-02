@@ -16,5 +16,6 @@ public class Facilities
     public string ImageURL { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public DateTimeOffset CreateDate { get; set; } = DateTimeOffset.UtcNow;
+    public string Timezone { get; set; } = "Asia/Ho_Chi_Minh";
     public bool IsActive { get; set; } = true;
 }

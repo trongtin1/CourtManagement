@@ -112,6 +112,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Email).HasColumnType("varchar(255)");
             e.Property(x => x.ImageURL).HasColumnType("nvarchar(500)");
             e.Property(x => x.Description).HasColumnType("nvarchar(1000)");
+            e.Property(x => x.Timezone).HasColumnType("varchar(50)").HasDefaultValue("Asia/Ho_Chi_Minh").IsRequired();
         });
 
         // ── Areas ────────────────────────────────────────────────────────────
@@ -325,6 +326,7 @@ public class AppDbContext : DbContext
                 .IsRequired();
             e.Property(x => x.CancellationReason).HasColumnType("nvarchar(500)");
             e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            e.Property(x => x.BookingDate).HasColumnType("date");
 
             e.HasIndex(x => x.CustomerID);
             e.HasIndex(x => x.CourtID);
@@ -424,6 +426,7 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.ID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
+            e.Property(x => x.BookingDate).HasColumnType("date");
             // Unique: 1 sân + 1 ngày + 1 slot chỉ được đặt 1 lần
             e.HasIndex(x => new { x.CourtID, x.BookingDate, x.StartTime, x.EndTime }).IsUnique();
         });

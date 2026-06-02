@@ -77,4 +77,18 @@ public abstract class BaseService
         return courts.Select(x => x.CourtID).ToList();
     }
 
+    protected async Task<DateTime> GetFacilityLocalTime(int facilityId)
+    {
+        var facility = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == facilityId);
+        var timezoneId = facility?.Timezone ?? "Asia/Ho_Chi_Minh";
+        try
+        {
+            var zone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+        }
+        catch
+        {
+            return DateTime.UtcNow.AddHours(7);
+        }
+    }
 }

@@ -10,7 +10,7 @@ public class Bookings
     public Guid BookingID { get; set; } = Guid.NewGuid();
     public int CourtID { get; set; }
     public int CustomerID { get; set; }
-    public DateTime BookingDate { get; set; }
+    public DateOnly BookingDate { get; set; }
 
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; } = 0;

@@ -8,7 +8,7 @@ public class BookingResponse
     public Guid BookingID { get; set; }
     public int CourtID { get; set; }
     public int CustomerID { get; set; }
-    public DateTime BookingDate { get; set; }
+    public DateOnly BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public string Status { get; set; } = string.Empty;

@@ -55,7 +55,8 @@ public class BookingService : BaseService, IBookingService
     public async Task<Result<List<BookingResponse>>> GetByDate(DateTime date)
     {
         var courtIds = await GetScopedCourtIds();
-        var list = await _unitOfWork.IBookingRepository.FindList(x => x.BookingDate.Date == date.Date && courtIds.Contains(x.CourtID));
+        var dateOnly = DateOnly.FromDateTime(date);
+        var list = await _unitOfWork.IBookingRepository.FindList(x => x.BookingDate == dateOnly && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingResponse>>(list));
     }
 
@@ -114,7 +115,7 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>("Khách hàng không tồn tại.");
         }
 
-        var bookingDate = request.BookingDate.Date;
+        var bookingDate = request.BookingDate;
         var normalizedSlots = request.Slots
             .Select(x => new CreateFullBookingSlotRequest
             {
@@ -138,7 +139,7 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>("Các khung giờ được chọn bị trùng nhau.");
         }
 
-        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate);
+        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate.ToDateTime(TimeOnly.MinValue));
         decimal courtTotal = 0;
         foreach (var requestedSlot in normalizedSlots)
         {
@@ -162,7 +163,7 @@ public class BookingService : BaseService, IBookingService
         }
 
         var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
-            x.CourtID == request.CourtID && x.BookingDate.Date == bookingDate);
+            x.CourtID == request.CourtID && x.BookingDate == bookingDate);
         var existingSlots = sameDaySlots
             .Where(x => normalizedSlots.Any(slot => slot.StartTime < x.EndTime && slot.EndTime > x.StartTime))
             .ToList();
@@ -555,7 +556,7 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>("Sân không tồn tại hoặc đang ngừng hoạt động.");
         }
 
-        var bookingDate = request.BookingDate.Date;
+        var bookingDate = request.BookingDate;
         var requestedSlot = new CreateFullBookingSlotRequest
         {
             StartTime = TrimToSecond(request.StartTime),
@@ -570,7 +571,7 @@ public class BookingService : BaseService, IBookingService
         var myOldSlots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
 
         var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
-            x.CourtID == request.CourtID && x.BookingDate.Date == bookingDate && x.BookingID != id);
+            x.CourtID == request.CourtID && x.BookingDate == bookingDate && x.BookingID != id);
         var existingSlots = sameDaySlots
             .Where(x => requestedSlot.StartTime < x.EndTime && requestedSlot.EndTime > x.StartTime)
             .ToList();
@@ -580,7 +581,7 @@ public class BookingService : BaseService, IBookingService
             return Conflict<BookingResponse>("Một hoặc nhiều khung giờ mới đã được đặt bởi booking khác.");
         }
 
-        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate);
+        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate.ToDateTime(TimeOnly.MinValue));
         decimal courtTotal = 0;
         var matchedSlots = availability
             .Where(x =>
@@ -613,7 +614,7 @@ public class BookingService : BaseService, IBookingService
             bool isLocked = matchedSlot.IsLocked;
             bool isBookedByOther = matchedSlot.IsBooked && !myOldSlots.Any(x =>
                 x.CourtID == request.CourtID &&
-                x.BookingDate.Date == bookingDate &&
+                x.BookingDate == bookingDate &&
                 TrimToSecond(x.StartTime) == slotStart &&
                 TrimToSecond(x.EndTime) == slotEnd);
 

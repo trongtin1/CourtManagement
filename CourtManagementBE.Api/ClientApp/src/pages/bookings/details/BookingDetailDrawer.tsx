@@ -481,12 +481,7 @@ export function BookingDetailDrawer({
           <CalendarOutlined /> Ngày đặt
         </span>
         <span className="text-xs text-slate-800 font-bold">
-          {new Date(selectedBooking.bookingDate).toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          })}
+          {dayjs(selectedBooking.bookingDate).format('dddd, DD/MM/YYYY')}
         </span>
       </div>
       <div className="flex justify-between items-center py-2 border-b border-slate-50">

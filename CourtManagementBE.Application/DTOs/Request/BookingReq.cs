@@ -6,7 +6,7 @@ public class BookingRequest
 {
     [Required] public int CourtID { get; set; }
     [Required] public int CustomerID { get; set; }
-    [Required] public DateTime BookingDate { get; set; }
+    [Required] public DateOnly BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
@@ -18,7 +18,7 @@ public class CreateFullBookingRequest
 {
     [Required] public int CourtID { get; set; }
     [Required] public int CustomerID { get; set; }
-    [Required] public DateTime BookingDate { get; set; }
+    [Required] public DateOnly BookingDate { get; set; }
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
     public List<CreateFullBookingSlotRequest> Slots { get; set; } = [];
     public List<CreateFullBookingServiceRequest> Services { get; set; } = [];
@@ -46,7 +46,7 @@ public class CreateFullBookingServiceRequest
 public class RescheduleBookingRequest
 {
     [Required] public int CourtID { get; set; }
-    [Required] public DateTime BookingDate { get; set; }
+    [Required] public DateOnly BookingDate { get; set; }
     [Required] public TimeSpan StartTime { get; set; }
     [Required] public TimeSpan EndTime { get; set; }
 }

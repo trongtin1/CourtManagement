@@ -22,14 +22,16 @@ public class BookingSlotService : BaseService, IBookingSlotService
     public async Task<Result<List<BookingSlotResponse>>> GetByCourtAndDate(int courtId, DateTime date)
     {
         if (!await CanAccessCourt(courtId)) return Unauthorized<List<BookingSlotResponse>>("Bạn không có quyền truy cập sân này.");
-        var list = await _unitOfWork.IBookingSlotRepository.FindList(x => x.CourtID == courtId && x.BookingDate.Date == date.Date);
+        var dateOnly = DateOnly.FromDateTime(date);
+        var list = await _unitOfWork.IBookingSlotRepository.FindList(x => x.CourtID == courtId && x.BookingDate == dateOnly);
         return Success(_mapper.Map<List<BookingSlotResponse>>(list));
     }
 
     public async Task<Result<List<BookingSlotResponse>>> GetByDate(DateTime date)
     {
         var courtIds = await GetScopedCourtIds();
-        var list = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingDate.Date == date.Date && courtIds.Contains(x.CourtID));
+        var dateOnly = DateOnly.FromDateTime(date);
+        var list = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingDate == dateOnly && courtIds.Contains(x.CourtID));
         return Success(_mapper.Map<List<BookingSlotResponse>>(list));
     }
 
