@@ -625,7 +625,6 @@ public static class AppDbSeeder
             ServiceID = service.ServiceID,
             Quantity = serviceQuantity,
             UnitPrice = servicePrice,
-            DiscountAmount = 0,
             TotalAmount = serviceTotal,
             CreatedBy = AdminLogin,
             ModifiedBy = AdminLogin,

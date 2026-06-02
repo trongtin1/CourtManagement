@@ -30,7 +30,7 @@ public class BookingComboService : BaseService, IBookingComboService
         if (combo == null) return NotFound<BookingComboResponse>("Không tìm thấy combo.");
 
         var entity = _mapper.Map<BookingCombos>(request);
-        entity.TotalAmount = request.UnitPrice * request.Quantity - request.DiscountAmount;
+        entity.TotalAmount = request.UnitPrice * request.Quantity;
         entity.CreatedDate = DateTimeOffset.UtcNow;
 
         var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == request.BookingID);
@@ -57,7 +57,7 @@ public class BookingComboService : BaseService, IBookingComboService
 
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-        entity.TotalAmount = entity.UnitPrice * entity.Quantity - entity.DiscountAmount;
+        entity.TotalAmount = entity.UnitPrice * entity.Quantity;
 
         var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == entity.BookingID);
         if (booking != null)

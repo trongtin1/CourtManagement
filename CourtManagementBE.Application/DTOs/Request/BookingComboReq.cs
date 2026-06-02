@@ -8,7 +8,6 @@ public class BookingComboRequest
     [Required] public int ComboID { get; set; }
     [Required, Range(1, int.MaxValue)] public int Quantity { get; set; }
     [Required] public decimal UnitPrice { get; set; }
-    public decimal DiscountAmount { get; set; }
 }
 
 public class BookingComboBulkUpdateItemRequest
@@ -17,12 +16,10 @@ public class BookingComboBulkUpdateItemRequest
     public int ComboID { get; set; }
     [Required, Range(1, int.MaxValue)] public int Quantity { get; set; }
     [Required] public decimal UnitPrice { get; set; }
-    public decimal DiscountAmount { get; set; }
 }
 
 public class UpdateBookingComboRequest
 {
     [Required, Range(1, int.MaxValue)] public int Quantity { get; set; }
     public decimal? UnitPrice { get; set; }
-    public decimal? DiscountAmount { get; set; }
 }

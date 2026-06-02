@@ -10,7 +10,6 @@ public class BookingServices
     public int ServiceID { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
-    public decimal DiscountAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;

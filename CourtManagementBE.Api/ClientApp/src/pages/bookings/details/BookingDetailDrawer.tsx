@@ -185,7 +185,6 @@ export function BookingDetailDrawer({
       serviceID: ls.serviceID,
       quantity: ls.quantity,
       unitPrice: ls.unitPrice,
-      discountAmount: 0,
     }))
 
     bulkUpdateServiceMutation.mutate(
@@ -239,7 +238,6 @@ export function BookingDetailDrawer({
       comboID: lc.comboID,
       quantity: lc.quantity,
       unitPrice: lc.unitPrice,
-      discountAmount: 0,
     }))
 
     bulkUpdateComboMutation.mutate(

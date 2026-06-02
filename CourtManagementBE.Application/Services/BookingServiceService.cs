@@ -40,7 +40,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
         }
 
         var entity = _mapper.Map<BookingServices>(request);
-        entity.TotalAmount = request.UnitPrice * request.Quantity - request.DiscountAmount;
+        entity.TotalAmount = request.UnitPrice * request.Quantity;
         entity.CreatedDate = DateTimeOffset.UtcNow;
 
         var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == request.BookingID);
@@ -79,7 +79,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-        entity.TotalAmount = entity.UnitPrice * entity.Quantity - entity.DiscountAmount;
+        entity.TotalAmount = entity.UnitPrice * entity.Quantity;
 
         var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == entity.BookingID);
         if (booking != null)

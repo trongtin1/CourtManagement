@@ -217,9 +217,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<DateTimeOffset>("CreatedDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("ModifiedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -358,9 +355,6 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<DateTimeOffset>("CreatedDate")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ModifiedBy")
                         .IsRequired()

@@ -127,7 +127,6 @@ export type BookingService = {
   serviceID: number
   quantity: number
   unitPrice: number
-  discountAmount: number
   totalAmount: number
   createdDate: string
 }
@@ -138,7 +137,6 @@ export type BookingCombo = {
   comboID: number
   quantity: number
   unitPrice: number
-  discountAmount: number
   totalAmount: number
   createdDate: string
 }
@@ -148,13 +146,11 @@ export type CreateBookingComboRequest = {
   comboID: number
   quantity: number
   unitPrice?: number
-  discountAmount?: number
 }
 
 export type UpdateBookingComboRequest = {
   quantity: number
   unitPrice?: number
-  discountAmount?: number
 }
 
 export type BulkUpdateBookingComboItemRequest = {
@@ -162,7 +158,6 @@ export type BulkUpdateBookingComboItemRequest = {
   comboID: number
   quantity: number
   unitPrice: number
-  discountAmount?: number
 }
 
 export type CreateBookingServiceRequest = {
@@ -170,13 +165,11 @@ export type CreateBookingServiceRequest = {
   serviceID: number
   quantity: number
   unitPrice?: number
-  discountAmount?: number
 }
 
 export type UpdateBookingServiceRequest = {
   quantity: number
   unitPrice?: number
-  discountAmount?: number
 }
 
 export type BulkUpdateBookingServiceItemRequest = {
@@ -184,7 +177,6 @@ export type BulkUpdateBookingServiceItemRequest = {
   serviceID?: number
   quantity: number
   unitPrice: number
-  discountAmount?: number
 }
 
 export type BookingSlot = {

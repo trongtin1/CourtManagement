@@ -436,7 +436,6 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.BookingServiceID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
             e.Property(x => x.UnitPrice).HasColumnType("decimal(18,2)");
-            e.Property(x => x.DiscountAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
         });
 
@@ -446,7 +445,6 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.BookingComboID);
             e.Property(x => x.BookingID).HasColumnType("uniqueidentifier");
             e.Property(x => x.UnitPrice).HasColumnType("decimal(18,2)");
-            e.Property(x => x.DiscountAmount).HasColumnType("decimal(18,2)");
             e.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
         });
 

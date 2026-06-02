@@ -202,7 +202,6 @@ public class BookingService : BaseService, IBookingService
                 ComboID = requestedCombo.ComboID,
                 Quantity = requestedCombo.Quantity,
                 UnitPrice = combo.ComboPrice,
-                DiscountAmount = 0,
                 TotalAmount = lineTotal,
                 CreatedDate = DateTimeOffset.UtcNow,
                 ModifiedDate = DateTimeOffset.UtcNow
@@ -252,7 +251,6 @@ public class BookingService : BaseService, IBookingService
                 ServiceID = requestedService.ServiceID,
                 Quantity = requestedService.Quantity,
                 UnitPrice = price.Value,
-                DiscountAmount = 0,
                 TotalAmount = lineTotal,
                 CreatedDate = DateTimeOffset.UtcNow,
                 ModifiedDate = DateTimeOffset.UtcNow
