@@ -1,13 +1,13 @@
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'dbo.sp_BulkUpdateBookingServices') AND type in (N'P', N'PC'))
+IF OBJECT_ID(N'dbo.sp_BulkUpdateBookingServices', N'P') IS NOT NULL
 BEGIN
     DROP PROCEDURE dbo.sp_BulkUpdateBookingServices;
-END
+END;
 GO
 
-IF EXISTS (SELECT * FROM sys.types WHERE name = 'BookingServiceBulkUpdateType' AND is_table_type = 1)
+IF TYPE_ID(N'dbo.BookingServiceBulkUpdateType') IS NOT NULL
 BEGIN
     DROP TYPE dbo.BookingServiceBulkUpdateType;
-END
+END;
 GO
 
 CREATE TYPE dbo.BookingServiceBulkUpdateType AS TABLE
@@ -15,12 +15,11 @@ CREATE TYPE dbo.BookingServiceBulkUpdateType AS TABLE
     BookingServiceID INT NULL,
     ServiceID INT NOT NULL,
     Quantity INT NOT NULL,
-    UnitPrice DECIMAL(18,2) NOT NULL,
-    DiscountAmount DECIMAL(18,2) NOT NULL
+    UnitPrice DECIMAL(18,2) NOT NULL
 );
 GO
 
-CREATE PROCEDURE dbo.sp_BulkUpdateBookingServices
+CREATE OR ALTER PROCEDURE dbo.sp_BulkUpdateBookingServices
     @BookingID UNIQUEIDENTIFIER,
     @ModifiedBy NVARCHAR(100),
     @Requests dbo.BookingServiceBulkUpdateType READONLY,
@@ -33,105 +32,203 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- 1. Calculate stock differences for services that track stock
-        DECLARE @StockDiffs TABLE (
-            ServiceID INT,
-            Diff INT
+        DECLARE @Now DATETIMEOFFSET = SYSDATETIMEOFFSET();
+
+        ------------------------------------------------------------
+        -- 1. Tính thay đổi số lượng để cập nhật tồn kho
+        ------------------------------------------------------------
+        DECLARE @StockAdjustments TABLE
+        (
+            ServiceID INT NOT NULL,
+            QuantityChange INT NOT NULL
         );
 
-        INSERT INTO @StockDiffs (ServiceID, Diff)
-        SELECT 
-            COALESCE(r.ServiceID, e.ServiceID) AS ServiceID,
-            SUM(COALESCE(r.Quantity, 0) - COALESCE(e.Quantity, 0)) AS Diff
-        FROM (
-            SELECT * FROM dbo.BookingServices WHERE BookingID = @BookingID
-        ) e
-        FULL OUTER JOIN @Requests r ON e.BookingServiceID = r.BookingServiceID
-        GROUP BY COALESCE(r.ServiceID, e.ServiceID);
+        ;WITH CurrentBookingServices AS
+        (
+            SELECT
+                BookingServiceID,
+                ServiceID,
+                Quantity
+            FROM dbo.BookingServices
+            WHERE BookingID = @BookingID
+        ),
+        ComparedServices AS
+        (
+            SELECT
+                ISNULL(r.ServiceID, c.ServiceID) AS ServiceID,
+                ISNULL(r.Quantity, 0) AS NewQuantity,
+                ISNULL(c.Quantity, 0) AS OldQuantity
+            FROM CurrentBookingServices c
+            FULL OUTER JOIN @Requests r
+                ON c.BookingServiceID = r.BookingServiceID
+        )
+        INSERT INTO @StockAdjustments
+        (
+            ServiceID,
+            QuantityChange
+        )
+        SELECT
+            ServiceID,
+            SUM(NewQuantity - OldQuantity) AS QuantityChange
+        FROM ComparedServices
+        GROUP BY ServiceID;
 
-        -- Check if any service tracks stock and the diff causes an overdraft
-        DECLARE @InsufficientService NVARCHAR(200) = NULL;
-        DECLARE @AvailableStock INT = 0;
+        ------------------------------------------------------------
+        -- 2. Kiểm tra tồn kho có đủ không
+        ------------------------------------------------------------
+        DECLARE @InsufficientService NVARCHAR(200);
+        DECLARE @AvailableStock INT;
 
-        SELECT TOP 1 
+        SELECT TOP 1
             @InsufficientService = s.ServiceName,
             @AvailableStock = s.StockQuantity
-        FROM @StockDiffs sd
-        INNER JOIN dbo.Services s ON sd.ServiceID = s.ServiceID
-        WHERE s.IsTrackStock = 1 AND sd.Diff > 0 AND s.StockQuantity < sd.Diff;
+        FROM @StockAdjustments sa
+        INNER JOIN dbo.Services s
+            ON sa.ServiceID = s.ServiceID
+        WHERE s.IsTrackStock = 1
+          AND sa.QuantityChange > 0
+          AND s.StockQuantity < sa.QuantityChange;
 
         IF @InsufficientService IS NOT NULL
         BEGIN
-            SET @ErrorMessage = N'Dịch vụ ' + @InsufficientService + N' không đủ tồn kho (Hiện còn: ' + CAST(@AvailableStock AS NVARCHAR(10)) + N').';
+            SET @ErrorMessage =
+                N'Dịch vụ ' + @InsufficientService
+                + N' không đủ tồn kho (Hiện còn: '
+                + CAST(@AvailableStock AS NVARCHAR(10))
+                + N').';
+
             ROLLBACK TRANSACTION;
             RETURN;
-        END
+        END;
 
-        -- Update stock for services with a non-zero difference
+        ------------------------------------------------------------
+        -- 3. Cập nhật tồn kho
+        -- QuantityChange > 0: trừ tồn kho
+        -- QuantityChange < 0: cộng lại tồn kho
+        ------------------------------------------------------------
         UPDATE s
-        SET s.StockQuantity = s.StockQuantity - sd.Diff,
-            s.ModifiedDate = SYSDATETIMEOFFSET(),
+        SET
+            s.StockQuantity = s.StockQuantity - sa.QuantityChange,
+            s.ModifiedDate = @Now,
             s.ModifiedBy = @ModifiedBy
         FROM dbo.Services s
-        INNER JOIN @StockDiffs sd ON s.ServiceID = sd.ServiceID
-        WHERE s.IsTrackStock = 1 AND sd.Diff <> 0;
+        INNER JOIN @StockAdjustments sa
+            ON s.ServiceID = sa.ServiceID
+        WHERE s.IsTrackStock = 1
+          AND sa.QuantityChange <> 0;
 
-        -- 2. Process deletions
-        DECLARE @TotalDiff DECIMAL(18,2) = 0.00;
-        DECLARE @DeletedAmount DECIMAL(18,2) = 0.00;
-        
-        SELECT @DeletedAmount = ISNULL(SUM(TotalAmount), 0)
-        FROM dbo.BookingServices
-        WHERE BookingID = @BookingID
-          AND BookingServiceID NOT IN (SELECT BookingServiceID FROM @Requests WHERE BookingServiceID > 0);
+        ------------------------------------------------------------
+        -- 4. Tính tiền bị giảm do xóa service
+        ------------------------------------------------------------
+        DECLARE @DeletedAmount DECIMAL(18,2) = 0;
+        DECLARE @UpdatedAmountChange DECIMAL(18,2) = 0;
+        DECLARE @AddedAmount DECIMAL(18,2) = 0;
+        DECLARE @BookingAmountChange DECIMAL(18,2) = 0;
 
-        SET @TotalDiff = @TotalDiff - @DeletedAmount;
+        SELECT
+            @DeletedAmount = ISNULL(SUM(bs.TotalAmount), 0)
+        FROM dbo.BookingServices bs
+        WHERE bs.BookingID = @BookingID
+          AND NOT EXISTS
+          (
+              SELECT 1
+              FROM @Requests r
+              WHERE r.BookingServiceID = bs.BookingServiceID
+          );
 
-        DELETE FROM dbo.BookingServices
-        WHERE BookingID = @BookingID
-          AND BookingServiceID NOT IN (SELECT BookingServiceID FROM @Requests WHERE BookingServiceID > 0);
+        SET @BookingAmountChange = @BookingAmountChange - @DeletedAmount;
 
-        -- 3. Process Updates
-        DECLARE @UpdatedAmountDiff DECIMAL(18,2) = 0.00;
+        DELETE bs
+        FROM dbo.BookingServices bs
+        WHERE bs.BookingID = @BookingID
+          AND NOT EXISTS
+          (
+              SELECT 1
+              FROM @Requests r
+              WHERE r.BookingServiceID = bs.BookingServiceID
+          );
 
-        SELECT @UpdatedAmountDiff = ISNULL(SUM((r.UnitPrice * r.Quantity - r.DiscountAmount) - e.TotalAmount), 0)
-        FROM dbo.BookingServices e
-        INNER JOIN @Requests r ON e.BookingServiceID = r.BookingServiceID
-        WHERE e.BookingID = @BookingID;
+        ------------------------------------------------------------
+        -- 5. Tính tiền thay đổi do update service cũ
+        ------------------------------------------------------------
+        SELECT
+            @UpdatedAmountChange = ISNULL
+            (
+                SUM
+                (
+                    (r.UnitPrice * r.Quantity)
+                    - bs.TotalAmount
+                ),
+                0
+            )
+        FROM dbo.BookingServices bs
+        INNER JOIN @Requests r
+            ON bs.BookingServiceID = r.BookingServiceID
+        WHERE bs.BookingID = @BookingID;
 
-        SET @TotalDiff = @TotalDiff + @UpdatedAmountDiff;
+        SET @BookingAmountChange = @BookingAmountChange + @UpdatedAmountChange;
 
-        UPDATE e
-        SET e.Quantity = r.Quantity,
-            e.UnitPrice = r.UnitPrice,
-            e.DiscountAmount = r.DiscountAmount,
-            e.TotalAmount = r.UnitPrice * r.Quantity - r.DiscountAmount,
-            e.ModifiedDate = SYSDATETIMEOFFSET(),
-            e.ModifiedBy = @ModifiedBy
-        FROM dbo.BookingServices e
-        INNER JOIN @Requests r ON e.BookingServiceID = r.BookingServiceID
-        WHERE e.BookingID = @BookingID;
+        UPDATE bs
+        SET
+            bs.ServiceID = r.ServiceID,
+            bs.Quantity = r.Quantity,
+            bs.UnitPrice = r.UnitPrice,
+            bs.TotalAmount = r.UnitPrice * r.Quantity,
+            bs.ModifiedDate = @Now,
+            bs.ModifiedBy = @ModifiedBy
+        FROM dbo.BookingServices bs
+        INNER JOIN @Requests r
+            ON bs.BookingServiceID = r.BookingServiceID
+        WHERE bs.BookingID = @BookingID;
 
-        -- 4. Process Additions
-        DECLARE @AddedAmount DECIMAL(18,2) = 0.00;
-        SELECT @AddedAmount = ISNULL(SUM(UnitPrice * Quantity - DiscountAmount), 0)
-        FROM @Requests
-        WHERE BookingServiceID IS NULL OR BookingServiceID <= 0;
+        ------------------------------------------------------------
+        -- 6. Tính tiền thêm mới
+        ------------------------------------------------------------
+        SELECT
+            @AddedAmount = ISNULL
+            (
+                SUM(r.UnitPrice * r.Quantity),
+                0
+            )
+        FROM @Requests r
+        WHERE r.BookingServiceID IS NULL
+           OR r.BookingServiceID <= 0;
 
-        SET @TotalDiff = @TotalDiff + @AddedAmount;
+        SET @BookingAmountChange = @BookingAmountChange + @AddedAmount;
 
-        INSERT INTO dbo.BookingServices (
-            BookingID, ServiceID, Quantity, UnitPrice, DiscountAmount, TotalAmount, CreatedDate, CreatedBy, ModifiedDate, ModifiedBy
+        INSERT INTO dbo.BookingServices
+        (
+            BookingID,
+            ServiceID,
+            Quantity,
+            UnitPrice,
+            TotalAmount,
+            CreatedDate,
+            CreatedBy,
+            ModifiedDate,
+            ModifiedBy
         )
-        SELECT 
-            @BookingID, ServiceID, Quantity, UnitPrice, DiscountAmount, (UnitPrice * Quantity - DiscountAmount), SYSDATETIMEOFFSET(), @ModifiedBy, SYSDATETIMEOFFSET(), @ModifiedBy
-        FROM @Requests
-        WHERE BookingServiceID IS NULL OR BookingServiceID <= 0;
+        SELECT
+            @BookingID,
+            r.ServiceID,
+            r.Quantity,
+            r.UnitPrice,
+            r.UnitPrice * r.Quantity,
+            @Now,
+            @ModifiedBy,
+            @Now,
+            @ModifiedBy
+        FROM @Requests r
+        WHERE r.BookingServiceID IS NULL
+           OR r.BookingServiceID <= 0;
 
-        -- 5. Update Booking total amount
+        ------------------------------------------------------------
+        -- 7. Cập nhật tổng tiền booking
+        ------------------------------------------------------------
         UPDATE dbo.Bookings
-        SET TotalAmount = TotalAmount + @TotalDiff,
-            ModifiedDate = SYSDATETIMEOFFSET(),
+        SET
+            TotalAmount = TotalAmount + @BookingAmountChange,
+            ModifiedDate = @Now,
             ModifiedBy = @ModifiedBy
         WHERE BookingID = @BookingID;
 
@@ -142,6 +239,6 @@ BEGIN
             ROLLBACK TRANSACTION;
 
         SET @ErrorMessage = ERROR_MESSAGE();
-    END CATCH
+    END CATCH;
 END;
 GO

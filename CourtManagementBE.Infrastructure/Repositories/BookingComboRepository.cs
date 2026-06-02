@@ -52,7 +52,7 @@ public class BookingComboRepository : GenericRepository<BookingCombos>, IBooking
             }
             catch (SqlException ex)
             {
-                return ex.Message;
+                throw new Exception("Lỗi hệ thống khi cập nhật combo booking.", ex);
             }
         }
     }

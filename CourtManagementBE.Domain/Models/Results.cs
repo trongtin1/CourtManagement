@@ -7,7 +7,7 @@ namespace CourtManagementBE.Domain.Models
         public string Message { get; set; } = string.Empty;
         public T Data { get; set; } = default!;
 
-        public static Results<T> Success(T data, string message = "Successfully")
+        public static Results<T> Success(T data, string message = "Thao tác thành công")
         {
             return new Results<T>
             {

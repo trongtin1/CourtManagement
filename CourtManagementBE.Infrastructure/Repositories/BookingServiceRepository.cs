@@ -52,7 +52,7 @@ public class BookingServiceRepository : GenericRepository<BookingServices>, IBoo
             }
             catch (SqlException ex)
             {
-                return ex.Message;
+                throw new Exception("Lỗi hệ thống khi cập nhật dịch vụ booking.", ex);
             }
         }
     }
