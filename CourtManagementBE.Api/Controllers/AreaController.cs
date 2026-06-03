@@ -24,12 +24,6 @@ public class AreaController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("facility/{facilityId}")]
-    public async Task<IActionResult> GetByFacility(int facilityId)
-    {
-        var r = await _service.GetByFacility(facilityId);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)

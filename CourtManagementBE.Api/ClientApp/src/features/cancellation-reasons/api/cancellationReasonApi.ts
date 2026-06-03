@@ -4,7 +4,6 @@ import type { CancellationReason, CancellationReasonRequest } from '../model/typ
 export const cancellationReasonApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CancellationReason>>('/CancellationReason', params),
-  getById: (id: number) => apiGet<CancellationReason>(`/CancellationReason/${id}`),
   create: (data: CancellationReasonRequest) =>
     apiPost<CancellationReason>('/CancellationReason', data),
   update: (id: number, data: CancellationReasonRequest) =>

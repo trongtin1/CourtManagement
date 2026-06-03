@@ -14,10 +14,6 @@ import type {
 export const bookingApi = {
   getAll: (params?: PaginationQuery) => apiGet<PageList<Booking>>('/booking', params),
   getById: (id: string) => apiGet<Booking>(`/booking/${id}`),
-  getByCustomer: (customerId: number) =>
-    apiGet<Booking[]>(`/booking/customer/${customerId}`),
-  getByCourt: (courtId: number) => apiGet<Booking[]>(`/booking/court/${courtId}`),
-  getByStatus: (status: string) => apiGet<Booking[]>(`/booking/status/${status}`),
   getByDate: (date: string) => apiGet<Booking[]>(`/booking/date/${date}`),
   create: (data: CreateBookingRequest) => apiPost<Booking>('/booking', data),
   createFull: (data: CreateFullBookingRequest) => apiPost<Booking>('/booking/full', data),

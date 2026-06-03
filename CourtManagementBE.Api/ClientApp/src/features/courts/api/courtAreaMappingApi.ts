@@ -7,8 +7,6 @@ import type {
 
 
 export const courtAreaMappingApi = {
-  getByCourt: (courtId: number) =>
-    apiGet<CourtAreaMapping[]>(`/courtareamapping/court/${courtId}`),
   getByArea: (areaId: number) =>
     apiGet<CourtAreaMapping[]>(`/courtareamapping/area/${areaId}`),
   create: (data: CreateCourtAreaMappingRequest) =>

@@ -6,7 +6,6 @@ import type { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../
 export const customerApi = {
   getAll: (params?: PaginationQuery) => apiGet<PageList<Customer>>('/customer', params),
   getById: (id: number) => apiGet<Customer>(`/customer/${id}`),
-  search: (phone: string) => apiGet<Customer[]>(`/customer/search`, { phone }),
   create: (data: CreateCustomerRequest) => apiPost<Customer>('/customer', data),
   update: (id: number, data: UpdateCustomerRequest) => apiPut<Customer>(`/customer/${id}`, data),
   delete: (id: number) => apiDelete(`/customer/${id}`),

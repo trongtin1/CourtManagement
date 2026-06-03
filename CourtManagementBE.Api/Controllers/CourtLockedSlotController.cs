@@ -39,12 +39,6 @@ public class CourtLockedSlotController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var r = await _service.GetById(id);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CourtLockedSlotRequest req)

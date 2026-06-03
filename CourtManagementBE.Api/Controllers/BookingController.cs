@@ -25,26 +25,6 @@ public class BookingController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("customer/{customerId}")]
-    public async Task<IActionResult> GetByCustomer(int customerId)
-    {
-        var r = await _service.GetByCustomer(customerId);
-        return StatusCode((int)r.StatusCode, r);
-    }
-
-    [HttpGet("court/{courtId}")]
-    public async Task<IActionResult> GetByCourt(int courtId)
-    {
-        var r = await _service.GetByCourt(courtId);
-        return StatusCode((int)r.StatusCode, r);
-    }
-
-    [HttpGet("status/{status}")]
-    public async Task<IActionResult> GetByStatus(string status)
-    {
-        var r = await _service.GetByStatus(status);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("date/{date}")]
     public async Task<IActionResult> GetByDate(DateTime date)

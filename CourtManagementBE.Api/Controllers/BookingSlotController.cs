@@ -37,17 +37,4 @@ public class BookingSlotController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] BookingSlotRequest req)
-    {
-        var r = await _service.Create(req);
-        return StatusCode((int)r.StatusCode, r);
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var r = await _service.Delete(id);
-        return StatusCode((int)r.StatusCode, r);
-    }
 }

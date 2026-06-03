@@ -24,12 +24,6 @@ public class CustomerController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("search")]
-    public async Task<IActionResult> SearchByPhone([FromQuery] string phone)
-    {
-        var r = await _service.SearchByPhone(phone);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)

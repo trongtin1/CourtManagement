@@ -25,12 +25,6 @@ public class UnitConversionController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var r = await _service.GetById(id);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] UnitConversionRequest req)
@@ -53,14 +47,4 @@ public class UnitConversionController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("convert")]
-    public async Task<IActionResult> ConvertQuantity(
-        [FromQuery] int serviceId, 
-        [FromQuery] int fromUnitId, 
-        [FromQuery] int toUnitId, 
-        [FromQuery] decimal quantity)
-    {
-        var r = await _service.ConvertQuantity(serviceId, fromUnitId, toUnitId, quantity);
-        return StatusCode((int)r.StatusCode, r);
-    }
 }

@@ -4,7 +4,6 @@ import type { CourtFeatureCategory, CourtFeatureCategoryRequest } from '../model
 export const courtFeatureCategoryApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtFeatureCategory>>('/CourtFeatureCategory', params),
-  getById: (id: number) => apiGet<CourtFeatureCategory>(`/CourtFeatureCategory/${id}`),
   create: (data: CourtFeatureCategoryRequest) =>
     apiPost<CourtFeatureCategory>('/CourtFeatureCategory', data),
   update: (id: number, data: CourtFeatureCategoryRequest) =>

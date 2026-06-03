@@ -9,7 +9,6 @@ import type {
 export const courtLockedSlotApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtLockedSlot>>('/courtlockedslot', params),
-  getById: (id: number) => apiGet<CourtLockedSlot>(`/courtlockedslot/${id}`),
   getByCourt: (courtId: number, targetDate?: string | null) =>
     apiGet<CourtLockedSlot[]>(`/courtlockedslot/court/${courtId}`, {
       targetDate: targetDate || undefined,

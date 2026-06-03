@@ -5,7 +5,6 @@ import type { PaymentStatus, PaymentStatusRequest } from '../model/types'
 export const paymentStatusApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<PaymentStatus>>('/PaymentStatus', params),
-  getById: (id: number) => apiGet<PaymentStatus>(`/PaymentStatus/${id}`),
   create: (data: PaymentStatusRequest) => apiPost<PaymentStatus>('/PaymentStatus', data),
   update: (id: number, data: PaymentStatusRequest) =>
     apiPut<PaymentStatus>(`/PaymentStatus/${id}`, data),

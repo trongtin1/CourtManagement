@@ -9,8 +9,6 @@ import type {
 export const courtDefaultPriceRuleApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<CourtDefaultPriceRule>>('/courtdefaultpricerule', params),
-  getById: (id: number) =>
-    apiGet<CourtDefaultPriceRule>(`/courtdefaultpricerule/${id}`),
   getByDay: (dayOfWeek: number) =>
     apiGet<CourtDefaultPriceRule[]>(`/courtdefaultpricerule/day/${dayOfWeek}`),
   create: (data: CreateCourtDefaultPriceRuleRequest) =>

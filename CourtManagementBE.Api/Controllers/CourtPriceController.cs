@@ -17,12 +17,6 @@ public class CourtPriceController : ControllerBase
         _service = service;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] QueryResource query)
-    {
-        var r = await _service.GetAll(query);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("court/{courtId}")]
     public async Task<IActionResult> GetByCourt(int courtId, [FromQuery] DateTime targetDate)
@@ -31,19 +25,6 @@ public class CourtPriceController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("court/{courtId}/day/{dayOfWeek}")]
-    public async Task<IActionResult> GetByCourtAndDay(int courtId, int dayOfWeek)
-    {
-        var r = await _service.GetByCourtAndDay(courtId, dayOfWeek);
-        return StatusCode((int)r.StatusCode, r);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var r = await _service.GetById(id);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CourtPriceRequest req)

@@ -24,19 +24,6 @@ public class CourtController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("facility/{facilityId}")]
-    public async Task<IActionResult> GetByFacility(int facilityId)
-    {
-        var r = await _service.GetByFacility(facilityId);
-        return StatusCode((int)r.StatusCode, r);
-    }
-
-    [HttpGet("status/{statusId}")]
-    public async Task<IActionResult> GetByStatus(int statusId)
-    {
-        var r = await _service.GetByStatus(statusId);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)

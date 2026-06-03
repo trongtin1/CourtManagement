@@ -5,7 +5,6 @@ import type { AssetCondition, AssetConditionRequest } from '../model/types'
 export const assetConditionApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<AssetCondition>>('/AssetCondition', params),
-  getById: (id: number) => apiGet<AssetCondition>(`/AssetCondition/${id}`),
   create: (data: AssetConditionRequest) =>
     apiPost<AssetCondition>('/AssetCondition', data),
   update: (id: number, data: AssetConditionRequest) =>

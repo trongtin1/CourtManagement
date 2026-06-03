@@ -5,7 +5,6 @@ import type { BookingStatus, BookingStatusRequest } from '../model/types'
 export const bookingStatusApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<BookingStatus>>('/BookingStatus', params),
-  getById: (id: number) => apiGet<BookingStatus>(`/BookingStatus/${id}`),
   create: (data: BookingStatusRequest) => apiPost<BookingStatus>('/BookingStatus', data),
   update: (id: number, data: BookingStatusRequest) =>
     apiPut<BookingStatus>(`/BookingStatus/${id}`, data),

@@ -24,12 +24,6 @@ public class PaymentController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
-    [HttpGet("booking/{bookingId}")]
-    public async Task<IActionResult> GetByBooking(Guid bookingId)
-    {
-        var r = await _service.GetByBooking(bookingId);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)

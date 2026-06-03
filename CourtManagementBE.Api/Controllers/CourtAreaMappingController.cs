@@ -16,12 +16,6 @@ public class CourtAreaMappingController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("court/{courtId}")]
-    public async Task<IActionResult> GetByCourt(int courtId)
-    {
-        var r = await _service.GetByCourt(courtId);
-        return StatusCode((int)r.StatusCode, r);
-    }
 
     [HttpGet("area/{areaId}")]
     public async Task<IActionResult> GetByArea(int areaId)

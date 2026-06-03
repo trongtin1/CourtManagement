@@ -12,8 +12,6 @@ import type {
 export const courtApi = {
   getAll: (params?: PaginationQuery) => apiGet<PageList<Court>>('/court', params),
   getById: (id: number) => apiGet<Court>(`/court/${id}`),
-  getByFacility: (facilityId: number) => apiGet<Court[]>(`/court/facility/${facilityId}`),
-  getByStatus: (statusId: number) => apiGet<Court[]>(`/court/status/${statusId}`),
   getSlotsAvailability: (id: number, date: string) =>
     apiGet<CourtSlotAvailability[]>(`/court/${id}/slots`, { date }),
   getTimelineAvailability: (facilityId: number, date: string) =>

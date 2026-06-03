@@ -8,7 +8,6 @@ export const areaApi = {
   getAll: (params?: PaginationQuery) =>
     apiGet<PageList<Area>>('/area', params),
   getById: (id: number) => apiGet<Area>(`/area/${id}`),
-  getByFacility: (facilityId: number) => apiGet<Area[]>(`/area/facility/${facilityId}`),
   create: (data: CreateAreaRequest) => apiPost<Area>('/area', data),
   update: (id: number, data: UpdateAreaRequest) => apiPut<Area>(`/area/${id}`, data),
   delete: (id: number) => apiDelete(`/area/${id}`),
