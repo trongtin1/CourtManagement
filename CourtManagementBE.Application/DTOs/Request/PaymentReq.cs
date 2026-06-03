@@ -18,6 +18,7 @@ public class BookingPaymentRequest
 {
     [Required] public decimal Amount { get; set; }
     [MaxLength(300)] public string Note { get; set; } = string.Empty;
+    public bool DeductFromGroupDeposit { get; set; } = true;
 }
 
 public class BookingRefundRequest

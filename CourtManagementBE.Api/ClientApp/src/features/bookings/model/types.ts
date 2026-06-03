@@ -17,6 +17,7 @@ export type Booking = {
   bookingSlots?: BookingSlot[]
   bookingServices?: BookingService[]
   bookingCombos?: BookingCombo[]
+  bookingGroup?: BookingGroup | null
 }
 
 export type BookingGroup = {
@@ -86,6 +87,7 @@ export type CancelBookingRequest = {
 export type PayBookingRequest = {
   amount: number
   note?: string
+  deductFromGroupDeposit?: boolean
 }
 
 export type RescheduleBookingRequest = {

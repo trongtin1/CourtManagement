@@ -478,7 +478,7 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>($"Số tiền thanh toán vượt quá số còn lại ({remainingAmount:N0}).");
         }
 
-        bool isGroupDeposit = entity.BookingGroupID.HasValue;
+        bool isGroupDeposit = entity.BookingGroupID.HasValue && request.DeductFromGroupDeposit;
         BookingGroups? group = null;
 
         if (isGroupDeposit)

@@ -16,6 +16,7 @@ public class BookingResponse
     public int? CancellationReasonID { get; set; }
     public string CancellationReason { get; set; } = string.Empty;
     public DateTimeOffset CreatedDate { get; set; }
+    public int? BookingGroupID { get; set; }
 
     public Courts Court { get; set; } = null!;
     public Customers Customer { get; set; } = null!;

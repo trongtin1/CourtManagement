@@ -8,7 +8,6 @@ import type { PaginationQuery } from '@/types/api'
 import type {
   CreateBookingRequest,
   UpdateBookingRequest,
-  CancelBookingRequest,
   PayBookingRequest,
   RescheduleBookingRequest,
   CreateBookingServiceRequest,
@@ -106,15 +105,6 @@ export const useUpdateBookingMutation = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateBookingRequest }) =>
       bookingApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
-  })
-}
-
-export const useCancelBookingMutation = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CancelBookingRequest }) =>
-      bookingApi.cancel(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingKeys.all }),
   })
 }

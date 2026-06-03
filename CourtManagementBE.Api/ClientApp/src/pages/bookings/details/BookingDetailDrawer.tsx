@@ -13,6 +13,7 @@ import {
   InputNumber,
   Tag,
   Alert,
+  Radio,
 } from 'antd'
 import {
   CalendarOutlined,
@@ -47,6 +48,11 @@ import type {
   TimelineBookingResponse,
 } from '@/features/courts/model/types'
 import { BookingStatusConstants } from '@/features/bookings/constants/bookingStatusConstants'
+
+const PaymentSources = {
+  GroupDeposit: 'group_deposit',
+  Direct: 'direct',
+} as const
 
 const formatTimeSpan = (timeStr: string) => {
   const parts = timeStr.split(':')
@@ -83,6 +89,8 @@ export function BookingDetailDrawer({
   )
   const selectedBooking = dbBooking || (initialBooking as Booking) || null
 
+  const bookingGroup = selectedBooking?.bookingGroup
+
   // ─── Mutations ──────────────────────────────────────────────────────────────
   const updateStatusMutation = useUpdateBookingStatusMutation()
   const payMutation = usePayBookingMutation()
@@ -93,9 +101,9 @@ export function BookingDetailDrawer({
     payMutation.isPending ||
     rescheduleMutation.isPending
 
-  // Payment Modal State
   const [isPayModalOpen, setIsPayModalOpen] = useState(false)
   const [payForm] = Form.useForm()
+  const payAmount = Form.useWatch('amount', payForm)
 
   // Reschedule Modal State
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
@@ -353,6 +361,7 @@ export function BookingDetailDrawer({
     amount?: number
     paymentMethod?: string
     note?: string
+    paymentSource?: typeof PaymentSources[keyof typeof PaymentSources]
   }
 
   const isCurrentBookingSlot = (slot: CourtSlotAvailability) =>
@@ -382,12 +391,17 @@ export function BookingDetailDrawer({
       return
     }
 
+    const deductFromGroupDeposit = selectedBooking.bookingGroupID
+      ? values.paymentSource === PaymentSources.GroupDeposit
+      : false
+
     payMutation.mutate(
       {
         id: selectedBooking.bookingID,
         data: {
           amount: values.amount!,
           note: values.note || '',
+          deductFromGroupDeposit,
         },
       },
       {
@@ -494,6 +508,26 @@ export function BookingDetailDrawer({
         <span className="text-xs text-slate-700 font-bold font-mono">
           {selectedBooking.bookingID}
         </span>
+      </div>
+
+      <div className="flex justify-between items-center py-2 border-b border-slate-50">
+        <span className="text-xs text-slate-400 font-semibold">Loại lịch đặt</span>
+
+        {selectedBooking.bookingGroupID ? (
+          <Tag
+            color="purple"
+            className="font-bold m-0 flex items-center gap-1 scale-95 origin-right"
+          >
+            <SyncOutlined /> Lịch định kỳ
+          </Tag>
+        ) : (
+          <Tag
+            color="purple"
+            className="font-bold m-0 flex items-center gap-1 scale-95 origin-right"
+          >
+            <SyncOutlined /> Lịch thông thường
+          </Tag>
+        )}
       </div>
 
       {/* Advanced Status Control Panel */}
@@ -741,7 +775,15 @@ export function BookingDetailDrawer({
             icon={<WalletOutlined />}
             className="mt-2 bg-emerald-600 hover:bg-emerald-700"
             onClick={() => {
-              payForm.setFieldsValue({ amount: remainingAmount, paymentMethod: 'cash' })
+              const groupBalance = bookingGroup?.paidAmount ?? 0
+              const hasGroup = !!selectedBooking.bookingGroupID
+              const canUseGroup = hasGroup && groupBalance >= remainingAmount
+              payForm.setFieldsValue({
+                amount: remainingAmount,
+                paymentMethod: 'cash',
+                paymentSource: canUseGroup ? PaymentSources.GroupDeposit : PaymentSources.Direct,
+                note: '',
+              })
               setIsPayModalOpen(true)
             }}
           >
@@ -809,6 +851,81 @@ export function BookingDetailDrawer({
               size="large"
             />
           </Form.Item>
+
+          {selectedBooking.bookingGroupID && (
+            <>
+              {bookingGroup && bookingGroup.paidAmount < (payAmount ?? 0) && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  className="mb-4"
+                  message={
+                    <span className="text-xs">
+                      Số dư cọc của nhóm không đủ để khấu trừ (Cần{' '}
+                      <span className="font-bold font-mono">
+                        {formatCompactCurrency(payAmount ?? 0)}
+                      </span>
+                      , hiện có{' '}
+                      <span className="font-bold font-mono">
+                        {formatCompactCurrency(bookingGroup.paidAmount)}
+                      </span>
+                      ). Vui lòng chọn <b>Thanh toán trực tiếp</b>.
+                    </span>
+                  }
+                />
+              )}
+              <Form.Item
+                name="paymentSource"
+                label={
+                  <span className="text-xs font-bold text-slate-600">
+                    Nguồn thanh toán
+                  </span>
+                }
+                rules={[
+                  { required: true, message: 'Vui lòng chọn nguồn thanh toán!' },
+                  {
+                    validator: (_, value) => {
+                      if (
+                        value === PaymentSources.GroupDeposit &&
+                        bookingGroup &&
+                        bookingGroup.paidAmount < (payAmount ?? 0)
+                      ) {
+                        return Promise.reject(
+                          new Error('Số dư cọc của nhóm không đủ để thực hiện khấu trừ.'),
+                        )
+                      }
+                      return Promise.resolve()
+                    },
+                  },
+                ]}
+              >
+                <Radio.Group className="w-full">
+                  <div className="flex flex-col gap-2">
+                    <Radio
+                      value={PaymentSources.GroupDeposit}
+                      disabled={
+                        isBookingLoading ||
+                        (bookingGroup ? bookingGroup.paidAmount < (payAmount ?? 0) : true)
+                      }
+                    >
+                      <span className="text-xs">
+                        Khấu trừ quỹ cọc nhóm (Số dư:{' '}
+                        <span className="font-bold text-emerald-600 font-mono">
+                          {isBookingLoading
+                            ? 'Đang tải...'
+                            : formatCompactCurrency(bookingGroup?.paidAmount ?? 0)}
+                        </span>
+                        )
+                      </span>
+                    </Radio>
+                    <Radio value={PaymentSources.Direct}>
+                      <span className="text-xs">Thanh toán trực tiếp bằng tiền mặt</span>
+                    </Radio>
+                  </div>
+                </Radio.Group>
+              </Form.Item>
+            </>
+          )}
 
           <Form.Item
             name="paymentMethod"
