@@ -420,6 +420,12 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>($"Không thể chuyển đổi trạng thái đặt sân từ '{oldName}' sang '{newName}'.");
         }
 
+        // Ngăn chặn chuyển sang trạng thái Completed nếu chưa thanh toán đủ
+        if (newStatus == BookingStatusConstants.Completed && entity.PaidAmount < entity.TotalAmount)
+        {
+            return BadRequest<BookingResponse>("Không thể hoàn thành đơn đặt sân khi chưa thanh toán đủ tiền.");
+        }
+
         await _unitOfWork.BeginTransactionAsync();
         try
         {

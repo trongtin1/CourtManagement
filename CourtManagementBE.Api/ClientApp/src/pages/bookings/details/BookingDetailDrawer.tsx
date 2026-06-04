@@ -352,7 +352,13 @@ export function BookingDetailDrawer({
           message.success('Cập nhật trạng thái thành công!')
           onRefresh?.()
         },
-        onError: () => message.error('Cập nhật trạng thái thất bại!'),
+        onError: (error) => {
+          const fallbackMessage = 'Cập nhật trạng thái thất bại!'
+          const serverMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data
+              ?.message ?? fallbackMessage
+          message.error(serverMessage)
+        },
       },
     )
   }
