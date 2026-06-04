@@ -677,7 +677,8 @@ public static class AppDbSeeder
 
     private static async Task SeedSystemSettingsAsync(AppDbContext db, CancellationToken cancellationToken)
     {
-        if (!await db.SystemSettings.AnyAsync(cancellationToken))
+        var settings = await db.SystemSettings.FirstOrDefaultAsync(cancellationToken);
+        if (settings is null)
         {
             db.SystemSettings.Add(new SystemSettings
             {
@@ -687,9 +688,26 @@ public static class AppDbSeeder
                 Timezone = "Asia/Ho_Chi_Minh",
                 EnableCancellationFee = true,
                 CancellationFeePercent = 20.0m,
-                CancellationThresholdHours = 24.0
+                CancellationThresholdHours = 24.0,
+                BufferDurationMinutes = 10,
+                MinBookingDurationMinutes = 60,
+                MaxBookingDurationMinutes = 180,
+                MinAllowableGapMinutes = 60
             });
             await db.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            bool isUpdated = false;
+            if (settings.BufferDurationMinutes == 0) { settings.BufferDurationMinutes = 10; isUpdated = true; }
+            if (settings.MinBookingDurationMinutes == 0) { settings.MinBookingDurationMinutes = 60; isUpdated = true; }
+            if (settings.MaxBookingDurationMinutes == 0) { settings.MaxBookingDurationMinutes = 180; isUpdated = true; }
+            if (settings.MinAllowableGapMinutes == 0) { settings.MinAllowableGapMinutes = 60; isUpdated = true; }
+            if (isUpdated)
+            {
+                db.SystemSettings.Update(settings);
+                await db.SaveChangesAsync(cancellationToken);
+            }
         }
     }
 }

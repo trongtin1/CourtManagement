@@ -9,19 +9,19 @@ BEGIN
     DECLARE 
         @OpeningTime TIME(7),
         @ClosingTime TIME(7),
-        @SlotDurationMinutes INT;
+        @BufferDurationMinutes INT;
 
     SELECT TOP 1
         @OpeningTime = OpeningTime,
         @ClosingTime = ClosingTime,
-        @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+        @BufferDurationMinutes = ISNULL(BufferDurationMinutes, 10)
     FROM SystemSettings;
 
     IF @OpeningTime IS NULL
     BEGIN
         SET @OpeningTime = '06:00:00';
         SET @ClosingTime = '22:00:00';
-        SET @SlotDurationMinutes = 60;
+        SET @BufferDurationMinutes = 10;
     END;
 
     DECLARE @dow INT = DATEPART(WEEKDAY, @TargetDate) - 1;
@@ -36,7 +36,7 @@ BEGIN
 
     WHILE @current < @ClosingTime
     BEGIN
-        DECLARE @next TIME(7) = DATEADD(MINUTE, @SlotDurationMinutes, @current);
+        DECLARE @next TIME(7) = DATEADD(MINUTE, 60, @current);
 
         IF @next > @ClosingTime
             SET @next = @ClosingTime;
@@ -193,8 +193,8 @@ BEGIN
     INNER JOIN Customers cust 
         ON cust.CustomerID = b.CustomerID
     WHERE b.Status NOT IN ('cancelled')
-      AND bs.StartTime < r.EndTime
-      AND bs.EndTime > r.StartTime;
+      AND r.StartTime < DATEADD(MINUTE, @BufferDurationMinutes, bs.EndTime)
+      AND DATEADD(MINUTE, @BufferDurationMinutes, r.EndTime) > bs.StartTime;
 
     DECLARE @JsonResult NVARCHAR(MAX);
 

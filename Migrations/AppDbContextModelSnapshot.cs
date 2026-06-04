@@ -1773,6 +1773,9 @@ namespace CourtManagementBE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
+                    b.Property<int>("BufferDurationMinutes")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("CancellationFeePercent")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(5,2)")
@@ -1786,6 +1789,15 @@ namespace CourtManagementBE.Migrations
 
                     b.Property<bool>("EnableCancellationFee")
                         .HasColumnType("bit");
+
+                    b.Property<int>("MaxBookingDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinAllowableGapMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinBookingDurationMinutes")
+                        .HasColumnType("int");
 
                     b.Property<TimeSpan>("OpeningTime")
                         .HasColumnType("time");

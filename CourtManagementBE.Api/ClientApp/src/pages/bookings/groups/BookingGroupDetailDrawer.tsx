@@ -76,6 +76,8 @@ export function BookingGroupDetailDrawer({
 }: BookingGroupDetailDrawerProps) {
   const { message } = App.useApp()
   const { data: fullGroup, isLoading } = useBookingGroupQuery(group?.bookingGroupID ?? 0)
+  const detail = fullGroup ?? group
+
   const payDepositMutation = usePayBookingGroupDepositMutation()
   const cancelGroupMutation = useCancelBookingGroupMutation()
   const refundMutation = useRefundBookingMutation()
@@ -96,6 +98,7 @@ export function BookingGroupDetailDrawer({
   const payBookingAmount = Form.useWatch('amount', payBookingForm)
 
   const handleCancelGroup = async () => {
+    if (!detail) return
     try {
       await cancelGroupMutation.mutateAsync({
         id: detail.bookingGroupID,
@@ -108,6 +111,7 @@ export function BookingGroupDetailDrawer({
   }
 
   const handleQuickDeduct = (b: Booking) => {
+    if (!detail) return
     const remaining = b.totalAmount - (b.paidAmount ?? 0)
     payBookingMutation.mutate(
       {
@@ -136,6 +140,7 @@ export function BookingGroupDetailDrawer({
   }
 
   const handlePayBookingClick = (b: Booking) => {
+    if (!detail) return
     setSelectedPayBooking(b)
     const remaining = b.totalAmount - (b.paidAmount ?? 0)
     payBookingForm.setFieldsValue({
@@ -181,7 +186,6 @@ export function BookingGroupDetailDrawer({
     )
   }
 
-  const detail = fullGroup ?? group
   if (!detail) return null
 
   const statusMeta = STATUS_MAP[detail.status]

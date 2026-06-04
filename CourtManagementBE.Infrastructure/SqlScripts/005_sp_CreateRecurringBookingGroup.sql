@@ -18,10 +18,11 @@ BEGIN
     SET DATEFIRST 7;
 
     DECLARE @BookingGroupID INT = 0;
-    DECLARE @SlotDurationMinutes INT = 60;
+    DECLARE @BufferDurationMinutes INT = 10;
     SET @ErrorMessage = NULL;
 
-    SELECT TOP 1 @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+    SELECT TOP 1 
+        @BufferDurationMinutes = ISNULL(BufferDurationMinutes, 10)
     FROM SystemSettings;
 
     BEGIN TRY
@@ -81,8 +82,8 @@ BEGIN
         INNER JOIN BookingSlots bs
             ON bs.CourtID = @CourtID
            AND bs.BookingDate = td.TargetDate
-           AND bs.StartTime < @EndTime
-           AND bs.EndTime > @StartTime
+           AND bs.StartTime < DATEADD(MINUTE, @BufferDurationMinutes, @EndTime)
+           AND DATEADD(MINUTE, @BufferDurationMinutes, bs.EndTime) > @StartTime
         INNER JOIN Bookings b
             ON b.BookingID = bs.BookingID
            AND b.Status <> 'cancelled'
@@ -101,25 +102,7 @@ BEGIN
             THROW 50000, @ErrorMessage, 1;
         END;
 
-        -- 5. Phân tích khung giờ thành các slot dựa trên cấu hình SlotDurationMinutes để áp giá dịch vụ (Set-Based)
-        CREATE TABLE #HourlySlots (
-            StartTime TIME(7) NOT NULL,
-            EndTime TIME(7) NOT NULL
-        );
-
-        WITH HourlyCTE AS (
-            SELECT @StartTime AS StartTime, 
-                   CASE WHEN DATEADD(MINUTE, @SlotDurationMinutes, @StartTime) > @EndTime THEN @EndTime ELSE DATEADD(MINUTE, @SlotDurationMinutes, @StartTime) END AS EndTime
-            UNION ALL
-            SELECT EndTime, 
-                   CASE WHEN DATEADD(MINUTE, @SlotDurationMinutes, EndTime) > @EndTime THEN @EndTime ELSE DATEADD(MINUTE, @SlotDurationMinutes, EndTime) END
-            FROM HourlyCTE
-            WHERE EndTime < @EndTime
-        )
-        INSERT INTO #HourlySlots (StartTime, EndTime)
-        SELECT StartTime, EndTime FROM HourlyCTE;
-
-        -- 6. Tính giá tự động cho toàn bộ danh sách ngày lặp (Set-Based)
+        -- 5. Tính giá tự động cho toàn bộ danh sách ngày lặp bằng cách tính tỷ lệ theo phút (pro-rated) dựa trên Price Rules
         CREATE TABLE #BookingPrices (
             TargetDate DATE NOT NULL,
             TotalPrice DECIMAL(18,2) NOT NULL
@@ -128,54 +111,58 @@ BEGIN
         INSERT INTO #BookingPrices (TargetDate, TotalPrice)
         SELECT 
             td.TargetDate,
-            ISNULL(SUM(ISNULL(COALESCE(cp1.Price, cp2.Price, dp1.Price, dp2.Price), 0)), 0) AS TotalPrice
+            ISNULL(SUM(
+                CASE 
+                    WHEN r.StartTime < @EndTime AND r.EndTime > @StartTime 
+                    THEN 
+                        DATEDIFF(MINUTE, 
+                            CASE WHEN r.StartTime > @StartTime THEN r.StartTime ELSE @StartTime END,
+                            CASE WHEN r.EndTime < @EndTime THEN r.EndTime ELSE @EndTime END
+                        ) / 60.0 * r.Price
+                    ELSE 0 
+                END
+            ), 0) AS TotalPrice
         FROM #TargetDates td
-        CROSS JOIN #HourlySlots hs
-        OUTER APPLY (
-            SELECT TOP 1 p.Price
-            FROM CourtPriceRules p
-            WHERE p.CourtID = @CourtID
-              AND p.IsActive = 1
-              AND p.SpecificDate = td.TargetDate
-              AND p.StartTime <= hs.StartTime
-              AND p.EndTime >= hs.EndTime
-            ORDER BY p.StartTime
-        ) cp1
-        OUTER APPLY (
-            SELECT TOP 1 p.Price
-            FROM CourtPriceRules p
-            WHERE p.CourtID = @CourtID
-              AND p.IsActive = 1
-              AND p.SpecificDate IS NULL
-              AND p.DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1)
-              AND p.StartTime <= hs.StartTime
-              AND p.EndTime >= hs.EndTime
-            ORDER BY p.StartTime
-        ) cp2
-        OUTER APPLY (
-            SELECT TOP 1 d.Price
-            FROM CourtDefaultPriceRules d
-            WHERE d.IsActive = 1
-              AND d.IsMapping = 1
-              AND d.SpecificDate = td.TargetDate
-              AND d.StartTime <= hs.StartTime
-              AND d.EndTime >= hs.EndTime
-            ORDER BY d.StartTime
-        ) dp1
-        OUTER APPLY (
-            SELECT TOP 1 d.Price
-            FROM CourtDefaultPriceRules d
-            WHERE d.IsActive = 1
-              AND d.IsMapping = 1
-              AND d.SpecificDate IS NULL
-              AND d.DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1)
-              AND d.StartTime <= hs.StartTime
-              AND d.EndTime >= hs.EndTime
-            ORDER BY d.StartTime
-        ) dp2
+        CROSS APPLY (
+            SELECT 
+                r.StartTime, 
+                r.EndTime, 
+                r.Price
+            FROM (
+                -- Ưu tiên 1: Court Price Rules cho SpecificDate
+                SELECT StartTime, EndTime, Price, 1 AS Priority
+                FROM CourtPriceRules
+                WHERE CourtID = @CourtID AND IsActive = 1 AND SpecificDate = td.TargetDate
+                
+                UNION ALL
+                
+                -- Ưu tiên 2: Court Price Rules cho DayOfWeek
+                SELECT StartTime, EndTime, Price, 2 AS Priority
+                FROM CourtPriceRules
+                WHERE CourtID = @CourtID AND IsActive = 1 AND SpecificDate IS NULL AND DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1)
+                  AND NOT EXISTS (SELECT 1 FROM CourtPriceRules WHERE CourtID = @CourtID AND IsActive = 1 AND SpecificDate = td.TargetDate)
+                
+                UNION ALL
+                
+                -- Ưu tiên 3: Court Default Price Rules cho SpecificDate
+                SELECT StartTime, EndTime, Price, 3 AS Priority
+                FROM CourtDefaultPriceRules
+                WHERE IsActive = 1 AND IsMapping = 1 AND SpecificDate = td.TargetDate
+                  AND NOT EXISTS (SELECT 1 FROM CourtPriceRules WHERE CourtID = @CourtID AND IsActive = 1 AND (SpecificDate = td.TargetDate OR (SpecificDate IS NULL AND DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1))))
+                
+                UNION ALL
+                
+                -- Ưu tiên 4: Court Default Price Rules cho DayOfWeek
+                SELECT StartTime, EndTime, Price, 4 AS Priority
+                FROM CourtDefaultPriceRules
+                WHERE IsActive = 1 AND IsMapping = 1 AND SpecificDate IS NULL AND DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1)
+                  AND NOT EXISTS (SELECT 1 FROM CourtPriceRules WHERE CourtID = @CourtID AND IsActive = 1 AND (SpecificDate = td.TargetDate OR (SpecificDate IS NULL AND DayOfWeek = (DATEPART(WEEKDAY, td.TargetDate) - 1))))
+                  AND NOT EXISTS (SELECT 1 FROM CourtDefaultPriceRules WHERE IsActive = 1 AND IsMapping = 1 AND SpecificDate = td.TargetDate)
+            ) r
+        ) r
         GROUP BY td.TargetDate;
 
-        -- 7. Sinh các ID đặt sân ngẫu nhiên và lưu trữ trước khi chèn (Set-Based)
+        -- 6. Sinh các ID đặt sân ngẫu nhiên và lưu trữ trước khi chèn (Set-Based)
         CREATE TABLE #NewBookings (
             BookingID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
             TargetDate DATE NOT NULL,
@@ -223,7 +210,7 @@ BEGIN
             @EndTime
         FROM #NewBookings nb;
 
-        -- 8. Tính toán lại tổng tiền của cả nhóm nếu không phải giá trọn gói
+        -- 7. Tính toán lại tổng tiền của cả nhóm nếu không phải giá trọn gói
         IF @FlatRatePrice IS NULL OR @FlatRatePrice <= 0
         BEGIN
             DECLARE @TotalGroupAmount DECIMAL(18,2) = 0;
@@ -239,7 +226,6 @@ BEGIN
         COMMIT TRANSACTION;
 
         DROP TABLE #TargetDates;
-        DROP TABLE #HourlySlots;
         DROP TABLE #BookingPrices;
         DROP TABLE #NewBookings;
     END TRY
@@ -250,7 +236,6 @@ BEGIN
         IF @ErrorMessage IS NULL
             SET @ErrorMessage = ERROR_MESSAGE();
 
-        IF OBJECT_ID('tempdb..#HourlySlots') IS NOT NULL DROP TABLE #HourlySlots;
         IF OBJECT_ID('tempdb..#TargetDates') IS NOT NULL DROP TABLE #TargetDates;
         IF OBJECT_ID('tempdb..#BookingPrices') IS NOT NULL DROP TABLE #BookingPrices;
         IF OBJECT_ID('tempdb..#NewBookings') IS NOT NULL DROP TABLE #NewBookings;

@@ -9,6 +9,8 @@ export const courtKeys = {
   detail: (id: number) => [...courtKeys.all, 'detail', id] as const,
   slotsAvailability: (id: number, date: string) =>
     [...courtKeys.all, 'slotsAvailability', id, date] as const,
+  weeklyTimeline: (id: number, date: string) =>
+    [...courtKeys.all, 'weeklyTimeline', id, date] as const,
   timelineAvailability: (facilityId: number, date: string) =>
     [...courtKeys.all, 'timelineAvailability', facilityId, date] as const,
 }
@@ -65,6 +67,14 @@ export const useToggleCourtMutation = () => {
   return useMutation({
     mutationFn: (id: number) => courtApi.toggleActive(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: courtKeys.all }),
+  })
+}
+
+export const useCourtWeeklyTimelineQuery = (id: number | null, date: string) => {
+  return useQuery({
+    queryKey: courtKeys.weeklyTimeline(id ?? 0, date),
+    queryFn: () => courtApi.getWeeklyTimeline(id!, date),
+    enabled: !!id && !!date,
   })
 }
 

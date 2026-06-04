@@ -390,6 +390,51 @@ export type CreateCourtUtilityRequest = {
   utilityID: number
 }
 
+export type WeeklyBookingResponse = {
+  bookingID: string
+  customerID: number
+  customerName: string
+  phone: string
+  startTime: string
+  endTime: string
+  timeBuffer?: {
+    startTime: string
+    endTime: string
+  } | null
+  status: string
+  totalAmount: number
+}
+
+export type WeeklyLockResponse = {
+  startTime: string
+  endTime: string
+  reason: string
+}
+
+export type WeeklyPriceRuleResponse = {
+  startTime: string
+  endTime: string
+  price: number
+}
+
+export type CourtDailyTimeline = {
+  dayOfWeek: number
+  date: string
+  bookings: WeeklyBookingResponse[]
+  locks: WeeklyLockResponse[]
+  priceRules: WeeklyPriceRuleResponse[]
+}
+
+export type CourtWeeklyTimeline = {
+  bufferDurationMinutes: number
+  timeline: CourtDailyTimeline[]
+}
+
+// Re-declare what was replaced:
+export type FakePlaceholder = {
+  dummy: number
+}
+
 export type CourtPriceHistory = {
   courtPriceHistoryID: number
   courtPriceByTimeSlotID: number

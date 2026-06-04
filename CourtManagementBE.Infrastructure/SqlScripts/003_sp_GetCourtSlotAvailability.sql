@@ -7,25 +7,23 @@ BEGIN
     SET DATEFIRST 7; -- Sunday = 1
 
     -- ══════════════════════════════════════════════════════════════════════
-    -- 1. Xác định giờ mở/đóng cửa và slot duration từ SystemSettings
+    -- 1. Xác định giờ mở/đóng cửa từ SystemSettings
     -- ══════════════════════════════════════════════════════════════════════
-    DECLARE @OpeningTime TIME(7), @ClosingTime TIME(7), @SlotDurationMinutes INT;
+    DECLARE @OpeningTime TIME(7), @ClosingTime TIME(7);
 
     SELECT TOP 1 
         @OpeningTime = OpeningTime, 
-        @ClosingTime = ClosingTime,
-        @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+        @ClosingTime = ClosingTime
     FROM SystemSettings;
 
     IF @OpeningTime IS NULL
     BEGIN
         SET @OpeningTime = '06:00:00';
         SET @ClosingTime = '22:00:00';
-        SET @SlotDurationMinutes = 60;
     END
 
     -- ══════════════════════════════════════════════════════════════════════
-    -- 2. Sinh danh sách khung giờ từ OpeningTime → ClosingTime
+    -- 2. Sinh danh sách khung giờ từ OpeningTime → ClosingTime (mỗi block 60 phút)
     -- ══════════════════════════════════════════════════════════════════════
     CREATE TABLE #Slots (
         SlotIndex   INT IDENTITY(1,1),
@@ -36,7 +34,7 @@ BEGIN
     DECLARE @current TIME(7) = @OpeningTime;
     WHILE @current < @ClosingTime
     BEGIN
-        DECLARE @next TIME(7) = DATEADD(MINUTE, @SlotDurationMinutes, @current);
+        DECLARE @next TIME(7) = DATEADD(MINUTE, 60, @current);
         IF @next > @ClosingTime
             SET @next = @ClosingTime;
 
@@ -139,8 +137,11 @@ BEGIN
         );
 
     -- ══════════════════════════════════════════════════════════════════════
-    -- 6. Đánh dấu slot đã được đặt (BookingSlots + Bookings status check)
+    -- 6. Đánh dấu slot đã được đặt (BookingSlots + Bookings status check + Buffer)
     -- ══════════════════════════════════════════════════════════════════════
+    DECLARE @BufferDurationMinutes INT;
+    SELECT TOP 1 @BufferDurationMinutes = ISNULL(BufferDurationMinutes, 10) FROM SystemSettings;
+
     UPDATE sp
     SET sp.IsBooked = 1
     FROM #SlotPrices sp
@@ -151,8 +152,8 @@ BEGIN
         WHERE bs.CourtID = @CourtID
           AND bs.BookingDate = @TargetDate
           AND b.Status NOT IN ('cancelled')
-          AND bs.StartTime < sp.EndTime
-          AND bs.EndTime > sp.StartTime
+          AND sp.StartTime < DATEADD(MINUTE, @BufferDurationMinutes, bs.EndTime)
+          AND DATEADD(MINUTE, @BufferDurationMinutes, sp.EndTime) > bs.StartTime
     );
 
     -- ══════════════════════════════════════════════════════════════════════

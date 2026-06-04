@@ -10,5 +10,6 @@ namespace CourtManagementBE.Domain.IRepositories
     {
         Task<List<CourtSlotAvailabilityResponse>> GetSlotAvailabilityAsync(int courtId, DateTime targetDate);
         Task<List<CourtTimelineAvailabilityResponse>> GetTimelineAvailabilityAsync(int facilityId, DateTime targetDate);
+        Task<List<CourtDailyTimelineResponse>> GetWeeklyTimelineAvailabilityAsync(int courtId, DateTime targetDate);
     }
 }

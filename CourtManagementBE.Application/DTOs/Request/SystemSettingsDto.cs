@@ -11,4 +11,9 @@ public class SystemSettingsDto
     public bool EnableCancellationFee { get; set; }
     public decimal CancellationFeePercent { get; set; }
     public double CancellationThresholdHours { get; set; }
+
+    public int BufferDurationMinutes { get; set; }
+    public int MinBookingDurationMinutes { get; set; }
+    public int MaxBookingDurationMinutes { get; set; }
+    public int MinAllowableGapMinutes { get; set; }
 }

@@ -88,6 +88,54 @@ public class TimelineCustomerResponse
     public string Email { get; set; } = string.Empty;
 }
 
+public class CourtWeeklyTimelineResponse
+{
+    public int BufferDurationMinutes { get; set; }
+    public List<CourtDailyTimelineResponse> Timeline { get; set; } = new();
+}
+
+public class CourtDailyTimelineResponse
+{
+    public int DayOfWeek { get; set; }
+    public string Date { get; set; } = string.Empty;
+    public List<WeeklyBookingResponse> Bookings { get; set; } = new();
+    public List<WeeklyLockResponse> Locks { get; set; } = new();
+    public List<WeeklyPriceRuleResponse> PriceRules { get; set; } = new();
+}
+
+public class WeeklyBookingResponse
+{
+    public Guid BookingID { get; set; }
+    public int CustomerID { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public BookingBufferResponse? TimeBuffer { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+}
+
+public class BookingBufferResponse
+{
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+}
+
+public class WeeklyLockResponse
+{
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+}
+
+public class WeeklyPriceRuleResponse
+{
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}
+
 
 
 

@@ -16,4 +16,10 @@ public class SystemSettings
     public bool EnableCancellationFee { get; set; } = true;
     public decimal CancellationFeePercent { get; set; } = 20.0m;
     public double CancellationThresholdHours { get; set; } = 24.0;
+
+    // Booking Constraints & Buffer configurations
+    public int BufferDurationMinutes { get; set; } = 10;
+    public int MinBookingDurationMinutes { get; set; } = 60;
+    public int MaxBookingDurationMinutes { get; set; } = 180;
+    public int MinAllowableGapMinutes { get; set; } = 60;
 }

@@ -67,6 +67,13 @@ public class CourtController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpGet("{id}/weekly-timeline")]
+    public async Task<IActionResult> GetWeeklyTimeline(int id, [FromQuery] DateTime date)
+    {
+        var r = await _service.GetWeeklyTimelineAvailability(id, date);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

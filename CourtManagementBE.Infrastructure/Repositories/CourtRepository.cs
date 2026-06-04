@@ -67,4 +67,34 @@ public class CourtRepository : GenericRepository<Courts>, ICourtRepository
         return System.Text.Json.JsonSerializer.Deserialize<List<CourtTimelineAvailabilityResponse>>(jsonResult, options)
                ?? new List<CourtTimelineAvailabilityResponse>();
     }
+
+    public async Task<List<CourtDailyTimelineResponse>> GetWeeklyTimelineAvailabilityAsync(int courtId, DateTime targetDate)
+    {
+        string jsonResult = string.Empty;
+        using (var command = _ctx.Database.GetDbConnection().CreateCommand())
+        {
+            command.CommandText = "dbo.sp_GetCourtWeeklyTimelineAvailability";
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.Add(new SqlParameter("@CourtID", courtId));
+            command.Parameters.Add(new SqlParameter("@TargetDate", targetDate.Date));
+
+            await _ctx.Database.OpenConnectionAsync();
+            using var result = await command.ExecuteReaderAsync();
+            if (await result.ReadAsync())
+            {
+                jsonResult = result.IsDBNull(0) ? string.Empty : result.GetString(0);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(jsonResult))
+            return new List<CourtDailyTimelineResponse>();
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        return System.Text.Json.JsonSerializer.Deserialize<List<CourtDailyTimelineResponse>>(jsonResult, options)
+               ?? new List<CourtDailyTimelineResponse>();
+    }
 }

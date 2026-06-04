@@ -16,4 +16,5 @@ public interface ICourtService
     Task<Result<bool>> ToggleActive(int id);
     Task<Result<List<CourtSlotAvailabilityResponse>>> GetSlotsAvailability(int courtId, DateTime date);
     Task<Result<List<CourtTimelineAvailabilityResponse>>> GetTimelineAvailability(int facilityId, DateTime date);
+    Task<Result<CourtWeeklyTimelineResponse>> GetWeeklyTimelineAvailability(int courtId, DateTime date);
 }

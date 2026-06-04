@@ -142,54 +142,59 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>("Các khung giờ được chọn bị trùng nhau.");
         }
 
-        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate.ToDateTime(TimeOnly.MinValue));
+        var priceRules = await _unitOfWork.ICourtPriceRepository.GetCourtPriceRulesAsync(request.CourtID, bookingDate.ToDateTime(TimeOnly.MinValue));
+        var targetDayOfWeek = (int)bookingDate.DayOfWeek;
+        var dayRules = priceRules.Where(r => r.DayOfWeek == targetDayOfWeek).ToList();
+
         decimal courtTotal = 0;
         foreach (var requestedSlot in normalizedSlots)
         {
-            var matchedSlot = availability.FirstOrDefault(x =>
-                TimeSpan.TryParse(x.StartTime, out var startTime) &&
-                TimeSpan.TryParse(x.EndTime, out var endTime) &&
-                TrimToSecond(startTime) == requestedSlot.StartTime &&
-                TrimToSecond(endTime) == requestedSlot.EndTime);
+            var overlappingRules = dayRules
+                .Where(r => r.IsActive && r.StartTime < requestedSlot.EndTime && r.EndTime > requestedSlot.StartTime)
+                .ToList();
 
-            if (matchedSlot is null)
+            if (overlappingRules.Any(r => r.IsLocked))
             {
-                return BadRequest<BookingResponse>("Khung giờ được chọn không thuộc lịch đặt sân hợp lệ.");
+                return Conflict<BookingResponse>("Một hoặc nhiều khung giờ đã bị khóa (bảo trì hoặc sự kiện).");
             }
 
-            if (matchedSlot.IsLocked || matchedSlot.IsBooked)
+            if (overlappingRules.Count == 0)
             {
-                return Conflict<BookingResponse>("Một hoặc nhiều khung giờ đã bị khóa hoặc đã được đặt.");
+                return BadRequest<BookingResponse>("Khung giờ được chọn không thuộc giờ hoạt động của sân.");
             }
 
-            courtTotal += matchedSlot.Price;
+            decimal slotCost = 0;
+            foreach (var rule in overlappingRules)
+            {
+                var intersectStart = rule.StartTime > requestedSlot.StartTime ? rule.StartTime : requestedSlot.StartTime;
+                var intersectEnd = rule.EndTime < requestedSlot.EndTime ? rule.EndTime : requestedSlot.EndTime;
+                if (intersectStart < intersectEnd)
+                {
+                    var durationMinutes = (decimal)(intersectEnd - intersectStart).TotalMinutes;
+                    slotCost += (durationMinutes / 60m) * rule.Price;
+                }
+            }
+            courtTotal += slotCost;
         }
 
-        var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
-            x.CourtID == request.CourtID && x.BookingDate == bookingDate);
-        var existingSlots = sameDaySlots
-            .Where(x => normalizedSlots.Any(slot => slot.StartTime < x.EndTime && slot.EndTime > x.StartTime))
-            .ToList();
-
-        if (existingSlots.Count > 0)
+        var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+        var validationError = await ValidateBookingConstraints(null, request.CourtID, bookingDate, normalizedSlots, settings);
+        if (validationError != null)
         {
-            var bookingIds = existingSlots.Select(x => x.BookingID).Distinct().ToList();
-            var activeBookings = await _unitOfWork.IBookingRepository.FindList(x =>
-                bookingIds.Contains(x.BookingID) && x.Status != BookingStatusConstants.Cancelled);
-
-            if (activeBookings.Count > 0)
-            {
-                return Conflict<BookingResponse>("Một hoặc nhiều khung giờ đã được đặt bởi booking khác.");
-            }
+            return BadRequest<BookingResponse>(validationError);
         }
+
+        var requestedCombos = request.Combos.Where(x => x.Quantity > 0).ToList();
+        var comboIds = requestedCombos.Select(x => x.ComboID).ToList();
+        var combosList = await _unitOfWork.IComboRepository.FindList(x => comboIds.Contains(x.ComboID));
+        var combosMap = combosList.ToDictionary(x => x.ComboID);
 
         var comboLines = new List<BookingCombos>();
         decimal comboTotal = 0;
         Combos? firstCombo = null;
-        foreach (var requestedCombo in request.Combos.Where(x => x.Quantity > 0))
+        foreach (var requestedCombo in requestedCombos)
         {
-            var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == requestedCombo.ComboID);
-            if (combo is null || !combo.IsActive)
+            if (!combosMap.TryGetValue(requestedCombo.ComboID, out var combo) || !combo.IsActive)
             {
                 return BadRequest<BookingResponse>("Combo không tồn tại hoặc đang ngừng hoạt động.");
             }
@@ -212,12 +217,16 @@ public class BookingService : BaseService, IBookingService
             });
         }
 
+        var requestedServices = request.Services.Where(x => x.Quantity > 0).ToList();
+        var serviceIds = requestedServices.Select(x => x.ServiceID).ToList();
+        var servicesList = await _unitOfWork.IServiceRepository.FindList(x => serviceIds.Contains(x.ServiceID));
+        var servicesMap = servicesList.ToDictionary(x => x.ServiceID);
+
         var serviceLines = new List<BookingServices>();
         decimal serviceTotal = 0;
-        foreach (var requestedService in request.Services.Where(x => x.Quantity > 0))
+        foreach (var requestedService in requestedServices)
         {
-            var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == requestedService.ServiceID);
-            if (service is null || !service.IsActive || !CanAccessService(service))
+            if (!servicesMap.TryGetValue(requestedService.ServiceID, out var service) || !service.IsActive || !CanAccessService(service))
             {
                 return BadRequest<BookingResponse>("Dịch vụ không tồn tại, đã ngừng hoạt động hoặc không thuộc cơ sở hiện tại.");
             }
@@ -242,19 +251,14 @@ public class BookingService : BaseService, IBookingService
                 _unitOfWork.IServiceRepository.Update(service);
             }
 
-            var price = await GetCurrentServicePrice(requestedService.ServiceID);
-            if (price is null)
-            {
-                return BadRequest<BookingResponse>($"Dịch vụ {service.ServiceName} chưa có giá hiện hành.");
-            }
-
-            var lineTotal = price.Value * requestedService.Quantity;
+            var price = service.Price;
+            var lineTotal = price * requestedService.Quantity;
             serviceTotal += lineTotal;
             serviceLines.Add(new BookingServices
             {
                 ServiceID = requestedService.ServiceID,
                 Quantity = requestedService.Quantity,
-                UnitPrice = price.Value,
+                UnitPrice = price,
                 TotalAmount = lineTotal,
                 CreatedDate = DateTimeOffset.UtcNow,
                 ModifiedDate = DateTimeOffset.UtcNow
@@ -263,7 +267,7 @@ public class BookingService : BaseService, IBookingService
 
         if (firstCombo is not null)
         {
-            courtTotal = CalculateComboCourtTotal(firstCombo, normalizedSlots.Count, availability, normalizedSlots);
+            courtTotal = CalculateComboCourtTotal(firstCombo, normalizedSlots, priceRules, bookingDate);
         }
 
         var bookingId = Guid.NewGuid();
@@ -276,7 +280,7 @@ public class BookingService : BaseService, IBookingService
             BookingDate = bookingDate,
             Status = BookingStatusConstants.Pending,
             Note = request.Note,
-            TotalAmount = courtTotal + serviceTotal + comboTotal,
+            TotalAmount = courtTotal + serviceTotal,
             CreatedDate = now,
             ModifiedDate = now
         };
@@ -688,60 +692,41 @@ public class BookingService : BaseService, IBookingService
 
         var myOldSlots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
 
-        var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
-            x.CourtID == request.CourtID && x.BookingDate == bookingDate && x.BookingID != id);
-        var existingSlots = sameDaySlots
-            .Where(x => requestedSlot.StartTime < x.EndTime && requestedSlot.EndTime > x.StartTime)
-            .ToList();
-
-        if (existingSlots.Count > 0)
+        var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+        var validationError = await ValidateBookingConstraints(id, request.CourtID, bookingDate, new List<CreateFullBookingSlotRequest> { requestedSlot }, settings);
+        if (validationError != null)
         {
-            return Conflict<BookingResponse>("Một hoặc nhiều khung giờ mới đã được đặt bởi booking khác.");
+            return BadRequest<BookingResponse>(validationError);
         }
 
-        var availability = await _unitOfWork.ICourtRepository.GetSlotAvailabilityAsync(request.CourtID, bookingDate.ToDateTime(TimeOnly.MinValue));
+        var priceRules = await _unitOfWork.ICourtPriceRepository.GetCourtPriceRulesAsync(request.CourtID, bookingDate.ToDateTime(TimeOnly.MinValue));
+        var targetDayOfWeek = (int)bookingDate.DayOfWeek;
+        var dayRules = priceRules.Where(r => r.DayOfWeek == targetDayOfWeek).ToList();
+
+        var overlappingRules = dayRules
+            .Where(r => r.IsActive && r.StartTime < requestedSlot.EndTime && r.EndTime > requestedSlot.StartTime)
+            .ToList();
+
+        if (overlappingRules.Any(r => r.IsLocked))
+        {
+            return Conflict<BookingResponse>("Khung giờ mới được chọn đã bị khóa (bảo trì hoặc sự kiện).");
+        }
+
+        if (overlappingRules.Count == 0)
+        {
+            return BadRequest<BookingResponse>("Khung giờ mới được chọn không thuộc giờ hoạt động của sân.");
+        }
+
         decimal courtTotal = 0;
-        var matchedSlots = availability
-            .Where(x =>
-                TimeSpan.TryParse(x.StartTime, out var startTime) &&
-                TimeSpan.TryParse(x.EndTime, out var endTime) &&
-                TrimToSecond(startTime) >= requestedSlot.StartTime &&
-                TrimToSecond(endTime) <= requestedSlot.EndTime)
-            .OrderBy(x => TimeSpan.Parse(x.StartTime))
-            .ToList();
-
-        if (matchedSlots.Count == 0 ||
-            TrimToSecond(TimeSpan.Parse(matchedSlots.First().StartTime)) != requestedSlot.StartTime ||
-            TrimToSecond(TimeSpan.Parse(matchedSlots.Last().EndTime)) != requestedSlot.EndTime)
+        foreach (var rule in overlappingRules)
         {
-            return BadRequest<BookingResponse>("Khung giờ mới được chọn không thuộc lịch đặt sân hợp lệ.");
-        }
-
-        for (var i = 1; i < matchedSlots.Count; i++)
-        {
-            if (TrimToSecond(TimeSpan.Parse(matchedSlots[i - 1].EndTime)) != TrimToSecond(TimeSpan.Parse(matchedSlots[i].StartTime)))
+            var intersectStart = rule.StartTime > requestedSlot.StartTime ? rule.StartTime : requestedSlot.StartTime;
+            var intersectEnd = rule.EndTime < requestedSlot.EndTime ? rule.EndTime : requestedSlot.EndTime;
+            if (intersectStart < intersectEnd)
             {
-                return BadRequest<BookingResponse>("Khung giờ mới được chọn không thuộc lịch đặt sân hợp lệ.");
+                var durationMinutes = (decimal)(intersectEnd - intersectStart).TotalMinutes;
+                courtTotal += (durationMinutes / 60m) * rule.Price;
             }
-        }
-
-        foreach (var matchedSlot in matchedSlots)
-        {
-            var slotStart = TrimToSecond(TimeSpan.Parse(matchedSlot.StartTime));
-            var slotEnd = TrimToSecond(TimeSpan.Parse(matchedSlot.EndTime));
-            bool isLocked = matchedSlot.IsLocked;
-            bool isBookedByOther = matchedSlot.IsBooked && !myOldSlots.Any(x =>
-                x.CourtID == request.CourtID &&
-                x.BookingDate == bookingDate &&
-                TrimToSecond(x.StartTime) == slotStart &&
-                TrimToSecond(x.EndTime) == slotEnd);
-
-            if (isLocked || isBookedByOther)
-            {
-                return Conflict<BookingResponse>("Một hoặc nhiều khung giờ mới đã bị khóa hoặc đã được đặt.");
-            }
-
-            courtTotal += matchedSlot.Price;
         }
 
         var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
@@ -754,11 +739,7 @@ public class BookingService : BaseService, IBookingService
             var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == firstBookingCombo.ComboID);
             if (combo is not null && combo.IsActive)
             {
-                courtTotal = CalculateComboCourtTotal(combo, matchedSlots.Count, availability, matchedSlots.Select(x => new CreateFullBookingSlotRequest
-                {
-                    StartTime = TrimToSecond(TimeSpan.Parse(x.StartTime)),
-                    EndTime = TrimToSecond(TimeSpan.Parse(x.EndTime))
-                }).ToList());
+                courtTotal = CalculateComboCourtTotal(combo, new List<CreateFullBookingSlotRequest> { requestedSlot }, priceRules, bookingDate);
             }
         }
 
@@ -875,27 +856,48 @@ public class BookingService : BaseService, IBookingService
 
     private static decimal CalculateComboCourtTotal(
         Combos combo,
-        int selectedSlotCount,
-        List<CourtSlotAvailabilityResponse> availability,
-        List<CreateFullBookingSlotRequest> selectedSlots)
+        List<CreateFullBookingSlotRequest> selectedSlots,
+        List<CourtPriceResponse> priceRules,
+        DateOnly bookingDate)
     {
-        var total = combo.ComboPrice;
-        var extraCount = selectedSlotCount - combo.DurationHours;
-        if (extraCount <= 0)
+        var totalCost = 0m;
+        var targetDayOfWeek = (int)bookingDate.DayOfWeek;
+        var dayRules = priceRules.Where(r => r.DayOfWeek == targetDayOfWeek).ToList();
+
+        foreach (var slot in selectedSlots)
         {
-            return total;
+            var overlappingRules = dayRules
+                .Where(r => r.IsActive && r.StartTime < slot.EndTime && r.EndTime > slot.StartTime)
+                .ToList();
+
+            decimal baseCost = 0;
+            foreach (var rule in overlappingRules)
+            {
+                var intersectStart = rule.StartTime > slot.StartTime ? rule.StartTime : slot.StartTime;
+                var intersectEnd = rule.EndTime < slot.EndTime ? rule.EndTime : slot.EndTime;
+                if (intersectStart < intersectEnd)
+                {
+                    var durationMinutes = (decimal)(intersectEnd - intersectStart).TotalMinutes;
+                    baseCost += (durationMinutes / 60m) * rule.Price;
+                }
+            }
+
+            var durationHours = (decimal)(slot.EndTime - slot.StartTime).TotalHours;
+            var comboHours = (decimal)combo.DurationHours;
+
+            if (durationHours <= comboHours)
+            {
+                totalCost += combo.ComboPrice;
+            }
+            else
+            {
+                var extraHours = durationHours - comboHours;
+                var averageHourlyRate = durationHours > 0 ? baseCost / durationHours : 0;
+                totalCost += combo.ComboPrice + extraHours * averageHourlyRate;
+            }
         }
 
-        var selectedPrices = selectedSlots
-            .Select(slot => availability.FirstOrDefault(x =>
-                TimeSpan.TryParse(x.StartTime, out var startTime) &&
-                TimeSpan.TryParse(x.EndTime, out var endTime) &&
-                TrimToSecond(startTime) == slot.StartTime &&
-                TrimToSecond(endTime) == slot.EndTime)?.Price ?? 0)
-            .OrderByDescending(x => x)
-            .Take(extraCount);
-
-        return total + selectedPrices.Sum();
+        return totalCost;
     }
 
     public async Task<Result<List<BookingHistoryResponse>>> GetHistory(Guid? bookingId)
@@ -933,6 +935,86 @@ public class BookingService : BaseService, IBookingService
             CreatedAt = DateTimeOffset.UtcNow
         };
         await _unitOfWork.IBookingHistoryRepository.Add(log);
+    }
+
+    private async Task<string?> ValidateBookingConstraints(
+        Guid? currentBookingId,
+        int courtId,
+        DateOnly bookingDate,
+        List<CreateFullBookingSlotRequest> requestedSlots,
+        SystemSettings settings)
+    {
+        // 1. Check Duration Limits
+        var totalDurationMinutes = requestedSlots.Sum(x => (x.EndTime - x.StartTime).TotalMinutes);
+        if (totalDurationMinutes < settings.MinBookingDurationMinutes)
+        {
+            return $"Thời lượng đặt tối thiểu là {settings.MinBookingDurationMinutes} phút.";
+        }
+        if (totalDurationMinutes > settings.MaxBookingDurationMinutes)
+        {
+            return $"Thời lượng đặt tối đa là {settings.MaxBookingDurationMinutes} phút.";
+        }
+
+        // 2. Check Overlap including Buffer Duration
+        var buffer = TimeSpan.FromMinutes(settings.BufferDurationMinutes);
+        var sameDaySlots = await _unitOfWork.IBookingSlotRepository.FindList(x =>
+            x.CourtID == courtId && x.BookingDate == bookingDate && x.BookingID != currentBookingId);
+
+        // Filter only slots from active bookings
+        var activeBookingIds = sameDaySlots.Select(x => x.BookingID).Distinct().ToList();
+        var activeBookings = await _unitOfWork.IBookingRepository.FindList(x =>
+            activeBookingIds.Contains(x.BookingID) && x.Status != BookingStatusConstants.Cancelled);
+        var activeBookingIdSet = activeBookings.Select(x => x.BookingID).ToHashSet();
+
+        var activeSameDaySlots = sameDaySlots.Where(x => activeBookingIdSet.Contains(x.BookingID)).ToList();
+
+        var overlappingSlots = activeSameDaySlots
+            .Where(x => requestedSlots.Any(slot =>
+                slot.StartTime < x.EndTime + buffer &&
+                slot.EndTime + buffer > x.StartTime))
+            .ToList();
+
+        if (overlappingSlots.Count > 0)
+        {
+            return "Một hoặc nhiều khung giờ đã bị trùng hoặc nằm trong khoảng thời gian đệm dọn sân (Buffer) của booking khác.";
+        }
+
+        // 3. Check No-Crumb Policy (MinAllowableGapMinutes)
+        if (settings.MinAllowableGapMinutes > 0)
+        {
+            var newStart = requestedSlots.Min(x => x.StartTime);
+            var newEnd = requestedSlots.Max(x => x.EndTime);
+
+            // Find closest active booking slot before newStart
+            var slotsBefore = activeSameDaySlots
+                .Where(x => x.EndTime <= newStart)
+                .OrderByDescending(x => x.EndTime)
+                .ToList();
+
+            var minGap = TimeSpan.FromMinutes(settings.MinAllowableGapMinutes);
+
+            var boundaryBefore = slotsBefore.Count > 0 ? slotsBefore.First().EndTime + buffer : settings.OpeningTime;
+            var leftGap = newStart - boundaryBefore;
+            if (leftGap > TimeSpan.Zero && leftGap < minGap)
+            {
+                return $"Đặt lịch để lại khoảng trống quá ngắn phía trước ({leftGap.TotalMinutes} phút). Vui lòng đặt sát ca trước ({boundaryBefore.ToString(@"hh\:mm")}) hoặc lùi giờ lại.";
+            }
+
+            // Find closest active booking slot after newEnd
+            var slotsAfter = activeSameDaySlots
+                .Where(x => x.StartTime >= newEnd)
+                .OrderBy(x => x.StartTime)
+                .ToList();
+
+            var boundaryAfter = slotsAfter.Count > 0 ? slotsAfter.First().StartTime - buffer : settings.ClosingTime;
+            var rightGap = boundaryAfter - newEnd;
+            if (rightGap > TimeSpan.Zero && rightGap < minGap)
+            {
+                return $"Đặt lịch để lại khoảng trống quá ngắn phía sau ({rightGap.TotalMinutes} phút). Vui lòng đặt sát ca sau ({boundaryAfter.ToString(@"hh\:mm")}) hoặc đổi giờ.";
+            }
+        }
+
+        return null;
     }
 
     private static bool IsValidTransition(string currentStatus, string newStatus)

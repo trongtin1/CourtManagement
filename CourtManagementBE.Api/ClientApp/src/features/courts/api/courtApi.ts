@@ -4,6 +4,7 @@ import type {
   Court,
   CourtSlotAvailability,
   CourtTimelineAvailability,
+  CourtWeeklyTimeline,
   CreateCourtRequest,
   UpdateCourtRequest,
 } from '../model/types'
@@ -16,6 +17,8 @@ export const courtApi = {
     apiGet<CourtSlotAvailability[]>(`/court/${id}/slots`, { date }),
   getTimelineAvailability: (facilityId: number, date: string) =>
     apiGet<CourtTimelineAvailability[]>(`/court/facility/${facilityId}/timeline`, { date }),
+  getWeeklyTimeline: (id: number, date: string) =>
+    apiGet<CourtWeeklyTimeline>(`/court/${id}/weekly-timeline`, { date }),
   create: (data: CreateCourtRequest) => apiPost<Court>('/court', data),
   update: (id: number, data: UpdateCourtRequest) => apiPut<Court>(`/court/${id}`, data),
   toggleActive: (id: number) => apiPatch<Court>(`/court/${id}/toggle-active`),

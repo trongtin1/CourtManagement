@@ -121,7 +121,7 @@ export const getMenuItems = (): MenuItem[] => {
     {
       key: 'court-setup',
       icon: <SettingOutlined />,
-      label: 'Court Setup',
+      label: 'Cấu hình sân',
       children: [
         {
           key: 'courts',

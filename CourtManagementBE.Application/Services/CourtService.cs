@@ -121,4 +121,23 @@ public class CourtService : BaseService, ICourtService
         var timeline = await _unitOfWork.ICourtRepository.GetTimelineAvailabilityAsync(facilityId, date);
         return Success(timeline);
     }
+
+    public async Task<Result<CourtWeeklyTimelineResponse>> GetWeeklyTimelineAvailability(int courtId, DateTime date)
+    {
+        if (!await CanAccessCourt(courtId))
+            return Unauthorized<CourtWeeklyTimelineResponse>("Bạn không có quyền truy cập sân này.");
+
+        // Lấy cấu hình hệ thống hiện tại để lấy BufferDurationMinutes và các ràng buộc khác
+        var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+
+        var dailyTimeline = await _unitOfWork.ICourtRepository.GetWeeklyTimelineAvailabilityAsync(courtId, date);
+
+        var response = new CourtWeeklyTimelineResponse
+        {
+            BufferDurationMinutes = settings.BufferDurationMinutes,
+            Timeline = dailyTimeline
+        };
+
+        return Success(response);
+    }
 }
