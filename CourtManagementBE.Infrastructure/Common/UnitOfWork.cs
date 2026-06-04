@@ -64,6 +64,7 @@ public class UnitOfWork : IUnitOfWork
     public IUnitConversionRepository IUnitConversionRepository => new UnitConversionRepository(_context);
     public IBookingHistoryRepository IBookingHistoryRepository => new BookingHistoryRepository(_context);
     public IBookingStatusRepository IBookingStatusRepository => new BookingStatusRepository(_context);
+    public ISystemSettingsRepository ISystemSettingsRepository => new SystemSettingsRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

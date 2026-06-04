@@ -68,6 +68,7 @@ public class AppDbContext : DbContext
     public DbSet<CourtFeatureCategories> CourtFeatureCategories => Set<CourtFeatureCategories>();
     public DbSet<CancellationReasons> CancellationReasons => Set<CancellationReasons>();
     public DbSet<RefundReasons> RefundReasons => Set<RefundReasons>();
+    public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
 
     // ── Audit Log ─────────────────────────────────────────────────────────────
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -112,7 +113,6 @@ public class AppDbContext : DbContext
             e.Property(x => x.Email).HasColumnType("varchar(255)");
             e.Property(x => x.ImageURL).HasColumnType("nvarchar(500)");
             e.Property(x => x.Description).HasColumnType("nvarchar(1000)");
-            e.Property(x => x.Timezone).HasColumnType("varchar(50)").HasDefaultValue("Asia/Ho_Chi_Minh").IsRequired();
         });
 
         // ── Areas ────────────────────────────────────────────────────────────
@@ -599,6 +599,14 @@ public class AppDbContext : DbContext
             e.Property(x => x.LabelName).HasColumnType("nvarchar(200)").IsRequired();
             e.Property(x => x.ColorCode).HasColumnType("varchar(20)");
             e.HasIndex(x => x.Code).IsUnique();
+        });
+
+        // ── SystemSettings ───────────────────────────────────────────────────
+        modelBuilder.Entity<SystemSettings>(e =>
+        {
+            e.HasKey(x => x.ID);
+            e.Property(x => x.Timezone).HasColumnType("varchar(50)").HasDefaultValue("Asia/Ho_Chi_Minh").IsRequired();
+            e.Property(x => x.CancellationFeePercent).HasColumnType("decimal(5,2)").HasDefaultValue(20.0m);
         });
     }
 

@@ -9,6 +9,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_CreateRecurringBookingGroup
     @DaysOfWeek NVARCHAR(100),
     @CreatedBy NVARCHAR(100),
     @Note NVARCHAR(MAX),
+    @FlatRatePrice DECIMAL(18,2) = NULL,
     @ErrorMessage NVARCHAR(MAX) OUTPUT
 AS
 BEGIN
@@ -20,9 +21,8 @@ BEGIN
     DECLARE @SlotDurationMinutes INT = 60;
     SET @ErrorMessage = NULL;
 
-    SELECT @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
-    FROM Facilities
-    WHERE FacilityID = @FacilityID;
+    SELECT TOP 1 @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+    FROM SystemSettings;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -33,7 +33,7 @@ BEGIN
             CreatedDate, CreatedBy, ModifiedDate, ModifiedBy
         )
         VALUES (
-            'returning', @CustomerID, @FacilityID, 0, 0, 'confirmed', ISNULL(@Note, ''),
+            'returning', @CustomerID, @FacilityID, ISNULL(@FlatRatePrice, 0), 0, 'confirmed', ISNULL(@Note, ''),
             SYSDATETIMEOFFSET(), @CreatedBy, SYSDATETIMEOFFSET(), @CreatedBy
         );
 
@@ -199,7 +199,7 @@ BEGIN
             CAST(nb.TargetDate AS DATETIME),
             @StartTime, 
             @EndTime, 
-            nb.TotalPrice, 
+            CASE WHEN @FlatRatePrice IS NOT NULL AND @FlatRatePrice > 0 THEN 0 ELSE nb.TotalPrice END, 
             0, 
             'confirmed', 
             N'',
@@ -223,15 +223,18 @@ BEGIN
             @EndTime
         FROM #NewBookings nb;
 
-        -- 8. Tính toán lại tổng tiền của cả nhóm
-        DECLARE @TotalGroupAmount DECIMAL(18,2) = 0;
+        -- 8. Tính toán lại tổng tiền của cả nhóm nếu không phải giá trọn gói
+        IF @FlatRatePrice IS NULL OR @FlatRatePrice <= 0
+        BEGIN
+            DECLARE @TotalGroupAmount DECIMAL(18,2) = 0;
 
-        SELECT @TotalGroupAmount = ISNULL(SUM(TotalPrice), 0)
-        FROM #BookingPrices;
+            SELECT @TotalGroupAmount = ISNULL(SUM(TotalPrice), 0)
+            FROM #BookingPrices;
 
-        UPDATE BookingGroups
-        SET TotalAmount = @TotalGroupAmount
-        WHERE BookingGroupID = @BookingGroupID;
+            UPDATE BookingGroups
+            SET TotalAmount = @TotalGroupAmount
+            WHERE BookingGroupID = @BookingGroupID;
+        END;
 
         COMMIT TRANSACTION;
 

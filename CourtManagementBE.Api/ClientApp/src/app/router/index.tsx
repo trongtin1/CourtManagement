@@ -40,6 +40,7 @@ import {
   UnitsPage,
   UtilitiesPage,
   BookingHistoriesPage,
+  SystemSettingsPage,
 } from '@/app/router/lazyPages'
 
 const withSuspense = (element: ReactNode) => (
@@ -171,6 +172,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.bookingHistories.replace('/', ''),
         element: withSuspense(<BookingHistoriesPage />),
+      },
+      {
+        path: ROUTES.systemSettings.replace('/', ''),
+        element: withSuspense(<SystemSettingsPage />),
       },
     ],
   },

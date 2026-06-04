@@ -2,6 +2,8 @@ using AutoMapper;
 using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
+using CourtManagementBE.Application.Helpers;
+using CourtManagementBE.Application.Extensions;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
@@ -341,40 +343,56 @@ public class BookingService : BaseService, IBookingService
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền hủy booking này.");
         if (entity.Status == BookingStatusConstants.Cancelled) return BadRequest<BookingResponse>("Đơn đặt sân đã bị hủy trước đó.");
 
-        entity.Status = BookingStatusConstants.Cancelled;
-        entity.CancellationReason = request.CancellationReason;
-        entity.ModifiedDate = DateTimeOffset.UtcNow;
         var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
-
-        await _unitOfWork.BeginTransactionAsync();
-        try
+        var earliestStartTime = TimeSpan.Zero;
+        if (slots != null && slots.Count > 0)
         {
-            _unitOfWork.IBookingRepository.Update(entity);
-            if (slots.Count > 0)
+            earliestStartTime = slots[0].StartTime;
+            foreach (var slot in slots)
             {
-                _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
-            }
-
-            // Logic hoàn trả kho
-            var bookingServices = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
-            foreach (var bs in bookingServices)
-            {
-                var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == bs.ServiceID);
-                if (service is not null && service.IsTrackStock)
+                if (slot.StartTime < earliestStartTime)
                 {
-                    service.StockQuantity += bs.Quantity;
-                    _unitOfWork.IServiceRepository.Update(service);
+                    earliestStartTime = slot.StartTime;
                 }
             }
+        }
 
-            await _unitOfWork.CommitTransactionAsync();
-            return Success(_mapper.Map<BookingResponse>(entity), "Hủy đơn đặt sân thành công.");
-        }
-        catch (Exception)
+        var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+        DateTime currentLocalTime = settings.GetLocalTime();
+
+        var localBookingStart = entity.BookingDate.ToDateTime(TimeOnly.FromTimeSpan(earliestStartTime));
+
+        // 1. Tính toán số tiền hoàn/phạt bằng C# Helper (C# làm bộ não)
+        var calculationResult = CancellationPolicyCalculator.Calculate(new CancellationFeeCalculationRequest
         {
-            await _unitOfWork.RollbackTransactionAsync();
-            return Conflict<BookingResponse>("Đã xảy ra lỗi khi hủy booking.");
+            OriginalPaidAmount = entity.PaidAmount,
+            BookingStartLocal = localBookingStart,
+            CurrentLocalTime = currentLocalTime,
+            Settings = settings,
+            BookingDate = entity.BookingDate,
+            IsFromGroup = false,
+            CustomReason = request.CancellationReason
+        });
+
+        // 2. Thực thi giao dịch DB bằng Stored Procedure (SP làm chân tay)
+        var performedBy = _currentUser?.UserId?.ToString() ?? "system";
+        var errorMessage = await _unitOfWork.IBookingRepository.CancelBookingAsync(
+            bookingId: id,
+            cancellationReason: request.CancellationReason,
+            refundAmount: calculationResult.RefundAmount,
+            penaltyAmount: calculationResult.PenaltyAmount,
+            refundNote: calculationResult.RefundNote,
+            penaltyNote: calculationResult.PenaltyNote,
+            performedBy: performedBy,
+            historyNote: calculationResult.HistoryNote
+        );
+
+        if (!string.IsNullOrEmpty(errorMessage))
+        {
+            return Conflict<BookingResponse>(errorMessage);
         }
+
+        return Success<BookingResponse>(null, "Hủy đơn đặt sân thành công.");
     }
 
     public async Task<Result<BookingResponse>> UpdateStatus(Guid id, string status)

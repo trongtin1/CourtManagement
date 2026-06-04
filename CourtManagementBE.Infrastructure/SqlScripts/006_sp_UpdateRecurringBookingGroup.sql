@@ -10,6 +10,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_UpdateRecurringBookingGroup
     @DaysOfWeek NVARCHAR(100),
     @ModifiedBy NVARCHAR(100),
     @Note NVARCHAR(MAX),
+    @FlatRatePrice DECIMAL(18,2) = NULL,
     @ErrorMessage NVARCHAR(MAX) OUTPUT
 AS
 BEGIN
@@ -21,9 +22,8 @@ BEGIN
     DECLARE @Today DATE = CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SE Asia Standard Time' AS DATE);
     DECLARE @SlotDurationMinutes INT = 60;
 
-    SELECT @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
-    FROM Facilities
-    WHERE FacilityID = @FacilityID;
+    SELECT TOP 1 @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+    FROM SystemSettings;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -32,6 +32,7 @@ BEGIN
         UPDATE BookingGroups
         SET CustomerID = @CustomerID,
             Note = ISNULL(@Note, ''),
+            TotalAmount = CASE WHEN @FlatRatePrice IS NOT NULL AND @FlatRatePrice > 0 THEN @FlatRatePrice ELSE TotalAmount END,
             ModifiedDate = SYSDATETIMEOFFSET(),
             ModifiedBy = @ModifiedBy
         WHERE BookingGroupID = @BookingGroupID;
@@ -231,7 +232,7 @@ BEGIN
             CAST(nb.TargetDate AS DATETIME),
             @StartTime, 
             @EndTime, 
-            nb.TotalPrice, 
+            CASE WHEN @FlatRatePrice IS NOT NULL AND @FlatRatePrice > 0 THEN 0 ELSE nb.TotalPrice END, 
             0, 
             'confirmed', 
             N'',
@@ -255,17 +256,20 @@ BEGIN
             @EndTime
         FROM #NewBookings nb;
 
-        -- 9. Tính toán lại tổng tiền của cả nhóm dựa trên tất cả các buổi (cũ + mới) không bị hủy
-        DECLARE @TotalGroupAmount DECIMAL(18,2) = 0;
+        -- 9. Tính toán lại tổng tiền của cả nhóm dựa trên tất cả các buổi (cũ + mới) không bị hủy nếu không phải giá trọn gói
+        IF @FlatRatePrice IS NULL OR @FlatRatePrice <= 0
+        BEGIN
+            DECLARE @TotalGroupAmount DECIMAL(18,2) = 0;
 
-        SELECT @TotalGroupAmount = ISNULL(SUM(TotalAmount), 0)
-        FROM Bookings
-        WHERE BookingGroupID = @BookingGroupID
-          AND Status <> 'cancelled';
+            SELECT @TotalGroupAmount = ISNULL(SUM(TotalAmount), 0)
+            FROM Bookings
+            WHERE BookingGroupID = @BookingGroupID
+              AND Status <> 'cancelled';
 
-        UPDATE BookingGroups
-        SET TotalAmount = @TotalGroupAmount
-        WHERE BookingGroupID = @BookingGroupID;
+            UPDATE BookingGroups
+            SET TotalAmount = @TotalGroupAmount
+            WHERE BookingGroupID = @BookingGroupID;
+        END;
 
         COMMIT TRANSACTION;
 

@@ -169,6 +169,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IFacilityService, FacilityService>();
+            builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();
             builder.Services.AddScoped<IAreaService, AreaService>();
             builder.Services.AddScoped<ICourtService, CourtService>();
             builder.Services.AddScoped<ICourtTypeService, CourtTypeService>();

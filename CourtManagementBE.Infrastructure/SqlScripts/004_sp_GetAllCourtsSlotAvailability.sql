@@ -11,12 +11,11 @@ BEGIN
         @ClosingTime TIME(7),
         @SlotDurationMinutes INT;
 
-    SELECT
-        @OpeningTime = f.OpeningTime,
-        @ClosingTime = f.ClosingTime,
-        @SlotDurationMinutes = ISNULL(f.SlotDurationMinutes, 60)
-    FROM Facilities f
-    WHERE f.FacilityID = @FacilityID;
+    SELECT TOP 1
+        @OpeningTime = OpeningTime,
+        @ClosingTime = ClosingTime,
+        @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+    FROM SystemSettings;
 
     IF @OpeningTime IS NULL
     BEGIN

@@ -10,14 +10,15 @@ import {
   InputNumber,
   Space,
   App,
+  Checkbox,
 } from 'antd'
-import { ReloadOutlined, UserOutlined, EnvironmentOutlined } from '@ant-design/icons'
+import { UserOutlined, EnvironmentOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 import { useCreateBookingGroupMutation } from '@/features/bookings/api/useBookingGroupQueries'
 import { useCourtsQuery } from '@/features/courts/api/useCourtQueries'
 import { useCustomersQuery } from '@/features/customers/api/useCustomerQueries'
-import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import { getDisabledTime } from '@/utils/format'
 import { toApiError } from '@/utils/errors'
 import type {
@@ -63,7 +64,7 @@ export function BookingGroupCreateDrawer({
   // Queries
   const { data: courtsData } = useCourtsQuery({ page: 1, pageSize: 100 })
   const { data: customersData } = useCustomersQuery({ page: 1, pageSize: 100 })
-  const { data: facility } = useFacilityQuery(facilityId)
+  const { data: facility } = useSystemSettingsQuery()
 
   const courts = courtsData?.items ?? []
   const customers = customersData?.items ?? []
@@ -71,6 +72,7 @@ export function BookingGroupCreateDrawer({
   // Component States
   const groupType: BookingGroupType = 'returning'
   const [selectedDays, setSelectedDays] = useState<string[]>([])
+  const [isFlatRate, setIsFlatRate] = useState(false)
 
   const toggleDay = (dayValue: string) => {
     setSelectedDays((prev) =>
@@ -99,7 +101,7 @@ export function BookingGroupCreateDrawer({
         groupType,
         customerID: values.customerID || null,
         facilityID: facilityId,
-        totalAmount: values.totalAmount || 0,
+        totalAmount: isFlatRate ? values.totalAmount || 0 : 0,
         paidAmount: values.paidAmount || 0,
         status: 'Active',
         note: values.note || '',
@@ -265,16 +267,52 @@ export function BookingGroupCreateDrawer({
           </div>
         )}
 
-        {/* Tài chính */}
-        <Form.Item label="Đã thanh toán trước" name="paidAmount">
-          <InputNumber<number>
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={(value) => Number(value?.replace(/,/g, '') || 0)}
-            className="w-full"
-            addonAfter="đ"
-            min={0}
-          />
-        </Form.Item>
+        {/* Đặt trọn gói */}
+        <div className="border border-slate-100 bg-slate-50/30 rounded-xl p-4 mb-4">
+          <Form.Item name="isFlatRate" valuePropName="checked" className="mb-2">
+            <Checkbox
+              checked={isFlatRate}
+              onChange={(e) => setIsFlatRate(e.target.checked)}
+            >
+              <span className="font-semibold text-slate-700">
+                Áp dụng giá trọn gói (Flat-rate)
+              </span>
+            </Checkbox>
+          </Form.Item>
+
+          {isFlatRate && (
+            <Form.Item
+              label="Giá trọn gói toàn lịch"
+              name="totalAmount"
+              rules={[{ required: true, message: 'Vui lòng nhập giá trọn gói' }]}
+            >
+              <InputNumber<number>
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => Number(value?.replace(/,/g, '') || 0)}
+                className="w-full"
+                addonAfter="đ"
+                min={0}
+                placeholder="Nhập giá trọn gói cố định cho toàn bộ lịch..."
+              />
+            </Form.Item>
+          )}
+
+          {/* Đã thanh toán trước / Cọc */}
+          <Form.Item
+            label="Đã thanh toán trước (Quỹ cọc)"
+            name="paidAmount"
+            className="mb-0"
+          >
+            <InputNumber<number>
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => Number(value?.replace(/,/g, '') || 0)}
+              className="w-full"
+              addonAfter="đ"
+              min={0}
+              placeholder="Nhập số tiền nạp quỹ cọc trước nếu có..."
+            />
+          </Form.Item>
+        </div>
 
         {/* Ghi chú */}
         <Form.Item label="Ghi chú" name="note">

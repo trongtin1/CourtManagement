@@ -1383,9 +1383,6 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<TimeSpan>("ClosingTime")
-                        .HasColumnType("time");
-
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
 
@@ -1408,21 +1405,9 @@ namespace CourtManagementBE.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<TimeSpan>("OpeningTime")
-                        .HasColumnType("time");
-
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasColumnType("varchar(20)");
-
-                    b.Property<int>("SlotDurationMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Timezone")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("varchar(50)")
-                        .HasDefaultValue("Asia/Ho_Chi_Minh");
 
                     b.HasKey("FacilityID");
 
@@ -1778,6 +1763,45 @@ namespace CourtManagementBE.Migrations
                         .HasFilter("[FacilityID] IS NOT NULL");
 
                     b.ToTable("Services");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.SystemSettings", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<decimal>("CancellationFeePercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(20.0m);
+
+                    b.Property<double>("CancellationThresholdHours")
+                        .HasColumnType("float");
+
+                    b.Property<TimeSpan>("ClosingTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("EnableCancellationFee")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeSpan>("OpeningTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("SlotDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Timezone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Asia/Ho_Chi_Minh");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.UnitConversions", b =>

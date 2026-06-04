@@ -42,9 +42,7 @@ import type {
   UpdateCourtDefaultPriceRuleRequest,
 } from '@/features/courts/model/types'
 import { toApiError } from '@/utils/errors'
-import { storage } from '@/utils/storage'
-import { AUTH_STORAGE_KEYS } from '@/constants/auth'
-import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import { getDisabledTime } from '@/utils/format'
 import { formatCurrency, formatTime, toTimeSpan } from '@/utils/format'
 
@@ -94,9 +92,7 @@ export default function CourtPriceSettingPage() {
   const [selectedDay, setSelectedDay] = useState(1)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isFormVisible, setIsFormVisible] = useState(false)
-  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
-  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
-  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+  const { data: facility } = useSystemSettingsQuery()
 
   const [configType, setConfigType] = useState<'weekly' | 'specific'>('weekly')
 

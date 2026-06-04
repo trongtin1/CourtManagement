@@ -14,6 +14,8 @@ import {
   Select,
   Pagination,
   Tabs,
+  Popconfirm,
+  Radio,
 } from 'antd'
 import {
   CloseOutlined,
@@ -22,6 +24,7 @@ import {
   DollarOutlined,
   ReloadOutlined,
   WalletOutlined,
+  StopOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -34,11 +37,13 @@ import { formatCompactCurrency } from '@/utils/format'
 import {
   useBookingGroupQuery,
   usePayBookingGroupDepositMutation,
+  useCancelBookingGroupMutation,
 } from '@/features/bookings/api/useBookingGroupQueries'
 import {
   useGroupBookingsQuery,
   useRefundBookingMutation,
   useBookingStatusesQuery,
+  usePayBookingMutation,
 } from '@/features/bookings/api/useBookingQueries'
 
 interface BookingGroupDetailDrawerProps {
@@ -72,7 +77,9 @@ export function BookingGroupDetailDrawer({
   const { message } = App.useApp()
   const { data: fullGroup, isLoading } = useBookingGroupQuery(group?.bookingGroupID ?? 0)
   const payDepositMutation = usePayBookingGroupDepositMutation()
+  const cancelGroupMutation = useCancelBookingGroupMutation()
   const refundMutation = useRefundBookingMutation()
+  const payBookingMutation = usePayBookingMutation()
   const { data: statusesData } = useBookingStatusesQuery()
   const bookingStatuses = statusesData ?? []
 
@@ -83,6 +90,60 @@ export function BookingGroupDetailDrawer({
   const [refundForm] = Form.useForm()
   const [refundingBookingId, setRefundingBookingId] = useState<string | null>(null)
   const [refundingMaxAmount, setRefundingMaxAmount] = useState<number>(0)
+
+  const [selectedPayBooking, setSelectedPayBooking] = useState<Booking | null>(null)
+  const [payBookingForm] = Form.useForm()
+  const payBookingAmount = Form.useWatch('amount', payBookingForm)
+
+  const handleCancelGroup = async () => {
+    try {
+      await cancelGroupMutation.mutateAsync({
+        id: detail.bookingGroupID,
+        reason: 'Hủy từ màn hình quản lý chi tiết',
+      })
+      message.success('Đã hủy nhóm đặt sân thành công')
+    } catch {
+      message.error('Không thể hủy nhóm đặt sân')
+    }
+  }
+
+  const handleQuickDeduct = (b: Booking) => {
+    const remaining = b.totalAmount - (b.paidAmount ?? 0)
+    payBookingMutation.mutate(
+      {
+        id: b.bookingID,
+        data: {
+          amount: remaining,
+          note: `Khấu trừ cọc nhanh từ nhóm #${detail.bookingGroupID}`,
+          deductFromGroupDeposit: true,
+        },
+      },
+      {
+        onSuccess: () => {
+          message.success(
+            `Đã khấu trừ ${formatCompactCurrency(remaining)} thành công cho ngày ${dayjs(b.bookingDate).format('DD/MM/YYYY')}!`,
+          )
+        },
+        onError: (error) => {
+          const fallbackMessage = 'Khấu trừ cọc thất bại!'
+          const serverMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data
+              ?.message ?? fallbackMessage
+          message.error(serverMessage)
+        },
+      },
+    )
+  }
+
+  const handlePayBookingClick = (b: Booking) => {
+    setSelectedPayBooking(b)
+    const remaining = b.totalAmount - (b.paidAmount ?? 0)
+    payBookingForm.setFieldsValue({
+      amount: remaining,
+      paymentSource: detail.paidAmount >= remaining ? 'group_deposit' : 'direct',
+      note: '',
+    })
+  }
 
   // Booking Group Bookings Query & Pagination
   const [groupStatusFilter, setGroupStatusFilter] = useState<string | undefined>()
@@ -280,19 +341,43 @@ export function BookingGroupDetailDrawer({
                         </div>
 
                         {detail.status === 'Active' && (
-                          <Button
-                            type="primary"
-                            icon={<WalletOutlined />}
-                            size="large"
-                            className="bg-emerald-600 hover:bg-emerald-705 w-full rounded-lg text-sm font-bold h-10"
-                            loading={payDepositMutation.isPending}
-                            onClick={() => {
-                              payForm.setFieldsValue({ amount: 500000 })
-                              setIsPayModalOpen(true)
-                            }}
-                          >
-                            Nạp thêm tiền cọc nhóm
-                          </Button>
+                          <div className="flex gap-2 w-full">
+                            <Button
+                              type="primary"
+                              icon={<WalletOutlined />}
+                              size="large"
+                              className="bg-emerald-600 hover:bg-emerald-705 flex-1 rounded-lg text-sm font-bold h-10"
+                              loading={payDepositMutation.isPending}
+                              onClick={() => {
+                                payForm.setFieldsValue({ amount: 500000 })
+                                setIsPayModalOpen(true)
+                              }}
+                            >
+                              Nạp thêm tiền cọc nhóm
+                            </Button>
+                            <Popconfirm
+                              title="Hủy toàn bộ lịch trong nhóm này?"
+                              description="Tất cả các buổi đặt chưa diễn ra sẽ bị hủy."
+                              onConfirm={handleCancelGroup}
+                              okText="Xác nhận hủy"
+                              cancelText="Không"
+                              okButtonProps={{
+                                danger: true,
+                                loading: cancelGroupMutation.isPending,
+                              }}
+                            >
+                              <Button
+                                type="primary"
+                                danger
+                                ghost
+                                icon={<StopOutlined />}
+                                size="large"
+                                className="h-10 rounded-lg text-sm font-bold px-4"
+                              >
+                                Hủy nhóm
+                              </Button>
+                            </Popconfirm>
+                          </div>
                         )}
                       </div>
 
@@ -464,23 +549,49 @@ export function BookingGroupDetailDrawer({
                                         </strong>
                                       </span>
                                     </div>
-                                    {bPaid > 0 && (
-                                      <div className="flex justify-end border-t border-slate-100 pt-2.5 mt-1">
-                                        <Button
-                                          type="primary"
-                                          danger
-                                          size="middle"
-                                          icon={<WalletOutlined />}
-                                          className="text-xs h-7.5 px-3.5 rounded-md font-semibold"
-                                          onClick={() => {
-                                            setRefundingBookingId(b.bookingID)
-                                            setRefundingMaxAmount(bPaid)
-                                            refundForm.setFieldsValue({ amount: bPaid })
-                                            setIsRefundModalOpen(true)
-                                          }}
-                                        >
-                                          Hoàn tiền
-                                        </Button>
+                                    {(bPaid > 0 || (b.totalAmount > bPaid && b.status !== 'Cancelled')) && (
+                                      <div className="flex justify-end gap-1.5 border-t border-slate-100 pt-2.5 mt-1">
+                                        {bPaid > 0 && (
+                                          <Button
+                                            type="primary"
+                                            danger
+                                            size="middle"
+                                            icon={<WalletOutlined />}
+                                            className="text-xs h-7.5 px-3.5 rounded-md font-semibold mr-auto"
+                                            onClick={() => {
+                                              setRefundingBookingId(b.bookingID)
+                                              setRefundingMaxAmount(bPaid)
+                                              refundForm.setFieldsValue({ amount: bPaid })
+                                              setIsRefundModalOpen(true)
+                                            }}
+                                          >
+                                            Hoàn tiền
+                                          </Button>
+                                        )}
+                                        {b.totalAmount > bPaid && b.status !== 'Cancelled' && (
+                                          <>
+                                            {detail.paidAmount >= (b.totalAmount - bPaid) && (
+                                              <Button
+                                                type="dashed"
+                                                size="middle"
+                                                className="text-xs h-7.5 px-3.5 rounded-md font-semibold text-emerald-600 border-emerald-200 hover:border-emerald-500 hover:text-emerald-700 bg-emerald-50/30"
+                                                loading={payBookingMutation.isPending}
+                                                onClick={() => handleQuickDeduct(b)}
+                                              >
+                                                Khấu trừ cọc ({formatCompactCurrency(b.totalAmount - bPaid)})
+                                              </Button>
+                                            )}
+                                            <Button
+                                              type="primary"
+                                              size="middle"
+                                              icon={<WalletOutlined />}
+                                              className="text-xs h-7.5 px-3.5 rounded-md font-semibold bg-emerald-600 hover:bg-emerald-700"
+                                              onClick={() => handlePayBookingClick(b)}
+                                            >
+                                              Thanh toán
+                                            </Button>
+                                          </>
+                                        )}
                                       </div>
                                     )}
                                   </div>
@@ -695,6 +806,136 @@ export function BookingGroupDetailDrawer({
                 </Button>
               </div>
             </Form>
+          </Modal>
+
+          {/* Modal Thanh Toán Buổi Lẻ */}
+          <Modal
+            title={
+              <span className="flex items-center gap-2 font-extrabold text-slate-800 text-base">
+                <WalletOutlined className="text-emerald-600" /> Thanh toán buổi chơi ngày{' '}
+                {selectedPayBooking && dayjs(selectedPayBooking.bookingDate).format('DD/MM/YYYY')}
+              </span>
+            }
+            open={!!selectedPayBooking}
+            onCancel={() => setSelectedPayBooking(null)}
+            footer={null}
+            destroyOnClose
+            className="rounded-2xl overflow-hidden"
+          >
+            {selectedPayBooking && (
+              <Form
+                form={payBookingForm}
+                layout="vertical"
+                onFinish={(values: { amount: number; paymentSource: string; note?: string }) => {
+                  payBookingMutation.mutate(
+                    {
+                      id: selectedPayBooking.bookingID,
+                      data: {
+                        amount: values.amount,
+                        note: values.note || '',
+                        deductFromGroupDeposit: values.paymentSource === 'group_deposit',
+                      },
+                    },
+                    {
+                      onSuccess: () => {
+                        message.success('Ghi nhận thanh toán buổi thành công!')
+                        setSelectedPayBooking(null)
+                        payBookingForm.resetFields()
+                      },
+                      onError: (error) => {
+                        const fallbackMessage = 'Thanh toán thất bại!'
+                        const serverMessage =
+                          (error as { response?: { data?: { message?: string } } })?.response?.data
+                            ?.message ?? fallbackMessage
+                        message.error(serverMessage)
+                      },
+                    },
+                  )
+                }}
+              >
+                <Form.Item
+                  name="amount"
+                  label={
+                    <span className="text-xs font-bold text-slate-600">
+                      Số tiền thanh toán (VNĐ)
+                    </span>
+                  }
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập số tiền!' },
+                    {
+                      validator: (_, value) => {
+                        if (value === undefined || value === null) return Promise.resolve()
+                        if (value <= 0) return Promise.reject(new Error('Số tiền phải lớn hơn 0.'))
+                        const max =
+                          selectedPayBooking.totalAmount - (selectedPayBooking.paidAmount ?? 0)
+                        if (value > max) {
+                          return Promise.reject(
+                            new Error('Số tiền thanh toán không được vượt quá số còn lại.'),
+                          )
+                        }
+                        return Promise.resolve()
+                      },
+                    },
+                  ]}
+                >
+                  <InputNumber<number>
+                    className="w-full"
+                    min={1}
+                    max={selectedPayBooking.totalAmount - (selectedPayBooking.paidAmount ?? 0)}
+                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={(value) => Number(value?.replace(/,/g, '') || 0)}
+                    size="large"
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="paymentSource"
+                  label={
+                    <span className="text-xs font-bold text-slate-600">Nguồn thanh toán</span>
+                  }
+                  rules={[{ required: true, message: 'Vui lòng chọn nguồn thanh toán!' }]}
+                >
+                  <Radio.Group className="w-full">
+                    <div className="flex flex-col gap-2">
+                      <Radio
+                        value="group_deposit"
+                        disabled={detail.paidAmount < (payBookingAmount ?? 0)}
+                      >
+                        <span className="text-xs">
+                          Khấu trừ quỹ cọc nhóm (Số dư:{' '}
+                          <span className="font-bold text-emerald-600 font-mono">
+                            {formatCompactCurrency(detail.paidAmount)}
+                          </span>
+                          )
+                        </span>
+                      </Radio>
+                      <Radio value="direct">
+                        <span className="text-xs">Thanh toán trực tiếp bằng tiền mặt</span>
+                      </Radio>
+                    </div>
+                  </Radio.Group>
+                </Form.Item>
+
+                <Form.Item
+                  name="note"
+                  label={<span className="text-xs font-bold text-slate-600">Ghi chú</span>}
+                >
+                  <Input.TextArea rows={2} placeholder="Ghi chú thanh toán..." />
+                </Form.Item>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button onClick={() => setSelectedPayBooking(null)}>Hủy</Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={payBookingMutation.isPending}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    Xác nhận thanh toán
+                  </Button>
+                </div>
+              </Form>
+            )}
           </Modal>
         </>
       )}

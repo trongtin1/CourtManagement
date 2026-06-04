@@ -14,6 +14,9 @@ public class MappingProfile : Profile
         CreateMap<Facilities, FacilityResponse>();
         CreateMap<FacilityRequest, Facilities>();
 
+        // ── SystemSettings ───────────────────────────────────────────────
+        CreateMap<SystemSettings, SystemSettingsDto>().ReverseMap();
+
         // ── Area ─────────────────────────────────────────────────────────
         CreateMap<Areas, AreaResponse>();
         CreateMap<AreaRequest, Areas>();

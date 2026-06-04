@@ -18,7 +18,8 @@ public class BookingGroupRepository : GenericRepository<BookingGroups>, IBooking
 
     public async Task<string?> CreateRecurringBookingGroupAsync(
         int customerId, int facilityId, int courtId, DateTime startDate, DateTime endDate,
-        TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string createdBy, string note)
+        TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string createdBy, string note,
+        decimal? flatRatePrice = null)
     {
         using (var command = _ctx.Database.GetDbConnection().CreateCommand())
         {
@@ -35,6 +36,7 @@ public class BookingGroupRepository : GenericRepository<BookingGroups>, IBooking
             command.Parameters.Add(new SqlParameter("@DaysOfWeek", daysOfWeek));
             command.Parameters.Add(new SqlParameter("@CreatedBy", createdBy));
             command.Parameters.Add(new SqlParameter("@Note", note ?? (object)DBNull.Value));
+            command.Parameters.Add(new SqlParameter("@FlatRatePrice", flatRatePrice ?? (object)DBNull.Value));
 
             var errorMessageParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output };
             command.Parameters.Add(errorMessageParam);
@@ -55,7 +57,8 @@ public class BookingGroupRepository : GenericRepository<BookingGroups>, IBooking
 
     public async Task<string?> UpdateRecurringBookingGroupAsync(
         int bookingGroupId, int customerId, int facilityId, int courtId, DateTime startDate, DateTime endDate,
-        TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string modifiedBy, string note)
+        TimeSpan startTime, TimeSpan endTime, string daysOfWeek, string modifiedBy, string note,
+        decimal? flatRatePrice = null)
     {
         using (var command = _ctx.Database.GetDbConnection().CreateCommand())
         {
@@ -73,6 +76,7 @@ public class BookingGroupRepository : GenericRepository<BookingGroups>, IBooking
             command.Parameters.Add(new SqlParameter("@DaysOfWeek", daysOfWeek));
             command.Parameters.Add(new SqlParameter("@ModifiedBy", modifiedBy));
             command.Parameters.Add(new SqlParameter("@Note", note ?? (object)DBNull.Value));
+            command.Parameters.Add(new SqlParameter("@FlatRatePrice", flatRatePrice ?? (object)DBNull.Value));
 
             var errorMessageParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output };
             command.Parameters.Add(errorMessageParam);

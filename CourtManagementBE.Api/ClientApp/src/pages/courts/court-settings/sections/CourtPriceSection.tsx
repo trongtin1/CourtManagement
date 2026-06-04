@@ -37,9 +37,7 @@ import {
 } from '@/features/courts/api/useCourtPriceQueries'
 import { usePriceRuleTypesQuery } from '@/features/courts/api/usePriceRuleTypeQueries'
 import { useCourtDefaultPriceRulesQuery } from '@/features/courts/api/useCourtDefaultPriceRuleQueries'
-import { storage } from '@/utils/storage'
-import { AUTH_STORAGE_KEYS } from '@/constants/auth'
-import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import type {
   CourtPrice,
   PriceRuleType,
@@ -547,10 +545,8 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
   const { message } = App.useApp()
   const [currentMonday, setCurrentMonday] = useState(INITIAL_MONDAY)
 
-  // Query active facility
-  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
-  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
-  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+  // Query system settings
+  const { data: facility } = useSystemSettingsQuery()
 
   // Derive startHour, endHour, totalMinutes dynamically
   const openingHourStr = facility?.openingTime ? facility.openingTime.split(':')[0] : '06'

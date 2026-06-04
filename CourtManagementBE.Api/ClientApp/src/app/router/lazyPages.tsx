@@ -180,3 +180,9 @@ export const BookingHistoriesPage = lazy(() =>
     default: m.BookingHistoriesPage,
   })),
 )
+
+export const SystemSettingsPage = lazy(() =>
+  import('@/pages/system-settings/SystemSettingsPage').then((m) => ({
+    default: m.SystemSettingsPage,
+  })),
+)

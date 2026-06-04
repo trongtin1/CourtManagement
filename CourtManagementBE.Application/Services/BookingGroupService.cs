@@ -2,6 +2,8 @@ using AutoMapper;
 using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
+using CourtManagementBE.Application.Helpers;
+using CourtManagementBE.Application.Extensions;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Enums;
@@ -74,7 +76,8 @@ public class BookingGroupService : BaseService, IBookingGroupService
             request.RecurringConfig.EndTime,
             request.RecurringConfig.DaysOfWeek,
             createdBy,
-            request.Note
+            request.Note,
+            request.TotalAmount
         );
 
         if (!string.IsNullOrEmpty(errorMessage))
@@ -112,7 +115,8 @@ public class BookingGroupService : BaseService, IBookingGroupService
             request.RecurringConfig.EndTime,
             request.RecurringConfig.DaysOfWeek,
             modifiedBy,
-            request.Note
+            request.Note,
+            request.TotalAmount
         );
 
         if (!string.IsNullOrEmpty(errorMessage))
@@ -141,6 +145,9 @@ public class BookingGroupService : BaseService, IBookingGroupService
         if (entity.Status == BookingGroupStatus.Cancelled)
             return BadRequest<BookingGroupResponse>("Nhóm đặt sân đã được hủy trước đó.");
 
+        var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+        DateTime currentLocalTime = settings.GetLocalTime();
+
         entity.Status = BookingGroupStatus.Cancelled;
         entity.ModifiedDate = DateTimeOffset.UtcNow;
         entity.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
@@ -153,32 +160,79 @@ public class BookingGroupService : BaseService, IBookingGroupService
 
             // Tự động hủy tất cả các buổi đặt sân lẻ thuộc nhóm chưa diễn ra
             var bookings = await _unitOfWork.IBookingRepository.FindList(x => x.BookingGroupID == id && x.Status != BookingStatusConstants.Cancelled);
+
+            decimal totalGroupRefund = 0;
+            var performedBy = _currentUser?.UserId?.ToString() ?? "system";
+
             foreach (var booking in bookings)
             {
-                booking.Status = BookingStatusConstants.Cancelled;
-                booking.CancellationReason = $"Hủy theo nhóm đặt sân: {reason}";
-                booking.ModifiedDate = DateTimeOffset.UtcNow;
-                booking.ModifiedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
-
-                _unitOfWork.IBookingRepository.Update(booking);
-
-                // Giải phóng các khung giờ khóa trong ngày
                 var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == booking.BookingID);
-                if (slots.Count > 0)
+                var earliestStartTime = TimeSpan.Zero;
+                if (slots != null && slots.Count > 0)
                 {
-                    _unitOfWork.IBookingSlotRepository.RemoveRange(slots);
+                    earliestStartTime = slots[0].StartTime;
+                    foreach (var slot in slots)
+                    {
+                        if (slot.StartTime < earliestStartTime) earliestStartTime = slot.StartTime;
+                    }
+                }
+
+                var localBookingStart = booking.BookingDate.ToDateTime(TimeOnly.FromTimeSpan(earliestStartTime));
+
+                // Lịch trong quá khứ không tự động hoàn trả/hủy cọc
+                if (localBookingStart < currentLocalTime)
+                {
+                    continue;
+                }
+
+                // 1. Tính toán số tiền hoàn/phạt bằng C# Helper (C# làm bộ não)
+                var calculationResult = CancellationPolicyCalculator.Calculate(new CancellationFeeCalculationRequest
+                {
+                    OriginalPaidAmount = booking.PaidAmount,
+                    BookingStartLocal = localBookingStart,
+                    CurrentLocalTime = currentLocalTime,
+                    Settings = settings,
+                    BookingDate = booking.BookingDate,
+                    IsFromGroup = true,
+                    CustomReason = reason
+                });
+
+                if (calculationResult.RefundAmount > 0)
+                {
+                    totalGroupRefund += calculationResult.RefundAmount;
+                }
+
+                // 2. Thực thi giao dịch DB bằng Stored Procedure (SP làm chân tay)
+                var errorMessage = await _unitOfWork.IBookingRepository.CancelBookingAsync(
+                    bookingId: booking.BookingID,
+                    cancellationReason: $"Hủy theo nhóm đặt sân: {reason}",
+                    refundAmount: calculationResult.RefundAmount,
+                    penaltyAmount: calculationResult.PenaltyAmount,
+                    refundNote: calculationResult.RefundNote,
+                    penaltyNote: calculationResult.PenaltyNote,
+                    performedBy: performedBy,
+                    historyNote: calculationResult.HistoryNote
+                );
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    throw new Exception(errorMessage);
                 }
             }
+
+            // Đồng bộ quỹ cọc nhóm in-memory để EF lưu chính xác
+            entity.PaidAmount += totalGroupRefund;
+            _unitOfWork.IBookingGroupRepository.Update(entity);
 
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
             return Success(_mapper.Map<BookingGroupResponse>(entity), "Hủy nhóm đặt sân và toàn bộ lịch đi kèm thành công.");
         }
-        catch
+        catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync();
-            throw;
+            return Conflict<BookingGroupResponse>($"Đã xảy ra lỗi khi hủy nhóm: {ex.Message}");
         }
     }
 
@@ -226,22 +280,6 @@ public class BookingGroupService : BaseService, IBookingGroupService
             await _unitOfWork.RollbackTransactionAsync();
             throw;
         }
-    }
-
-    private static TimeSpan TrimToSecond(TimeSpan value)
-        => new(value.Days, value.Hours, value.Minutes, value.Seconds);
-
-    private static HashSet<int> ParseDaysOfWeek(string daysOfWeek)
-    {
-        if (string.IsNullOrWhiteSpace(daysOfWeek))
-            return [];
-
-        return daysOfWeek
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(s => int.TryParse(s, out var n) ? (int?)n : null)
-            .Where(n => n.HasValue && n >= 0 && n <= 6)
-            .Select(n => n!.Value)
-            .ToHashSet();
     }
 
     public async Task<Result<BookingGroupResponse>> PayDeposit(int id, BookingPaymentRequest request)

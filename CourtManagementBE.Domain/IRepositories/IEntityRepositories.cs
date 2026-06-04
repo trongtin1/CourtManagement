@@ -17,7 +17,18 @@ public interface IPriceRuleTypeRepository : IGenericRepository<PriceRuleTypes> {
 public interface ICourtDefaultPriceRuleRepository : IGenericRepository<CourtDefaultPriceRule> { }
 public interface ICourtLockedSlotRepository : IGenericRepository<CourtLockedSlot> { }
 public interface ICustomerRepository : IGenericRepository<Customers> { }
-public interface IBookingRepository : IGenericRepository<Bookings> { }
+public interface IBookingRepository : IGenericRepository<Bookings>
+{
+    Task<string?> CancelBookingAsync(
+        Guid bookingId,
+        string cancellationReason,
+        decimal refundAmount,
+        decimal penaltyAmount,
+        string refundNote,
+        string penaltyNote,
+        string performedBy,
+        string historyNote);
+}
 public interface IBookingSlotRepository : IGenericRepository<BookingSlots> { }
 public interface IBookingServiceRepository : IGenericRepository<BookingServices>
 {
@@ -49,3 +60,4 @@ public interface IUnitConversionRepository : IGenericRepository<UnitConversions>
 public interface IAuditLogRepository : IGenericRepository<AuditLog> { }
 public interface IBookingHistoryRepository : IGenericRepository<BookingHistories> { }
 public interface IBookingStatusRepository : IGenericRepository<BookingStatuses> { }
+public interface ISystemSettingsRepository : IGenericRepository<SystemSettings> { }

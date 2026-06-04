@@ -61,6 +61,12 @@ const masterDataGroups = [
         path: ROUTES.courtFeatures,
         icon: <TagsOutlined />,
       },
+      {
+        name: 'Cài đặt hệ thống',
+        desc: 'Giờ mở/đóng cửa, slot, chính sách hủy sân...',
+        path: ROUTES.systemSettings,
+        icon: <ToolOutlined />,
+      },
     ],
   },
   {

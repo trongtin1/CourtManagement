@@ -2,6 +2,8 @@ using System.Net;
 using AutoMapper;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Models;
+using CourtManagementBE.Application.Extensions;
+using CourtManagementBE.Domain.Entities;
 
 namespace CourtManagementBE.Application.Common;
 
@@ -23,8 +25,14 @@ public abstract class BaseService
         _currentUser = currentUser;
     }
 
-    protected Result<T> Success<T>(T data, string message = "Success")
-        => Result<T>.Success(data, message);
+    protected Result<T> Success<T>(T? data, string message = "Success")
+    {
+        if (data == null)
+        {
+            return Result<T>.Success(default(T)!, message);
+        }
+        return Result<T>.Success(data, message);
+    }
     protected Result<T> Created<T>(T data, string message = "Created")
         => Result<T>.Success(data, message);
     protected Result<T> NotFound<T>(string message)
@@ -79,16 +87,7 @@ public abstract class BaseService
 
     protected async Task<DateTime> GetFacilityLocalTime(int facilityId)
     {
-        var facility = await _unitOfWork.IFacilityRepository.FindFirst(x => x.FacilityID == facilityId);
-        var timezoneId = facility?.Timezone ?? "Asia/Ho_Chi_Minh";
-        try
-        {
-            var zone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
-            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
-        }
-        catch
-        {
-            return DateTime.UtcNow.AddHours(7);
-        }
+        var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+        return settings.GetLocalTime();
     }
 }

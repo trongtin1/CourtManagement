@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect } from 'react'
 import { Tooltip, Spin } from 'antd'
 import { LockOutlined } from '@ant-design/icons'
 
-import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import type {
   CourtTimelineAvailability,
   TimelineBookingResponse,
@@ -36,7 +36,6 @@ const timeToMinutes = (timeString: string) => {
 const formatTimeHHMM = (timeString: string) => timeString.substring(0, 5)
 
 export function BookingTimeline({
-  facilityId,
   courts: courtList,
   onBookingClick,
   onSlotClick,
@@ -46,9 +45,8 @@ export function BookingTimeline({
 }: BookingTimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // ─── Fetch Facility Configuration ──────────────────────────────────────────
-  const { data: facilityData, isLoading: isFacilityLoading } =
-    useFacilityQuery(facilityId)
+  // ─── Fetch System Configuration ──────────────────────────────────────────
+  const { data: facilityData, isLoading: isFacilityLoading } = useSystemSettingsQuery()
 
   const openingTimeInMinutes = useMemo(
     () => (facilityData ? timeToMinutes(facilityData.openingTime) : 6 * 60),

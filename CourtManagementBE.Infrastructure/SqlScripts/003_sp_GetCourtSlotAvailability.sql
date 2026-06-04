@@ -7,23 +7,25 @@ BEGIN
     SET DATEFIRST 7; -- Sunday = 1
 
     -- ══════════════════════════════════════════════════════════════════════
-    -- 1. Xác định giờ mở/đóng cửa từ Facilities thông qua Courts
+    -- 1. Xác định giờ mở/đóng cửa và slot duration từ SystemSettings
     -- ══════════════════════════════════════════════════════════════════════
-    DECLARE @OpeningTime TIME(7), @ClosingTime TIME(7);
+    DECLARE @OpeningTime TIME(7), @ClosingTime TIME(7), @SlotDurationMinutes INT;
 
-    SELECT @OpeningTime = f.OpeningTime, @ClosingTime = f.ClosingTime
-    FROM Facilities f
-    INNER JOIN Courts c ON c.FacilityID = f.FacilityID
-    WHERE c.CourtID = @CourtID;
+    SELECT TOP 1 
+        @OpeningTime = OpeningTime, 
+        @ClosingTime = ClosingTime,
+        @SlotDurationMinutes = ISNULL(SlotDurationMinutes, 60)
+    FROM SystemSettings;
 
     IF @OpeningTime IS NULL
     BEGIN
         SET @OpeningTime = '06:00:00';
         SET @ClosingTime = '22:00:00';
+        SET @SlotDurationMinutes = 60;
     END
 
     -- ══════════════════════════════════════════════════════════════════════
-    -- 2. Sinh danh sách khung giờ 1h từ OpeningTime → ClosingTime
+    -- 2. Sinh danh sách khung giờ từ OpeningTime → ClosingTime
     -- ══════════════════════════════════════════════════════════════════════
     CREATE TABLE #Slots (
         SlotIndex   INT IDENTITY(1,1),
@@ -34,7 +36,7 @@ BEGIN
     DECLARE @current TIME(7) = @OpeningTime;
     WHILE @current < @ClosingTime
     BEGIN
-        DECLARE @next TIME(7) = DATEADD(HOUR, 1, @current);
+        DECLARE @next TIME(7) = DATEADD(MINUTE, @SlotDurationMinutes, @current);
         IF @next > @ClosingTime
             SET @next = @ClosingTime;
 

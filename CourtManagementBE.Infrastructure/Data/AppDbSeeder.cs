@@ -13,6 +13,7 @@ public static class AppDbSeeder
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
         await SeedAdminAsync(db, cancellationToken);
+        await SeedSystemSettingsAsync(db, cancellationToken);
         await SeedMasterDataAsync(db, cancellationToken);
         await SeedBookingStatusesAsync(db, cancellationToken);
 
@@ -83,9 +84,6 @@ public static class AppDbSeeder
             Address = "123 Nguyen Trai, District 1, Ho Chi Minh City",
             Phone = "0900000000",
             Email = "demo@court.local",
-            OpeningTime = new TimeSpan(6, 0, 0),
-            ClosingTime = new TimeSpan(22, 0, 0),
-            SlotDurationMinutes = 60,
             ImageURL = "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea",
             Description = "Seed facility for local development.",
             IsActive = true,
@@ -675,5 +673,23 @@ public static class AppDbSeeder
         }
 
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedSystemSettingsAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        if (!await db.SystemSettings.AnyAsync(cancellationToken))
+        {
+            db.SystemSettings.Add(new SystemSettings
+            {
+                SlotDurationMinutes = 60,
+                OpeningTime = new TimeSpan(6, 0, 0),
+                ClosingTime = new TimeSpan(22, 0, 0),
+                Timezone = "Asia/Ho_Chi_Minh",
+                EnableCancellationFee = true,
+                CancellationFeePercent = 20.0m,
+                CancellationThresholdHours = 24.0
+            });
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 }

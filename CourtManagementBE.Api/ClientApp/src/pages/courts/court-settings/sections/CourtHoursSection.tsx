@@ -34,9 +34,7 @@ import type {
   CreateCourtLockedSlotRequest,
 } from '@/features/courts/model/types'
 import { formatTime, toTimeSpan } from '@/utils/format'
-import { storage } from '@/utils/storage'
-import { AUTH_STORAGE_KEYS } from '@/constants/auth'
-import { useFacilityQuery } from '@/features/facilities/api/useFacilityQueries'
+import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import { getDisabledTime } from '@/utils/format'
 
 const withDragAndDrop: typeof _withDragAndDrop =
@@ -99,9 +97,7 @@ const mapApiLockedSlot = (slot: CourtLockedSlotDto): LockedSlot => ({
 })
 
 export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
-  const storedFacilityId = storage.get<string>(AUTH_STORAGE_KEYS.workingFacilityId)
-  const facilityId = storedFacilityId ? parseInt(storedFacilityId, 10) : null
-  const { data: facility } = useFacilityQuery(facilityId ?? 0)
+  const { data: facility } = useSystemSettingsQuery()
 
   const startHour = facility?.openingTime
     ? parseInt(facility.openingTime.split(':')[0], 10)
