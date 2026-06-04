@@ -17,15 +17,9 @@ import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar'
 import type { Event } from 'react-big-calendar'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
 import '@/pages/courts/court-settings/sections/court-price.css'
-import {
-  CalendarOutlined,
-  ArrowLeftOutlined,
-  ArrowRightOutlined,
-} from '@ant-design/icons'
+import { CalendarOutlined, DoubleRightOutlined } from '@ant-design/icons'
 
 import { useCombosQuery } from '@/features/combos/api/useComboQueries'
 import type { Combo } from '@/features/combos/model/types'
@@ -42,6 +36,8 @@ import { useCustomersQuery } from '@/features/customers/api/useCustomerQueries'
 import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
 import { formatCompactCurrency, getDisabledTime } from '@/utils/format'
+import { CourtWeekCalendar } from '@/components/calendar/CourtWeekCalendar'
+import { COURT_WEEK_CALENDAR_FORMATS } from '@/components/calendar/courtWeekCalendarFormats'
 
 type SelectedSvc = { quantity: number; unitPrice: number }
 
@@ -59,8 +55,6 @@ interface BookingCalendarEvent extends Event {
     draftSlotId?: string
   }
 }
-
-const localizer = dayjsLocalizer(dayjs)
 
 const formatTimeSpan = (timeStr: string) => {
   const parts = timeStr.split(':')
@@ -113,16 +107,6 @@ const calculateCourtPrice = (
   }
 
   return totalCost
-}
-
-const FORMATS = {
-  dayFormat: (date: Date) => {
-    const d = dayjs(date)
-    const dow = d.day()
-    const label = dow === 0 ? 'CN' : `T${dow + 1}`
-    return `${label} (${d.format('DD/MM')})`
-  },
-  timeGutterFormat: (date: Date) => dayjs(date).format('HH:mm'),
 }
 
 interface CreateBookingPageProps {
@@ -296,7 +280,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
     })
 
     // 3. Add proposed selection events for all draft slots
-    draftSlots.forEach((slot, index) => {
+    draftSlots.forEach((slot) => {
       const selStart = dayjs(slot.startTime)
       if (
         selStart.isAfter(currentMonday.subtract(1, 'second')) &&
@@ -304,7 +288,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
       ) {
         evts.push({
           id: `draft-${slot.id}`,
-          title: `Khung giờ đang chọn #${index + 1}`,
+          title: `Khung giờ đang chọn`,
           start: slot.startTime,
           end: slot.endTime,
           resource: { isSelection: true, draftSlotId: slot.id },
@@ -641,19 +625,29 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
   return (
     <div className="bg-slate-50 min-h-screen pb-12">
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={handleClose}
-            className="flex items-center justify-center font-medium"
-          >
-            Quay lại
-          </Button>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800 m-0">Đặt sân mới</h1>
-          </div>
-        </div>
+     <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
+      <div className="flex items-center gap-4">
+        <Button
+          onClick={handleClose}
+          icon={<DoubleRightOutlined className="rotate-180" />}
+          className="inline-flex items-center justify-center"
+        >
+          Quay lại
+        </Button> 
+      
+    <div>
+      <div className="flex items-center gap-2">
+        <CalendarOutlined className="text-blue-500 text-xl" />
+        <h1 className="m-0 text-xl font-bold text-slate-800">
+          Tạo lịch đặt sân
+        </h1>
       </div>
+      <p className="m-0 text-sm text-slate-500">
+        Nhập thông tin để tạo đơn đặt sân mới
+      </p>
+    </div>
+  </div>
+</div>
 
       {/* Main Grid Layout - Natural Full Window Scroll */}
       <div className="max-w-375 w-full mx-auto px-8 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -666,7 +660,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
               <Button
                 disabled={step === 0}
                 onClick={() => setStep((s) => s - 1)}
-                icon={<ArrowLeftOutlined />}
+                icon={<DoubleRightOutlined className="rotate-180" />}
                 className="flex items-center justify-center text-xs font-semibold text-slate-600 border-slate-200 hover:text-slate-800"
               >
                 Trước
@@ -678,9 +672,11 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
               <Button
                 disabled={!canNext() || step === 3}
                 onClick={() => setStep((s) => s + 1)}
+                icon={<DoubleRightOutlined />}
+                iconPosition="end"
                 className="flex items-center justify-center text-xs font-semibold text-slate-600 border-slate-200 hover:text-slate-800"
               >
-                Sau <ArrowRightOutlined className="ml-1" />
+                Sau
               </Button>
             </div>
             {/* Step 0: Court picker */}
@@ -803,28 +799,22 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                 </div>
 
                 {/* Calendar */}
-                <div className="rbc-court-wrapper rounded-2xl border border-slate-100 shadow-sm overflow-y-auto overflow-hidden">
-                  <Calendar
-                    localizer={localizer}
-                    events={events}
-                    defaultView={Views.WEEK}
-                    views={[Views.WEEK]}
-                    date={currentMonday.toDate()}
-                    min={minTime}
-                    max={maxTime}
-                    step={facility?.slotDurationMinutes || 60}
-                    timeslots={1}
-                    selectable
-                    components={calendarComponents}
-                    eventPropGetter={eventPropGetter}
-                    slotPropGetter={slotPropGetter}
-                    onSelectSlot={handleSelectSlot}
-                    onSelectEvent={handleSelectEvent}
-                    scrollToTime={minTime}
-                    formats={FORMATS}
-                    className="h-240"
-                  />
-                </div>
+                <CourtWeekCalendar
+                  events={events}
+                  date={currentMonday.toDate()}
+                  minTime={minTime}
+                  maxTime={maxTime}
+                  step={facility?.slotDurationMinutes || 60}
+                  timeslots={1}
+                  selectable
+                  components={calendarComponents}
+                  eventPropGetter={eventPropGetter}
+                  slotPropGetter={slotPropGetter}
+                  onSelectSlot={handleSelectSlot}
+                  onSelectEvent={handleSelectEvent}
+                  formats={COURT_WEEK_CALENDAR_FORMATS}
+                  className="h-240"
+                />
 
                 {/* Selection Confirm Modal */}
                 <Modal

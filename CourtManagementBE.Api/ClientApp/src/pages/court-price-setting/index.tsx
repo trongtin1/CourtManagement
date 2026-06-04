@@ -248,7 +248,7 @@ export default function CourtPriceSettingPage() {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          size="large"
+          size="middle"
           onClick={openCreate}
           className="rounded-xl px-5 h-11 text-[15px] font-medium"
         >

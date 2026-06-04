@@ -1,8 +1,4 @@
 import { useMemo, useState, useCallback } from 'react'
-import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar'
-import _withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import './court-hours.css'
 import {
   App,
@@ -36,12 +32,7 @@ import type {
 import { formatTime, toTimeSpan } from '@/utils/format'
 import { useSystemSettingsQuery } from '@/features/facilities/api/useSystemSettingsQueries'
 import { getDisabledTime } from '@/utils/format'
-
-const withDragAndDrop: typeof _withDragAndDrop =
-  (_withDragAndDrop as unknown as { default: typeof _withDragAndDrop }).default ??
-  _withDragAndDrop
-const localizer = dayjsLocalizer(dayjs)
-const DnDCalendar = withDragAndDrop(Calendar)
+import { CourtWeekCalendar } from '@/components/calendar/CourtWeekCalendar'
 
 const { Title, Text } = Typography
 
@@ -500,37 +491,33 @@ export function CourtHoursSection({ courtId }: CourtHoursSectionProps) {
         </div>
 
         {/* Calendar Wrapper */}
-        <div className="rbc-court-wrapper rounded-3xl border border-slate-100 shadow-sm overflow-hidden court-hours-calendar-container">
-          <DnDCalendar
-            localizer={localizer}
-            events={events}
-            defaultView={Views.WEEK}
-            views={[Views.WEEK]}
-            date={currentMonday.toDate()}
-            min={minTime}
-            max={maxTime}
-            step={snap}
-            timeslots={1}
-            selectable
-            resizable={false}
-            components={calendarComponents}
-            eventPropGetter={eventPropGetter}
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-            scrollToTime={minTime}
-            formats={{
-              dayFormat: (date: Date) => {
-                const d = dayjs(date)
-                const label = d.day() === 0 ? 'CN' : `T${d.day() + 1}`
-                const isClosed = lockedSlots.some(
-                  (lk) => lk.isAllDay && lk.specificDate === d.format('YYYY-MM-DD'),
-                )
-                return `${label} (${d.format('DD/MM')}) ${isClosed ? '🚫' : ''}`
-              },
-              timeGutterFormat: (date: Date) => dayjs(date).format('HH:mm'),
-            }}
-          />
-        </div>
+        <CourtWeekCalendar
+          events={events}
+          date={currentMonday.toDate()}
+          minTime={minTime}
+          maxTime={maxTime}
+          step={snap}
+          timeslots={1}
+          selectable
+          resizable={false}
+          enableDragAndDrop
+          components={calendarComponents}
+          eventPropGetter={eventPropGetter}
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+          wrapperClassName="rbc-court-wrapper rounded-3xl border border-slate-100 shadow-sm overflow-hidden court-hours-calendar-container"
+          formats={{
+            dayFormat: (date: Date) => {
+              const d = dayjs(date)
+              const label = d.day() === 0 ? 'CN' : `T${d.day() + 1}`
+              const isClosed = lockedSlots.some(
+                (lk) => lk.isAllDay && lk.specificDate === d.format('YYYY-MM-DD'),
+              )
+              return `${label} (${d.format('DD/MM')}) ${isClosed ? '🚫' : ''}`
+            },
+            timeGutterFormat: (date: Date) => dayjs(date).format('HH:mm'),
+          }}
+        />
       </div>
 
       {/* ─────────────────── MODAL KHÓA KHUNG GIỜ / ĐÓNG CỬA SÂN ─────────────────── */}

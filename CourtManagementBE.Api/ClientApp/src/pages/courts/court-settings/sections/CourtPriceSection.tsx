@@ -1,10 +1,5 @@
 import { useMemo, useState } from 'react'
 
-import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar'
-import _withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
-import type { EventInteractionArgs } from 'react-big-calendar/lib/addons/dragAndDrop'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import './court-price.css'
 import {
   App,
@@ -52,12 +47,8 @@ import {
   toTimeSpan,
   getDisabledTime,
 } from '@/utils/format'
-
-const withDragAndDrop: typeof _withDragAndDrop =
-  (_withDragAndDrop as unknown as { default: typeof _withDragAndDrop }).default ??
-  _withDragAndDrop
-const localizer = dayjsLocalizer(dayjs)
-const DnDCalendar = withDragAndDrop(Calendar)
+import { CourtWeekCalendar, type EventInteractionArgs } from '@/components/calendar/CourtWeekCalendar'
+import { COURT_WEEK_CALENDAR_FORMATS } from '@/components/calendar/courtWeekCalendarFormats'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DEFAULT_PRICE = 150000
@@ -113,15 +104,6 @@ const hasCollision = (blocks: PriceBlock[], candidate: PriceBlock, excludeId?: s
       b.end > candidate.start,
   )
 
-const FORMATS = {
-  dayFormat: (date: Date) => {
-    const d = dayjs(date)
-    const dow = d.day()
-    const label = dow === 0 ? 'CN' : `T${dow + 1}`
-    return `${label} (${d.format('DD/MM')})`
-  },
-  timeGutterFormat: (date: Date) => dayjs(date).format('HH:mm'),
-}
 
 // ── Custom Event ──────────────────────────────────────────────────────────────
 function PriceEventTooltipContent({
@@ -1118,30 +1100,25 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
       </div>
 
       {/* Calendar */}
-      <div className="rbc-court-wrapper rounded-2xl border border-slate-100 shadow-sm overflow-y-auto overflow-hidden">
-        <DnDCalendar
-          localizer={localizer}
-          events={events}
-          defaultView={Views.WEEK}
-          views={[Views.WEEK]}
-          date={currentMonday.toDate()}
-          min={minTime}
-          max={maxTime}
-          step={snap}
-          timeslots={timeSlots}
-          selectable
-          resizable
-          components={calendarComponents}
-          eventPropGetter={eventPropGetter}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          onEventDrop={handleEventDrop}
-          onEventResize={handleEventResize}
-          scrollToTime={minTime}
-          formats={FORMATS}
-          className="h-240"
-        />
-      </div>
+      <CourtWeekCalendar
+        events={events}
+        date={currentMonday.toDate()}
+        minTime={minTime}
+        maxTime={maxTime}
+        step={snap}
+        timeslots={timeSlots}
+        selectable
+        resizable
+        enableDragAndDrop
+        components={calendarComponents}
+        eventPropGetter={eventPropGetter}
+        onSelectSlot={handleSelectSlot}
+        onSelectEvent={handleSelectEvent}
+        onEventDrop={handleEventDrop}
+        onEventResize={handleEventResize}
+        formats={COURT_WEEK_CALENDAR_FORMATS}
+        className="h-240"
+      />
 
       {/* Edit Modal */}
       <EditModal
