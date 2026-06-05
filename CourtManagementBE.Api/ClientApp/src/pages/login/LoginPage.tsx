@@ -17,43 +17,6 @@ type LocationState = {
   }
 }
 
-const CourtIcon = ({ className = 'h-7 w-7' }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <line x1="3" y1="12" x2="21" y2="12" />
-    <line x1="12" y1="3" x2="12" y2="21" />
-    <circle cx="12" cy="12" r="3.5" />
-  </svg>
-)
-
-const FeatureItem = ({
-  icon,
-  title,
-  desc,
-}: {
-  icon: React.ReactNode
-  title: string
-  desc: string
-}) => (
-  <div className="flex items-center gap-3">
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white backdrop-blur-md">
-      {icon}
-    </div>
-    <div>
-      <div className="text-sm font-bold text-white">{title}</div>
-      <div className="text-xs text-white/75">{desc}</div>
-    </div>
-  </div>
-)
-
 export function LoginPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -93,197 +56,224 @@ export function LoginPage() {
   }
 
   return (
-    <main
-      className="relative min-h-screen bg-slate-950 font-sans lg:h-screen lg:overflow-hidden"
-      style={{
-        fontFamily:
-          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      }}
-    >
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${courtHero})` }}
-      />
+    <main className="relative flex min-h-screen overflow-hidden bg-slate-950">
+      {/* ───── Inline styles for animations ───── */}
+      <style>{`
+        @keyframes login-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes login-gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes login-fade-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .login-float { animation: login-float 6s ease-in-out infinite; }
+        .login-gradient-text {
+          background: linear-gradient(135deg, #60a5fa, #a78bfa, #60a5fa);
+          background-size: 200% 200%;
+          animation: login-gradient 4s ease infinite;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .login-fade-up {
+          animation: login-fade-up 0.6s ease-out both;
+        }
+        .login-fade-up-delay-1 { animation-delay: 0.1s; }
+        .login-fade-up-delay-2 { animation-delay: 0.2s; }
+        .login-fade-up-delay-3 { animation-delay: 0.35s; }
+      `}</style>
 
-        <div className="absolute inset-0 bg-linear-to-r from-slate-950/82 via-slate-900/45 to-white/15" />
-        <div className="absolute inset-0 bg-linear-to-t from-slate-950/35 via-transparent to-transparent" />
+      {/* ───── Left: Hero Image Panel ───── */}
+      <div className="relative hidden w-[55%] lg:block">
+        <img
+          src={courtHero}
+          alt="Court"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-linear-to-br from-slate-950/90 via-slate-900/70 to-blue-950/60" />
+        <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent" />
 
-        <section className="relative z-10 grid min-h-screen lg:min-h-0 lg:h-full grid-cols-1 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_520px] lg:px-16 lg:py-10">
-          <div className="flex flex-col justify-between lg:h-full">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white shadow-lg backdrop-blur-md">
-                <CourtIcon className="h-5 w-5" />
-              </div>
-              <span className="text-base font-bold text-white">Court Management</span>
-            </div>
-
-            <div className="max-w-2xl py-8 lg:py-0">
-              <h1 className="mb-5 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl xl:text-5xl">
-                Quản lý sân thể thao
-                <br />
-                đơn giản và hiệu quả
-              </h1>
-
-              <div className="mb-6 h-1 w-12 rounded-full bg-blue-500" />
-
-              <p className="mb-8 max-w-xl text-base leading-7 text-white/90">
-                Nền tảng giúp bạn quản lý đặt sân, lịch trình, thanh toán và thành viên
-                một cách dễ dàng.
-              </p>
-
-              <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
-                <FeatureItem
-                  icon={
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="3" y="4" width="18" height="17" rx="2" />
-                      <path d="M8 2v4M16 2v4M3 10h18" />
-                    </svg>
-                  }
-                  title="Đặt sân"
-                  desc="Nhanh chóng"
-                />
-
-                <FeatureItem
-                  icon={
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M16 21v-2a4 4 0 0 0-8 0v2" />
-                      <circle cx="12" cy="7" r="4" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  }
-                  title="Thành viên"
-                  desc="Dễ dàng quản lý"
-                />
-
-                <FeatureItem
-                  icon={
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <path d="M2 10h20" />
-                      <path d="M6 15h4" />
-                    </svg>
-                  }
-                  title="Thanh toán"
-                  desc="An toàn, minh bạch"
-                />
-              </div>
-            </div>
-
-            <div className="hidden text-xs text-white/50 lg:block">
-              © {new Date().getFullYear()} Court Management
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center lg:justify-end lg:pr-12 lg:h-full">
-            <div className="w-full max-w-110 rounded-3xl border border-white/60 bg-white/88 p-6 backdrop-blur-2xl sm:p-8">
-              <div className="mb-6 flex flex-col items-center text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-[0_8px_20px_rgba(37,99,235,0.12)] ring-1 ring-slate-200">
-                  <CourtIcon className="h-7 w-7" />
-                </div>
-
-                <h2 className="mb-1 text-2xl font-extrabold tracking-tight text-slate-950">
-                  Chào mừng trở lại!
-                </h2>
-
-                <p className="text-xs text-slate-500">
-                  Đăng nhập để tiếp tục sử dụng hệ thống
-                </p>
-              </div>
-
-              <Form<LoginRequest>
-                layout="vertical"
-                onFinish={handleSubmit}
-                requiredMark={false}
-                size="large"
+        {/* Content on hero */}
+        <div className="relative z-10 flex h-full flex-col justify-between p-12 xl:p-16">
+          {/* Logo */}
+          <div className="flex items-center gap-3 login-fade-up">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/30">
+              <svg
+                className="h-5 w-5 text-white"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <Form.Item
-                  label={
-                    <span className="text-xs font-bold text-slate-800">
-                      Email hoặc tên đăng nhập
-                    </span>
-                  }
-                  name="email"
-                  rules={[
-                    {
-                      required: true,
-                      message: 'Vui lòng nhập email hoặc tên đăng nhập',
-                    },
-                  ]}
-                  className="mb-4"
-                >
-                  <Input
-                    autoComplete="username"
-                    prefix={<MailOutlined className="mr-2 text-slate-400" />}
-                    placeholder="Nhập email hoặc tên đăng nhập"
-                    className="rounded-xl text-sm"
-                    style={{
-                      height: 44,
-                      borderColor: '#dbe3ef',
-                      backgroundColor: '#ffffff',
-                    }}
-                  />
-                </Form.Item>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="12" y1="3" x2="12" y2="21" />
+                <circle cx="12" cy="12" r="3.5" />
+              </svg>
+            </div>
+            <span className="text-lg font-bold text-white tracking-tight">
+              Court Management
+            </span>
+          </div>
 
-                <Form.Item
-                  label={
-                    <span className="text-xs font-bold text-slate-800">Mật khẩu</span>
-                  }
-                  name="password"
-                  rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
-                  className="mb-4"
-                >
-                  <Input.Password
-                    autoComplete="current-password"
-                    prefix={<LockOutlined className="mr-2 text-slate-400" />}
-                    placeholder="Nhập mật khẩu"
-                    className="rounded-xl text-sm"
-                    style={{
-                      height: 44,
-                      borderColor: '#dbe3ef',
-                      backgroundColor: '#ffffff',
-                    }}
-                  />
-                </Form.Item>
+          {/* Hero text */}
+          <div className="max-w-lg login-fade-up login-fade-up-delay-1">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white xl:text-5xl">
+              Quản lý sân
+              <br />
+              <span className="login-gradient-text">thể thao thông minh</span>
+            </h1>
+            <p className="mt-5 text-base leading-relaxed text-white/70 max-w-md">
+              Nền tảng quản lý đặt sân, lịch trình, thanh toán và thành viên một cách dễ
+              dàng và chuyên nghiệp.
+            </p>
 
-                <Button
-                  block
-                  htmlType="submit"
-                  loading={loginMutation.isPending}
-                  type="primary"
-                  className="h-11 rounded-xl border-0 bg-blue-600 text-sm font-bold shadow-md shadow-blue-600/20 transition-all hover:bg-blue-700 active:scale-[0.99]"
-                  style={{
-                    height: 44,
-                    borderRadius: 12,
-                    backgroundColor: '#2563eb',
-                    boxShadow: '0 8px 20px rgba(37, 99, 235, 0.2)',
-                    fontWeight: 700,
-                  }}
+            {/* Feature pills */}
+            <div className="mt-8 flex flex-wrap gap-3">
+              {[
+                { icon: '📅', label: 'Đặt sân nhanh' },
+                { icon: '👥', label: 'Quản lý thành viên' },
+                { icon: '💳', label: 'Thanh toán an toàn' },
+              ].map((f) => (
+                <div
+                  key={f.label}
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 text-sm text-white/90 backdrop-blur-sm"
                 >
-                  Đăng nhập
-                </Button>
-              </Form>
+                  <span>{f.icon}</span>
+                  <span>{f.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </section>
-      </main>
+
+          {/* Footer */}
+          <div className="text-xs text-white/40 login-fade-up login-fade-up-delay-2">
+            © {new Date().getFullYear()} Court Management System
+          </div>
+        </div>
+      </div>
+
+      {/* ───── Right: Login Form Panel ───── */}
+      <div className="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12 lg:px-16">
+        <div className="w-full max-w-sm login-fade-up login-fade-up-delay-2">
+          {/* Mobile logo */}
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600">
+              <svg
+                className="h-4.5 w-4.5 text-white"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="12" y1="3" x2="12" y2="21" />
+                <circle cx="12" cy="12" r="3.5" />
+              </svg>
+            </div>
+            <span className="text-base font-bold text-slate-900">Court Management</span>
+          </div>
+
+          {/* Heading */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+              Đăng nhập
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              Nhập thông tin tài khoản để truy cập hệ thống
+            </p>
+          </div>
+
+          {/* Form */}
+          <Form<LoginRequest>
+            layout="vertical"
+            onFinish={handleSubmit}
+            requiredMark={false}
+            size="large"
+          >
+            <Form.Item
+              label={
+                <span className="text-xs font-semibold text-slate-700">
+                  Email hoặc tên đăng nhập
+                </span>
+              }
+              name="email"
+              rules={[
+                {
+                  required: true,
+                  message: 'Vui lòng nhập email hoặc tên đăng nhập',
+                },
+              ]}
+              className="mb-5"
+            >
+              <Input
+                autoComplete="username"
+                prefix={<MailOutlined className="text-slate-400" />}
+                placeholder="admin@example.com"
+                className="rounded-xl"
+                style={{ height: 46 }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-xs font-semibold text-slate-700">Mật khẩu</span>
+              }
+              name="password"
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
+              className="mb-6"
+            >
+              <Input.Password
+                autoComplete="current-password"
+                prefix={<LockOutlined className="text-slate-400" />}
+                placeholder="••••••••"
+                className="rounded-xl"
+                style={{ height: 46 }}
+              />
+            </Form.Item>
+
+            <Button
+              block
+              htmlType="submit"
+              loading={loginMutation.isPending}
+              type="primary"
+              className="rounded-xl border-0 font-bold shadow-lg shadow-blue-600/25 transition-all hover:shadow-xl hover:shadow-blue-600/30 active:scale-[0.99]"
+              style={{
+                height: 46,
+                fontSize: 15,
+                background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+              }}
+            >
+              Đăng nhập
+            </Button>
+          </Form>
+
+          {/* Divider */}
+          <div className="mt-8 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs text-slate-400 select-none">COURT MANAGEMENT</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+
+          <p className="mt-4 text-center text-xs text-slate-400 leading-relaxed">
+            Hệ thống quản lý sân thể thao chuyên nghiệp.
+            <br />
+            Liên hệ quản trị viên nếu bạn cần hỗ trợ.
+          </p>
+        </div>
+      </div>
+    </main>
   )
 }

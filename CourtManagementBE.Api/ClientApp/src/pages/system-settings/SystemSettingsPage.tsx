@@ -1,26 +1,23 @@
 import { useEffect } from 'react'
 import {
+  Alert,
   App,
   Button,
   Card,
   Col,
   Form,
-  InputNumber,
   Row,
-  Select,
+  Slider,
   Space,
   Switch,
   TimePicker,
-  Typography,
-  Tooltip,
 } from 'antd'
 import {
-  SettingOutlined,
   SaveOutlined,
   ClockCircleOutlined,
-  PercentageOutlined,
-  QuestionCircleOutlined,
-  InfoCircleOutlined,
+  ControlOutlined,
+  WalletOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -31,26 +28,148 @@ import {
 } from '@/features/facilities/api/useSystemSettingsQueries'
 import { toApiError } from '@/utils/errors'
 
-const { Title, Paragraph } = Typography
-
 type FormValues = {
   openingTime: dayjs.Dayjs
   closingTime: dayjs.Dayjs
   slotDurationMinutes: number
+  minBookingDurationMinutes: number
+  maxBookingDurationMinutes: number
+  maxPreBookingDays: number
+  cancellationThresholdHours: number
+
+  // Deposit & Policies
+  enableDeposit: boolean
+  depositPercent: number
+  autoCancelUnpaid: boolean
+  autoCancelThresholdMinutes: number
+  requireCheckIn: boolean
+  allowRecurringBookings: boolean
+
+  // Behind the scenes / existing fields
   enableCancellationFee: boolean
   cancellationFeePercent: number
-  cancellationThresholdHours: number
 }
+
+const minBookingMarks: Record<number, string> = {
+  30: '30p',
+  60: '60p',
+  120: '120p',
+  180: '180p',
+}
+
+const maxBookingMarks: Record<number, string> = {
+  60: '60p',
+  120: '120p',
+  180: '180p',
+  240: '240p',
+  360: '360p',
+}
+
+const preBookingMarks: Record<number, string> = {
+  1: '1',
+  14: '14',
+  30: '30',
+  60: '60',
+}
+
+const cancellationMarks: Record<number, string> = {
+  1: '1h',
+  4: '4h',
+  12: '12h',
+  24: '24h',
+  48: '48h',
+}
+
+const depositMarks: Record<number, string> = {
+  10: '10%',
+  30: '30%',
+  50: '50%',
+  100: '100%',
+}
+
+// ────────────────── Reusable sub-components ──────────────────
+
+function SwitchRow({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3">
+      <div className="min-w-0">
+        <div className="font-medium text-sm text-slate-800">{title}</div>
+        <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">{description}</div>
+      </div>
+      <div className="shrink-0 pt-0.5">{children}</div>
+    </div>
+  )
+}
+
+function SlotDurationPicker({
+  value,
+  onChange,
+}: {
+  value?: number
+  onChange?: (v: number) => void
+}) {
+  const options = [
+    { value: 15, label: '15 phút' },
+    { value: 30, label: '30 phút' },
+    { value: 60, label: '60 phút' },
+    { value: 90, label: '90 phút' },
+  ]
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => {
+        const isSelected = value === opt.value
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange?.(opt.value)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer border ${
+              isSelected
+                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+            }`}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ────────────────── Main Page ──────────────────
 
 export function SystemSettingsPage() {
   const { message } = App.useApp()
   const [form] = Form.useForm<FormValues>()
 
-  const { data: settings, isLoading } = useSystemSettingsQuery()
+  const { data: settings, isLoading, refetch, isRefetching } = useSystemSettingsQuery()
   const updateMutation = useUpdateSystemSettingsMutation()
 
   useEffect(() => {
     if (settings) {
+      // Load mock settings from localStorage
+      const maxPreBookingDays = Number(
+        localStorage.getItem('sys_maxPreBookingDays') || '14',
+      )
+      const enableDeposit = localStorage.getItem('sys_enableDeposit') !== 'false'
+      const depositPercent = Number(localStorage.getItem('sys_depositPercent') || '30')
+      const autoCancelUnpaid = localStorage.getItem('sys_autoCancelUnpaid') !== 'false'
+      const autoCancelThresholdMinutes = Number(
+        localStorage.getItem('sys_autoCancelThresholdMinutes') || '15',
+      )
+      const requireCheckIn = localStorage.getItem('sys_requireCheckIn') === 'true'
+      const allowRecurringBookings =
+        localStorage.getItem('sys_allowRecurringBookings') !== 'false'
+
       form.setFieldsValue({
         openingTime: settings.openingTime
           ? dayjs(settings.openingTime, 'HH:mm:ss')
@@ -59,9 +178,19 @@ export function SystemSettingsPage() {
           ? dayjs(settings.closingTime, 'HH:mm:ss')
           : dayjs('22:00', 'HH:mm'),
         slotDurationMinutes: settings.slotDurationMinutes || 60,
+        minBookingDurationMinutes: settings.minBookingDurationMinutes || 60,
+        maxBookingDurationMinutes: settings.maxBookingDurationMinutes || 180,
+        cancellationThresholdHours: settings.cancellationThresholdHours ?? 4,
         enableCancellationFee: !!settings.enableCancellationFee,
         cancellationFeePercent: settings.cancellationFeePercent ?? 20,
-        cancellationThresholdHours: settings.cancellationThresholdHours ?? 24,
+
+        maxPreBookingDays,
+        enableDeposit,
+        depositPercent,
+        autoCancelUnpaid,
+        autoCancelThresholdMinutes,
+        requireCheckIn,
+        allowRecurringBookings,
       })
     }
   }, [settings, form])
@@ -73,15 +202,36 @@ export function SystemSettingsPage() {
         return
       }
 
+      // 1. Update backend settings
       await updateMutation.mutateAsync({
         openingTime: values.openingTime.format('HH:mm:ss'),
         closingTime: values.closingTime.format('HH:mm:ss'),
         slotDurationMinutes: values.slotDurationMinutes,
+        minBookingDurationMinutes: values.minBookingDurationMinutes,
+        maxBookingDurationMinutes: values.maxBookingDurationMinutes,
+        cancellationThresholdHours: values.cancellationThresholdHours,
         enableCancellationFee: values.enableCancellationFee,
         cancellationFeePercent: values.cancellationFeePercent,
-        cancellationThresholdHours: values.cancellationThresholdHours,
+        bufferDurationMinutes: settings?.bufferDurationMinutes || 10,
+        minAllowableGapMinutes: settings?.minAllowableGapMinutes || 60,
         timezone: settings?.timezone || 'SE Asia Standard Time',
       })
+
+      // 2. Persist mock settings in localStorage
+      localStorage.setItem('sys_maxPreBookingDays', String(values.maxPreBookingDays))
+      localStorage.setItem('sys_enableDeposit', String(values.enableDeposit))
+      localStorage.setItem('sys_depositPercent', String(values.depositPercent))
+      localStorage.setItem('sys_autoCancelUnpaid', String(values.autoCancelUnpaid))
+      localStorage.setItem(
+        'sys_autoCancelThresholdMinutes',
+        String(values.autoCancelThresholdMinutes),
+      )
+      localStorage.setItem('sys_requireCheckIn', String(values.requireCheckIn))
+      localStorage.setItem(
+        'sys_allowRecurringBookings',
+        String(values.allowRecurringBookings),
+      )
+
       message.success('Cập nhật cấu hình hệ thống thành công!')
     } catch (err) {
       message.error(toApiError(err).message)
@@ -93,247 +243,269 @@ export function SystemSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in duration-300">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 text-left">
-        <Space align="start" size={16}>
-          <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-blue-100">
-            <SettingOutlined />
-          </div>
-          <div>
-            <Title level={2} style={{ margin: 0, marginBottom: 4, fontWeight: 700 }}>
-              Cài đặt Hệ thống
-            </Title>
-            <Paragraph type="secondary" className="text-sm m-0">
-              Quản lý các thông số cốt lõi của hệ thống bao gồm giờ hoạt động, thời lượng
-              slot mặc định, và chính sách phạt hủy đặt sân.
-            </Paragraph>
-          </div>
-        </Space>
-      </div>
+    <Form form={form} layout="vertical" onFinish={handleSubmit}>
+      <Space className="w-full" direction="vertical" size={24}>
+        {/* Top toolbar */}
+        <div className="flex items-center justify-end">
+          <Space>
+            <Button
+              icon={<ReloadOutlined />}
+              loading={isRefetching}
+              onClick={() => refetch()}
+            >
+              Làm mới
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SaveOutlined />}
+              loading={updateMutation.isPending}
+            >
+              Lưu cài đặt
+            </Button>
+          </Space>
+        </div>
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        className="space-y-6 text-left"
-      >
-        {/* Section 1: Thời gian & Slot */}
+        {/* Card 1 — Giờ hoạt động & Bước thời gian */}
         <Card
-          className="rounded-2xl border-slate-200 shadow-xs overflow-hidden"
+          className="border-slate-200 shadow-sm"
           title={
-            <div className="flex items-center gap-2.5 py-1">
-              <ClockCircleOutlined className="text-blue-500 text-lg" />
-              <span className="font-bold text-slate-800 text-[16px]">
-                Giờ hoạt động & Khung giờ chơi
-              </span>
-            </div>
+            <span>
+              <ClockCircleOutlined className="mr-2 text-blue-500" />
+              Giờ hoạt động & Bước thời gian
+            </span>
           }
         >
-          <Row gutter={[24, 24]}>
-            <Col xs={24} sm={12} md={8}>
+          <Row gutter={[24, 16]}>
+            <Col xs={12} sm={6}>
               <Form.Item
-                label={
-                  <span className="font-semibold text-slate-700">
-                    Giờ mở cửa <span className="text-red-500">*</span>
-                  </span>
-                }
+                label="Giờ mở cửa"
                 name="openingTime"
                 rules={[{ required: true, message: 'Vui lòng chọn giờ mở cửa' }]}
               >
                 <TimePicker
                   format="HH:mm"
-                  className="w-full rounded-xl py-2 px-3.5"
+                  className="w-full"
                   allowClear={false}
                   showNow={false}
                 />
               </Form.Item>
             </Col>
-
-            <Col xs={24} sm={12} md={8}>
+            <Col xs={12} sm={6}>
               <Form.Item
-                label={
-                  <span className="font-semibold text-slate-700">
-                    Giờ đóng cửa <span className="text-red-500">*</span>
-                  </span>
-                }
+                label="Giờ đóng cửa"
                 name="closingTime"
                 rules={[{ required: true, message: 'Vui lòng chọn giờ đóng cửa' }]}
               >
                 <TimePicker
                   format="HH:mm"
-                  className="w-full rounded-xl py-2 px-3.5"
+                  className="w-full"
                   allowClear={false}
                   showNow={false}
                 />
               </Form.Item>
             </Col>
-
-            <Col xs={24} md={8}>
+            <Col xs={24} sm={12}>
               <Form.Item
-                label={
-                  <Space>
-                    <span className="font-semibold text-slate-700">
-                      Thời lượng một slot
-                    </span>
-                    <Tooltip title="Độ dài chuẩn của mỗi slot khi khách hàng đặt sân. Thay đổi này sẽ ảnh hưởng trực tiếp tới cách phân khung giờ trên dòng thời gian.">
-                      <QuestionCircleOutlined className="text-slate-400 text-xs" />
-                    </Tooltip>
-                  </Space>
-                }
+                label="Bước thời gian đặt sân"
                 name="slotDurationMinutes"
-                rules={[{ required: true, message: 'Vui lòng chọn thời lượng slot' }]}
+                tooltip="Khoảng thời gian giữa các khung giờ có thể đặt"
               >
-                <Select
-                  size="large"
-                  className="w-full"
-                  options={[
-                    { value: 30, label: '30 phút' },
-                    { value: 60, label: '60 phút (1 tiếng)' },
-                    { value: 90, label: '90 phút (1.5 tiếng)' },
-                    { value: 120, label: '120 phút (2 tiếng)' },
-                  ]}
-                />
+                <SlotDurationPicker />
               </Form.Item>
             </Col>
           </Row>
         </Card>
 
-        {/* Section 2: Chính sách Hủy đặt sân */}
+        {/* Card 2 — Quy tắc đặt sân */}
         <Card
-          className="rounded-2xl border-slate-200 shadow-xs overflow-hidden"
+          className="border-slate-200 shadow-sm"
           title={
-            <div className="flex items-center gap-2.5 py-1">
-              <PercentageOutlined className="text-rose-500 text-lg" />
-              <span className="font-bold text-slate-800 text-[16px]">
-                Chính sách hủy sân & Phí phạt
-              </span>
-            </div>
+            <span>
+              <ControlOutlined className="mr-2 text-blue-500" />
+              Quy tắc đặt sân
+            </span>
           }
         >
-          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
-            <div className="pr-4">
-              <div className="font-bold text-slate-800 text-[14px]">
-                Áp dụng phí hủy sân
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                Kích hoạt để tự động tính phí phạt hủy sân nếu khách hàng hủy lịch sát giờ
-                chơi.
-              </div>
-            </div>
-            <Form.Item name="enableCancellationFee" valuePropName="checked" noStyle>
-              <Switch size="default" />
-            </Form.Item>
-          </div>
+          <Row gutter={[32, 0]}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Thời lượng đặt tối thiểu (phút)"
+                name="minBookingDurationMinutes"
+                tooltip="Khách hàng phải đặt ít nhất số phút này"
+              >
+                <Slider
+                  min={30}
+                  max={180}
+                  step={30}
+                  marks={minBookingMarks}
+                  tooltip={{ formatter: (val) => `${val} phút` }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Thời lượng đặt tối đa (phút)"
+                name="maxBookingDurationMinutes"
+                tooltip="Giới hạn tối đa một lần đặt sân"
+              >
+                <Slider
+                  min={60}
+                  max={360}
+                  step={30}
+                  marks={maxBookingMarks}
+                  tooltip={{ formatter: (val) => `${val} phút` }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Cho phép đặt trước (ngày)"
+                name="maxPreBookingDays"
+                tooltip="Số ngày tối đa trước ngày chơi mà khách có thể đặt"
+              >
+                <Slider
+                  min={1}
+                  max={60}
+                  step={1}
+                  marks={preBookingMarks}
+                  tooltip={{ formatter: (val) => `${val} ngày` }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Thời hạn hủy sân (giờ)"
+                name="cancellationThresholdHours"
+                tooltip="Hủy trước thời điểm đặt ít nhất số giờ này để được hoàn tiền"
+              >
+                <Slider
+                  min={1}
+                  max={48}
+                  step={1}
+                  marks={cancellationMarks}
+                  tooltip={{ formatter: (val) => `${val} giờ` }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
+          {/* Conflict warning — belongs to this card */}
           <Form.Item
             noStyle
             shouldUpdate={(prev, curr) =>
-              prev.enableCancellationFee !== curr.enableCancellationFee
+              prev.minBookingDurationMinutes !== curr.minBookingDurationMinutes ||
+              prev.slotDurationMinutes !== curr.slotDurationMinutes
             }
           >
             {({ getFieldValue }) => {
-              const enabled = getFieldValue('enableCancellationFee')
-              if (!enabled) return null
-
-              return (
-                <Row
-                  gutter={[24, 24]}
-                  className="animate-in slide-in-from-top-3 duration-200"
-                >
-                  <Col xs={24} sm={12}>
-                    <Form.Item
-                      label={
-                        <Space>
-                          <span className="font-semibold text-slate-700">
-                            Tỷ lệ phí phạt hủy sân
-                          </span>
-                          <Tooltip title="Số phần trăm tiền cọc/tiền thuê sân bị giữ lại làm phí phạt khi khách hàng thực hiện hủy sân vi phạm chính sách thời gian.">
-                            <QuestionCircleOutlined className="text-slate-400 text-xs" />
-                          </Tooltip>
-                        </Space>
-                      }
-                      name="cancellationFeePercent"
-                      rules={[
-                        { required: true, message: 'Nhập tỷ lệ phí phạt' },
-                        {
-                          type: 'number',
-                          min: 0,
-                          max: 100,
-                          message: 'Tỷ lệ phải từ 0% đến 100%',
-                        },
-                      ]}
-                    >
-                      <InputNumber
-                        className="w-full font-bold"
-                        addonAfter="%"
-                        min={0}
-                        max={100}
-                        size="large"
-                        controls={true}
-                      />
-                    </Form.Item>
-                  </Col>
-
-                  <Col xs={24} sm={12}>
-                    <Form.Item
-                      label={
-                        <Space>
-                          <span className="font-semibold text-slate-700">
-                            Thời gian giới hạn hủy miễn phí
-                          </span>
-                          <Tooltip title="Thời hạn trước giờ chơi tối thiểu (tính bằng tiếng) để khách hàng được phép hủy sân mà KHÔNG bị tính phí phạt.">
-                            <QuestionCircleOutlined className="text-slate-400 text-xs" />
-                          </Tooltip>
-                        </Space>
-                      }
-                      name="cancellationThresholdHours"
-                      rules={[
-                        { required: true, message: 'Nhập thời gian giới hạn' },
-                        { type: 'number', min: 0, message: 'Thời gian không được âm' },
-                      ]}
-                    >
-                      <InputNumber
-                        className="w-full font-bold"
-                        addonAfter="tiếng trước giờ chơi"
-                        min={0}
-                        size="large"
-                        controls={true}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              )
+              const minBooking = getFieldValue('minBookingDurationMinutes') || 60
+              const slotDuration = getFieldValue('slotDurationMinutes') || 30
+              if (minBooking > slotDuration) {
+                return (
+                  <Alert
+                    message={`Cảnh báo: thời lượng tối thiểu (${minBooking}p) lớn hơn bước thời gian (${slotDuration}p). Kiểm tra lại để tránh xung đột.`}
+                    type="warning"
+                    showIcon
+                    className="mt-2"
+                  />
+                )
+              }
+              return null
             }}
           </Form.Item>
         </Card>
 
-        {/* Info Tip Block */}
-        <div className="flex gap-3 bg-blue-50/40 border border-blue-100 p-4 rounded-2xl">
-          <InfoCircleOutlined className="text-blue-500 text-lg mt-0.5" />
-          <p className="text-xs text-blue-800 m-0 leading-relaxed">
-            Các thay đổi về <strong>Giờ mở/đóng cửa</strong> và{' '}
-            <strong>Thời lượng slot</strong> sẽ có hiệu lực ngay lập tức đối với tất cả
-            các chế độ xem lịch trình và chức năng chọn giờ chơi trên ứng dụng. Hãy chắc
-            chắn rằng bạn đã tham khảo ý kiến kỹ thuật trước khi điều chỉnh các tham số
-            này để tránh gián đoạn các đặt sân hiện có.
-          </p>
-        </div>
+        {/* Card 3 — Chính sách thanh toán & vận hành */}
+        <Card
+          className="border-slate-200 shadow-sm"
+          title={
+            <span>
+              <WalletOutlined className="mr-2 text-blue-500" />
+              Chính sách thanh toán & vận hành
+            </span>
+          }
+        >
+          <Row gutter={[32, 0]}>
+            <Col xs={24} md={12}>
+              <div className="divide-y divide-slate-100">
+                <SwitchRow
+                  title="Yêu cầu đặt cọc"
+                  description="Khách thanh toán một phần khi đặt sân."
+                >
+                  <Form.Item name="enableDeposit" valuePropName="checked" noStyle>
+                    <Switch />
+                  </Form.Item>
+                </SwitchRow>
 
-        {/* Action Button */}
-        <div className="flex justify-end pt-2">
-          <Button
-            type="primary"
-            htmlType="submit"
-            icon={<SaveOutlined />}
-            size="large"
-            loading={updateMutation.isPending}
-            className="px-8 rounded-xl font-bold h-12 bg-linear-to-r from-blue-600 to-blue-700 border-0 shadow-md shadow-blue-100 hover:brightness-95"
-          >
-            Lưu Cài đặt
-          </Button>
-        </div>
-      </Form>
-    </div>
+                {/* Deposit percent — conditional */}
+                <Form.Item
+                  noStyle
+                  shouldUpdate={(prev, curr) =>
+                    prev.enableDeposit !== curr.enableDeposit
+                  }
+                >
+                  {({ getFieldValue }) => {
+                    if (!getFieldValue('enableDeposit')) return null
+                    return (
+                      <div className="py-3">
+                        <Form.Item
+                          label="Phần trăm đặt cọc"
+                          name="depositPercent"
+                          className="mb-0"
+                        >
+                          <Slider
+                            min={10}
+                            max={100}
+                            step={5}
+                            marks={depositMarks}
+                            tooltip={{ formatter: (val) => `${val}%` }}
+                          />
+                        </Form.Item>
+                      </div>
+                    )
+                  }}
+                </Form.Item>
+
+                <SwitchRow
+                  title="Tự động hủy nếu chưa thanh toán"
+                  description="Hệ thống tự hủy sau 15 phút nếu không thanh toán."
+                >
+                  <Form.Item name="autoCancelUnpaid" valuePropName="checked" noStyle>
+                    <Switch />
+                  </Form.Item>
+                </SwitchRow>
+              </div>
+            </Col>
+
+            <Col xs={24} md={12}>
+              <div className="divide-y divide-slate-100">
+                <SwitchRow
+                  title="Yêu cầu check-in"
+                  description="Khách phải check-in tại quầy lễ tân khi đến."
+                >
+                  <Form.Item name="requireCheckIn" valuePropName="checked" noStyle>
+                    <Switch />
+                  </Form.Item>
+                </SwitchRow>
+
+                <SwitchRow
+                  title="Cho phép đặt lịch lặp lại"
+                  description="Khách có thể đặt sân định kỳ hàng tuần."
+                >
+                  <Form.Item
+                    name="allowRecurringBookings"
+                    valuePropName="checked"
+                    noStyle
+                  >
+                    <Switch />
+                  </Form.Item>
+                </SwitchRow>
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      </Space>
+    </Form>
   )
 }
