@@ -6,27 +6,34 @@ using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
 {
+    private readonly ILogger<CourtLockedSlotService> _logger;
+
     private static readonly TimeSpan AllDayStart = new(6, 0, 0);
     private static readonly TimeSpan AllDayEnd = new(22, 0, 0);
 
-    public CourtLockedSlotService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    public CourtLockedSlotService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<CourtLockedSlotService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<PageList<CourtLockedSlotResponse>>> GetAll(QueryResource query)
     {
+        const string loggingHeader = "Lấy danh sách khung giờ khóa";
         var courtIds = await GetScopedCourtIds();
         var page = await _unitOfWork.ICourtLockedSlotRepository.FindAll(
             x => courtIds.Contains(x.CourtID),
             pagingSpecification: new PagingSpecification(query));
-        return Success(MapPageList<CourtLockedSlot, CourtLockedSlotResponse>(page));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(MapPageList<CourtLockedSlot, CourtLockedSlotResponse>(page)); }
     }
 
     public async Task<Result<List<CourtLockedSlotResponse>>> GetByCourt(int courtId, DateTime? targetDate)
     {
+        const string loggingHeader = "Thực hiện Get By Court khung giờ khóa";
         if (!await CanAccessCourt(courtId))
             return Unauthorized<List<CourtLockedSlotResponse>>("Bạn không có quyền truy cập sân này.");
 
@@ -39,11 +46,12 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
                 || (x.IsWeekly && x.DayOfWeek == dayOfWeek)
                 || (!x.IsWeekly && x.SpecificDate == dateOnly)));
 
-        return Success(_mapper.Map<List<CourtLockedSlotResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<CourtLockedSlotResponse>>(list)); }
     }
 
     public async Task<Result<List<CourtLockedSlotResponse>>> GetAvailabilityBlocks(int courtId, DateTime targetDate)
     {
+        const string loggingHeader = "Thực hiện Get Availability Blocks khung giờ khóa";
         if (!await CanAccessCourt(courtId))
             return Unauthorized<List<CourtLockedSlotResponse>>("Bạn không có quyền truy cập sân này.");
 
@@ -55,21 +63,23 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
             && x.IsActive
             && ((x.IsWeekly && x.DayOfWeek == day) || (!x.IsWeekly && x.SpecificDate == date)));
 
-        return Success(_mapper.Map<List<CourtLockedSlotResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<CourtLockedSlotResponse>>(list)); }
     }
 
     public async Task<Result<CourtLockedSlotResponse>> GetById(int id)
     {
+        const string loggingHeader = "Lấy khung giờ khóa theo ID";
         var entity = await _unitOfWork.ICourtLockedSlotRepository.FindFirst(x => x.CourtLockedSlotID == id);
-        if (entity is null) return NotFound<CourtLockedSlotResponse>("Không tìm thấy lịch khóa sân.");
-        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<CourtLockedSlotResponse>("Bạn không có quyền truy cập lịch khóa sân này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy lịch khóa sân.")}"); return NotFound<CourtLockedSlotResponse>("Không tìm thấy lịch khóa sân."); }
+        if (!await CanAccessCourt(entity.CourtID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền truy cập lịch khóa sân này.")}"); return Unauthorized<CourtLockedSlotResponse>("Bạn không có quyền truy cập lịch khóa sân này."); }
 
-        return Success(_mapper.Map<CourtLockedSlotResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<CourtLockedSlotResponse>(entity)); }
     }
 
     public async Task<Result<CourtLockedSlotResponse>> Create(CourtLockedSlotRequest request)
     {
-        if (!await CanAccessCourt(request.CourtID)) return Unauthorized<CourtLockedSlotResponse>("Bạn không có quyền tạo lịch khóa cho sân này.");
+        const string loggingHeader = "Tạo khung giờ khóa";
+        if (!await CanAccessCourt(request.CourtID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền tạo lịch khóa cho sân này.")}"); return Unauthorized<CourtLockedSlotResponse>("Bạn không có quyền tạo lịch khóa cho sân này."); }
 
         var validation = ValidateRequest(request);
         if (validation is not null) return validation;
@@ -86,14 +96,15 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
         await _unitOfWork.ICourtLockedSlotRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        return Created(_mapper.Map<CourtLockedSlotResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Created(_mapper.Map<CourtLockedSlotResponse>(entity)); }
     }
 
     public async Task<Result<CourtLockedSlotResponse>> Update(int id, CourtLockedSlotRequest request)
     {
+        const string loggingHeader = "Cập nhật khung giờ khóa";
         var entity = await _unitOfWork.ICourtLockedSlotRepository.FindFirst(x => x.CourtLockedSlotID == id);
-        if (entity is null) return NotFound<CourtLockedSlotResponse>("Không tìm thấy lịch khóa sân.");
-        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<CourtLockedSlotResponse>("Bạn không có quyền cập nhật lịch khóa sân này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy lịch khóa sân.")}"); return NotFound<CourtLockedSlotResponse>("Không tìm thấy lịch khóa sân."); }
+        if (!await CanAccessCourt(entity.CourtID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền cập nhật lịch khóa sân này.")}"); return Unauthorized<CourtLockedSlotResponse>("Bạn không có quyền cập nhật lịch khóa sân này."); }
 
         request.CourtID = entity.CourtID;
 
@@ -112,19 +123,20 @@ public class CourtLockedSlotService : BaseService, ICourtLockedSlotService
         _unitOfWork.ICourtLockedSlotRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        return Success(_mapper.Map<CourtLockedSlotResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<CourtLockedSlotResponse>(entity)); }
     }
 
     public async Task<Result<bool>> Delete(int id)
     {
+        const string loggingHeader = "Xóa khung giờ khóa";
         var entity = await _unitOfWork.ICourtLockedSlotRepository.FindFirst(x => x.CourtLockedSlotID == id);
-        if (entity is null) return NotFound<bool>("Không tìm thấy lịch khóa sân.");
-        if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<bool>("Bạn không có quyền xóa lịch khóa sân này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy lịch khóa sân.")}"); return NotFound<bool>("Không tìm thấy lịch khóa sân."); }
+        if (!await CanAccessCourt(entity.CourtID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền xóa lịch khóa sân này.")}"); return Unauthorized<bool>("Bạn không có quyền xóa lịch khóa sân này."); }
 
         _unitOfWork.ICourtLockedSlotRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        return Success(true, "Xóa lịch khóa sân thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Xóa lịch khóa sân thành công."); }
     }
 
     private static void NormalizeRequest(CourtLockedSlotRequest request)

@@ -4,27 +4,34 @@ using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class CourtPriceHistoryService : BaseService, ICourtPriceHistoryService
 {
-    public CourtPriceHistoryService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    private readonly ILogger<CourtPriceHistoryService> _logger;
+
+    public CourtPriceHistoryService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<CourtPriceHistoryService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<List<CourtPriceHistoryResponse>>> GetByCourt(int courtId)
     {
+        const string loggingHeader = "Thực hiện Get By Court lịch sử giá sân";
         if (!await CanAccessCourt(courtId)) return Unauthorized<List<CourtPriceHistoryResponse>>("Bạn không có quyền truy cập sân này.");
         var list = await _unitOfWork.ICourtPriceRuleHistoryRepository.FindList(x => x.CourtID == courtId);
-        return Success(_mapper.Map<List<CourtPriceHistoryResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<CourtPriceHistoryResponse>>(list)); }
     }
 
     public async Task<Result<List<CourtPriceHistoryResponse>>> GetByPriceRule(int courtPriceRuleId)
     {
+        const string loggingHeader = "Thực hiện Get By Price Rule lịch sử giá sân";
         var price = await _unitOfWork.ICourtPriceRepository.FindFirst(x => x.CourtPriceRuleID == courtPriceRuleId);
         if (price is null) return NotFound<List<CourtPriceHistoryResponse>>("Không tìm thấy giá sân.");
         if (!await CanAccessCourt(price.CourtID)) return Unauthorized<List<CourtPriceHistoryResponse>>("Bạn không có quyền truy cập lịch sử giá này.");
 
         var list = await _unitOfWork.ICourtPriceRuleHistoryRepository.FindList(x => x.CourtPriceRuleID == courtPriceRuleId);
-        return Success(_mapper.Map<List<CourtPriceHistoryResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<CourtPriceHistoryResponse>>(list)); }
     }
 }

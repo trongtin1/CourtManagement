@@ -11,55 +11,64 @@ using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class BookingGroupService : BaseService, IBookingGroupService
 {
-    public BookingGroupService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    private readonly ILogger<BookingGroupService> _logger;
+
+    public BookingGroupService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<BookingGroupService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<PageList<BookingGroupResponse>>> GetAll(QueryResource query)
     {
+        const string loggingHeader = "Lấy danh sách nhóm đặt sân";
         var workingFacilityId = WorkingFacilityId;
         var page = await _unitOfWork.IBookingGroupRepository.FindAll(
             x => _currentUser == null || (_currentUser.IsSuperAdmin && workingFacilityId == null) || x.FacilityID == workingFacilityId,
             include: q => q.Include(x => x.RecurringConfig!),
             pagingSpecification: new PagingSpecification(query));
 
-        return Success(MapPageList<BookingGroups, BookingGroupResponse>(page));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(MapPageList<BookingGroups, BookingGroupResponse>(page)); }
     }
 
     public async Task<Result<List<BookingGroupResponse>>> GetByCustomer(int customerId)
     {
+        const string loggingHeader = "Lấy nhóm đặt sân theo khách hàng";
         var workingFacilityId = WorkingFacilityId;
         var list = await _unitOfWork.IBookingGroupRepository.FindList(
             x => x.CustomerID == customerId && (_currentUser == null || (_currentUser.IsSuperAdmin && workingFacilityId == null) || x.FacilityID == workingFacilityId),
             include: q => q.Include(x => x.RecurringConfig!));
 
-        return Success(_mapper.Map<List<BookingGroupResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<BookingGroupResponse>>(list)); }
     }
 
     public async Task<Result<BookingGroupResponse>> GetById(int id)
     {
+        const string loggingHeader = "Lấy nhóm đặt sân theo ID";
         var entity = await _unitOfWork.IBookingGroupRepository.FindFirst(
             x => x.BookingGroupID == id,
             include: q => q.Include(x => x.RecurringConfig!));
 
-        if (entity is null) return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy nhóm đặt sân.")}"); return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân."); }
         if (entity.FacilityID.HasValue && !CanAccessFacility(entity.FacilityID.Value))
-            return Unauthorized<BookingGroupResponse>("Bạn không có quyền truy cập nhóm đặt sân này.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền truy cập nhóm đặt sân này.")}"); return Unauthorized<BookingGroupResponse>("Bạn không có quyền truy cập nhóm đặt sân này."); }
 
-        return Success(_mapper.Map<BookingGroupResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<BookingGroupResponse>(entity)); }
     }
 
     public async Task<Result<string>> Create(BookingGroupRequest request)
     {
+        const string loggingHeader = "Tạo nhóm đặt sân";
         if (request.FacilityID.HasValue && !CanAccessFacility(request.FacilityID.Value))
-            return Unauthorized<string>("Bạn không có quyền thao tác trên cơ sở này.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền thao tác trên cơ sở này.")}"); return Unauthorized<string>("Bạn không có quyền thao tác trên cơ sở này."); }
 
         if (request.RecurringConfig is null)
         {
-            return BadRequest<string>("Thiếu cấu hình lịch định kỳ.");
+            { _logger.LogWarning($"{loggingHeader} - {("Thiếu cấu hình lịch định kỳ.")}"); return BadRequest<string>("Thiếu cấu hình lịch định kỳ."); }
         }
 
         var createdBy = _currentUser?.UserId?.ToString() ?? "system";
@@ -82,23 +91,24 @@ public class BookingGroupService : BaseService, IBookingGroupService
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
-            return BadRequest<string>(errorMessage);
+            { _logger.LogWarning($"{loggingHeader} - {(errorMessage)}"); return BadRequest<string>(errorMessage); }
         }
 
-        return Created<string>("Tạo nhóm đặt sân thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Created<string>("Tạo nhóm đặt sân thành công."); }
     }
 
     public async Task<Result<BookingGroupResponse>> Update(int id, BookingGroupRequest request)
     {
+        const string loggingHeader = "Cập nhật nhóm đặt sân";
         var entity = await _unitOfWork.IBookingGroupRepository.FindFirst(
             x => x.BookingGroupID == id,
             include: q => q.Include(x => x.RecurringConfig!));
 
-        if (entity is null) return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy nhóm đặt sân.")}"); return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân."); }
         if (entity.FacilityID.HasValue && !CanAccessFacility(entity.FacilityID.Value))
-            return Unauthorized<BookingGroupResponse>("Bạn không có quyền cập nhật nhóm đặt sân này.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền cập nhật nhóm đặt sân này.")}"); return Unauthorized<BookingGroupResponse>("Bạn không có quyền cập nhật nhóm đặt sân này."); }
         if (request.RecurringConfig is null)
-            return BadRequest<BookingGroupResponse>("Thiếu cấu hình lịch định kỳ.");
+            { _logger.LogWarning($"{loggingHeader} - {("Thiếu cấu hình lịch định kỳ.")}"); return BadRequest<BookingGroupResponse>("Thiếu cấu hình lịch định kỳ."); }
 
         var modifiedBy = _currentUser?.UserId?.ToString() ?? "system";
         var startDate = request.RecurringConfig.StartDate.ToDateTime(TimeOnly.MinValue);
@@ -121,7 +131,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
-            return BadRequest<BookingGroupResponse>(errorMessage);
+            { _logger.LogWarning($"{loggingHeader} - {(errorMessage)}"); return BadRequest<BookingGroupResponse>(errorMessage); }
         }
 
         // Tải lại thực thể sau khi đã cập nhật thành công từ SP
@@ -129,21 +139,22 @@ public class BookingGroupService : BaseService, IBookingGroupService
             x => x.BookingGroupID == id,
             include: q => q.Include(x => x.RecurringConfig!));
 
-        return Success(_mapper.Map<BookingGroupResponse>(updatedEntity), "Cập nhật nhóm đặt sân thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<BookingGroupResponse>(updatedEntity), "Cập nhật nhóm đặt sân thành công."); }
     }
 
     public async Task<Result<BookingGroupResponse>> Cancel(int id, string reason)
     {
+        const string loggingHeader = "Thực hiện Cancel nhóm đặt sân";
         var entity = await _unitOfWork.IBookingGroupRepository.FindFirst(
             x => x.BookingGroupID == id,
             include: q => q.Include(x => x.RecurringConfig!));
 
-        if (entity is null) return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy nhóm đặt sân.")}"); return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân."); }
         if (entity.FacilityID.HasValue && !CanAccessFacility(entity.FacilityID.Value))
-            return Unauthorized<BookingGroupResponse>("Bạn không có quyền hủy nhóm đặt sân này.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền hủy nhóm đặt sân này.")}"); return Unauthorized<BookingGroupResponse>("Bạn không có quyền hủy nhóm đặt sân này."); }
 
         if (entity.Status == BookingGroupStatus.Cancelled)
-            return BadRequest<BookingGroupResponse>("Nhóm đặt sân đã được hủy trước đó.");
+            { _logger.LogWarning($"{loggingHeader} - {("Nhóm đặt sân đã được hủy trước đó.")}"); return BadRequest<BookingGroupResponse>("Nhóm đặt sân đã được hủy trước đó."); }
 
         var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
         DateTime currentLocalTime = settings.GetLocalTime();
@@ -227,24 +238,25 @@ public class BookingGroupService : BaseService, IBookingGroupService
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
-            return Success(_mapper.Map<BookingGroupResponse>(entity), "Hủy nhóm đặt sân và toàn bộ lịch đi kèm thành công.");
+            { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<BookingGroupResponse>(entity), "Hủy nhóm đặt sân và toàn bộ lịch đi kèm thành công."); }
         }
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync();
-            return Conflict<BookingGroupResponse>($"Đã xảy ra lỗi khi hủy nhóm: {ex.Message}");
+            { _logger.LogWarning($"{loggingHeader} - {($"Đã xảy ra lỗi khi hủy nhóm: {ex.Message}")}"); return Conflict<BookingGroupResponse>($"Đã xảy ra lỗi khi hủy nhóm: {ex.Message}"); }
         }
     }
 
     public async Task<Result<bool>> Delete(int id)
     {
+        const string loggingHeader = "Xóa nhóm đặt sân";
         var entity = await _unitOfWork.IBookingGroupRepository.FindFirst(
             x => x.BookingGroupID == id,
             include: q => q.Include(x => x.RecurringConfig!));
 
-        if (entity is null) return NotFound<bool>("Không tìm thấy nhóm đặt sân.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy nhóm đặt sân.")}"); return NotFound<bool>("Không tìm thấy nhóm đặt sân."); }
         if (entity.FacilityID.HasValue && !CanAccessFacility(entity.FacilityID.Value))
-            return Unauthorized<bool>("Bạn không có quyền xóa nhóm đặt sân này.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền xóa nhóm đặt sân này.")}"); return Unauthorized<bool>("Bạn không có quyền xóa nhóm đặt sân này."); }
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -273,7 +285,7 @@ public class BookingGroupService : BaseService, IBookingGroupService
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
-            return Success(true, "Xóa nhóm đặt sân thành công.");
+            { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Xóa nhóm đặt sân thành công."); }
         }
         catch
         {
@@ -284,15 +296,16 @@ public class BookingGroupService : BaseService, IBookingGroupService
 
     public async Task<Result<BookingGroupResponse>> PayDeposit(int id, BookingPaymentRequest request)
     {
+        const string loggingHeader = "Thực hiện Pay Deposit nhóm đặt sân";
         if (request.Amount <= 0)
         {
-            return BadRequest<BookingGroupResponse>("Số tiền đóng cọc phải lớn hơn 0.");
+            { _logger.LogWarning($"{loggingHeader} - {("Số tiền đóng cọc phải lớn hơn 0.")}"); return BadRequest<BookingGroupResponse>("Số tiền đóng cọc phải lớn hơn 0."); }
         }
 
         var group = await _unitOfWork.IBookingGroupRepository.FindFirst(x => x.BookingGroupID == id);
-        if (group is null) return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân.");
+        if (group is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy nhóm đặt sân.")}"); return NotFound<BookingGroupResponse>("Không tìm thấy nhóm đặt sân."); }
         if (group.FacilityID.HasValue && !CanAccessFacility(group.FacilityID.Value))
-            return Unauthorized<BookingGroupResponse>("Bạn không có quyền thực hiện đóng cọc cho nhóm đặt sân này.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền thực hiện đóng cọc cho nhóm đặt sân này.")}"); return Unauthorized<BookingGroupResponse>("Bạn không có quyền thực hiện đóng cọc cho nhóm đặt sân này."); }
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -324,12 +337,12 @@ public class BookingGroupService : BaseService, IBookingGroupService
                 x => x.BookingGroupID == id,
                 include: q => q.Include(x => x.RecurringConfig!));
 
-            return Success(_mapper.Map<BookingGroupResponse>(updatedGroup), "Nạp tiền cọc nhóm thành công.");
+            { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<BookingGroupResponse>(updatedGroup), "Nạp tiền cọc nhóm thành công."); }
         }
         catch (Exception)
         {
             await _unitOfWork.RollbackTransactionAsync();
-            return Conflict<BookingGroupResponse>("Đã xảy ra lỗi khi thực hiện nạp cọc nhóm.");
+            { _logger.LogWarning($"{loggingHeader} - {("Đã xảy ra lỗi khi thực hiện nạp cọc nhóm.")}"); return Conflict<BookingGroupResponse>("Đã xảy ra lỗi khi thực hiện nạp cọc nhóm."); }
         }
     }
 }

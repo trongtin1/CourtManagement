@@ -7,15 +7,21 @@ using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class ComboService : BaseService, IComboService
 {
-    public ComboService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    private readonly ILogger<ComboService> _logger;
+
+    public ComboService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<ComboService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<PageList<ComboResponse>>> GetAll(QueryResource query)
     {
+        const string loggingHeader = "Lấy danh sách combo";
         var page = await _unitOfWork.IComboRepository.FindAll(
             x => true,
             pagingSpecification: new PagingSpecification(query)
@@ -41,13 +47,14 @@ public class ComboService : BaseService, IComboService
         }
 
         var resultPage = new PageList<ComboResponse>(responses, page.TotalCount, page.Page, page.PageSize);
-        return Success(resultPage);
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(resultPage); }
     }
 
     public async Task<Result<ComboResponse>> GetById(int id)
     {
+        const string loggingHeader = "Lấy combo theo ID";
         var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == id);
-        if (combo is null) return NotFound<ComboResponse>("Không tìm thấy combo.");
+        if (combo is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo.")}"); return NotFound<ComboResponse>("Không tìm thấy combo."); }
 
         var services = await _unitOfWork.IComboServiceRepository.FindList(
             x => x.ComboID == combo.ComboID,
@@ -64,15 +71,16 @@ public class ComboService : BaseService, IComboService
             Quantity = x.Quantity
         }).ToList();
 
-        return Success(res);
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(res); }
     }
 
     public async Task<Result<ComboResponse>> Create(ComboRequest request)
     {
+        const string loggingHeader = "Tạo combo";
         var existing = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboCode == request.ComboCode);
         if (existing is not null)
         {
-            return BadRequest<ComboResponse>("Mã combo đã tồn tại.");
+            { _logger.LogWarning($"{loggingHeader} - {("Mã combo đã tồn tại.")}"); return BadRequest<ComboResponse>("Mã combo đã tồn tại."); }
         }
 
         var combo = _mapper.Map<Combos>(request);
@@ -99,13 +107,14 @@ public class ComboService : BaseService, IComboService
 
     public async Task<Result<ComboResponse>> Update(int id, ComboRequest request)
     {
+        const string loggingHeader = "Cập nhật combo";
         var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == id);
-        if (combo is null) return NotFound<ComboResponse>("Không tìm thấy combo.");
+        if (combo is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo.")}"); return NotFound<ComboResponse>("Không tìm thấy combo."); }
 
         var existing = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboCode == request.ComboCode && x.ComboID != id);
         if (existing is not null)
         {
-            return BadRequest<ComboResponse>("Mã combo đã tồn tại.");
+            { _logger.LogWarning($"{loggingHeader} - {("Mã combo đã tồn tại.")}"); return BadRequest<ComboResponse>("Mã combo đã tồn tại."); }
         }
 
         _mapper.Map(request, combo);
@@ -131,22 +140,24 @@ public class ComboService : BaseService, IComboService
 
     public async Task<Result<bool>> Delete(int id)
     {
+        const string loggingHeader = "Xóa combo";
         var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == id);
-        if (combo is null) return NotFound<bool>("Không tìm thấy combo.");
+        if (combo is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo.")}"); return NotFound<bool>("Không tìm thấy combo."); }
 
         _unitOfWork.IComboRepository.Remove(combo);
         await _unitOfWork.SaveChangesAsync();
-        return Success(true, "Xóa combo thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Xóa combo thành công."); }
     }
 
     public async Task<Result<bool>> ToggleActive(int id)
     {
+        const string loggingHeader = "Chuyển trạng thái kích hoạt combo";
         var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == id);
-        if (combo is null) return NotFound<bool>("Không tìm thấy combo.");
+        if (combo is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo.")}"); return NotFound<bool>("Không tìm thấy combo."); }
 
         combo.IsActive = !combo.IsActive;
         _unitOfWork.IComboRepository.Update(combo);
         await _unitOfWork.SaveChangesAsync();
-        return Success(true, combo.IsActive ? "Kích hoạt combo thành công." : "Vô hiệu hóa combo thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, combo.IsActive ? "Kích hoạt combo thành công." : "Vô hiệu hóa combo thành công."); }
     }
 }

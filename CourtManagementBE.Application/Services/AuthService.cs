@@ -12,27 +12,31 @@ using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 using CourtManagementBE.Domain.Common;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class AuthService : BaseService, IAuthService
 {
+    private readonly ILogger<AuthService> _logger;
+
     private readonly JwtSettings _jwt;
 
-    public AuthService(IUnitOfWork unitOfWork, IMapper mapper, IOptions<JwtSettings> jwt)
-        : base(unitOfWork, mapper)
+    public AuthService(IUnitOfWork unitOfWork, IMapper mapper, IOptions<JwtSettings> jwt, ILogger<AuthService> logger) : base(unitOfWork, mapper)
     {
+        _logger = logger;
         _jwt = jwt.Value;
     }
 
     // ── Register ──────────────────────────────────────────────
     public async Task<Result<AuthResponse>> Register(RegisterRequest request, HttpContext httpContext)
     {
+        const string loggingHeader = "Đăng ký tài khoản auth";
 
         var userRepo = _unitOfWork.IAuthRepository;
 
         var existingUser = await userRepo.FindFirst(u => u.Email == request.Email);
         if (existingUser is not null)
-            return Conflict<AuthResponse>("Email đã tồn tại.");
+            { _logger.LogWarning($"{loggingHeader} - {("Email đã tồn tại.")}"); return Conflict<AuthResponse>("Email đã tồn tại."); }
 
         var user = new User
         {
@@ -49,7 +53,7 @@ public class AuthService : BaseService, IAuthService
         await _unitOfWork.SaveChangesAsync();
 
         var tokens = await GenerateTokens(user, httpContext);
-        return Created(tokens);
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Created(tokens); }
     }
 
 
@@ -58,29 +62,31 @@ public class AuthService : BaseService, IAuthService
     // ── Login ─────────────────────────────────────────────────
     public async Task<Result<AuthResponse>> Login(LoginRequest request, HttpContext httpContext)
     {
+        const string loggingHeader = "Đăng nhập auth";
 
         var userRepo = _unitOfWork.IAuthRepository;
 
         var user = await userRepo.FindFirst(u => u.Email == request.Email);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            return Unauthorized<AuthResponse>("Email hoặc mật khẩu không đúng.");
+            { _logger.LogWarning($"{loggingHeader} - {("Email hoặc mật khẩu không đúng.")}"); return Unauthorized<AuthResponse>("Email hoặc mật khẩu không đúng."); }
 
         var tokens = await GenerateTokens(user, httpContext);
-        return Success(tokens);
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(tokens); }
     }
 
     public async Task<Result<AuthUserResponse>> GetCurrentUser(HttpContext httpContext)
     {
+        const string loggingHeader = "Lấy người dùng hiện tại auth";
         var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userId, out var id))
-            return Unauthorized<AuthUserResponse>();
+            { _logger.LogWarning($"{loggingHeader} - {("Không xác định")}"); return Unauthorized<AuthUserResponse>(); }
 
         var user = await _unitOfWork.IAuthRepository.FindFirst(u => u.Id == id);
         if (user is null)
-            return NotFound<AuthUserResponse>("Không tìm thấy người dùng.");
+            { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy người dùng.")}"); return NotFound<AuthUserResponse>("Không tìm thấy người dùng."); }
 
-        return Success(ToAuthUserResponse(user));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(ToAuthUserResponse(user)); }
     }
 
 
@@ -89,6 +95,7 @@ public class AuthService : BaseService, IAuthService
     // ── Logout ────────────────────────────────────────────────
     public async Task<Result<bool>> Logout(HttpContext httpContext)
     {
+        const string loggingHeader = "Đăng xuất auth";
 
         var refreshToken = httpContext.Request.Cookies["refreshToken"];
 
@@ -105,7 +112,7 @@ public class AuthService : BaseService, IAuthService
         }
 
         httpContext.Response.Cookies.Delete("refreshToken");
-        return Success(true, "Đăng xuất thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Đăng xuất thành công."); }
     }
 
 

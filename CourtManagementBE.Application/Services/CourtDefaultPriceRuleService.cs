@@ -6,36 +6,45 @@ using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleService
 {
-    public CourtDefaultPriceRuleService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    private readonly ILogger<CourtDefaultPriceRuleService> _logger;
+
+    public CourtDefaultPriceRuleService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<CourtDefaultPriceRuleService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<PageList<CourtDefaultPriceRuleResponse>>> GetAll(QueryResource query)
     {
+        const string loggingHeader = "Lấy danh sách quy tắc giá mặc định";
         var page = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindAll(
             _ => true,
             pagingSpecification: new PagingSpecification(query));
-        return Success(MapPageList<CourtDefaultPriceRule, CourtDefaultPriceRuleResponse>(page));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(MapPageList<CourtDefaultPriceRule, CourtDefaultPriceRuleResponse>(page)); }
     }
 
     public async Task<Result<List<CourtDefaultPriceRuleResponse>>> GetByDay(int dayOfWeek)
     {
+        const string loggingHeader = "Thực hiện Get By Day quy tắc giá mặc định";
         var list = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindList(x => x.DayOfWeek == dayOfWeek);
-        return Success(_mapper.Map<List<CourtDefaultPriceRuleResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<CourtDefaultPriceRuleResponse>>(list)); }
     }
 
     public async Task<Result<CourtDefaultPriceRuleResponse>> GetById(int id)
     {
+        const string loggingHeader = "Lấy quy tắc giá mặc định theo ID";
         var entity = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindFirst(x => x.CourtDefaultPriceRuleID == id);
-        if (entity is null) return NotFound<CourtDefaultPriceRuleResponse>("Không tìm thấy cấu hình giá mặc định.");
-        return Success(_mapper.Map<CourtDefaultPriceRuleResponse>(entity));
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy cấu hình giá mặc định.")}"); return NotFound<CourtDefaultPriceRuleResponse>("Không tìm thấy cấu hình giá mặc định."); }
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<CourtDefaultPriceRuleResponse>(entity)); }
     }
 
     public async Task<Result<CourtDefaultPriceRuleResponse>> Create(CourtDefaultPriceRuleRequest request)
     {
+        const string loggingHeader = "Tạo quy tắc giá mặc định";
         var validation = await ValidateRuleWindow(request);
         if (validation is not null) return validation;
 
@@ -44,13 +53,14 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
         entity.CreatedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
         await _unitOfWork.ICourtDefaultPriceRuleRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Created(_mapper.Map<CourtDefaultPriceRuleResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Created(_mapper.Map<CourtDefaultPriceRuleResponse>(entity)); }
     }
 
     public async Task<Result<CourtDefaultPriceRuleResponse>> Update(int id, CourtDefaultPriceRuleRequest request)
     {
+        const string loggingHeader = "Cập nhật quy tắc giá mặc định";
         var entity = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindFirst(x => x.CourtDefaultPriceRuleID == id);
-        if (entity is null) return NotFound<CourtDefaultPriceRuleResponse>("Không tìm thấy cấu hình giá mặc định.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy cấu hình giá mặc định.")}"); return NotFound<CourtDefaultPriceRuleResponse>("Không tìm thấy cấu hình giá mặc định."); }
         var validation = await ValidateRuleWindow(request, id);
         if (validation is not null) return validation;
 
@@ -59,16 +69,17 @@ public class CourtDefaultPriceRuleService : BaseService, ICourtDefaultPriceRuleS
         entity.UpdatedBy = _currentUser?.UserId?.ToString() ?? string.Empty;
         _unitOfWork.ICourtDefaultPriceRuleRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(_mapper.Map<CourtDefaultPriceRuleResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<CourtDefaultPriceRuleResponse>(entity)); }
     }
 
     public async Task<Result<bool>> Delete(int id)
     {
+        const string loggingHeader = "Xóa quy tắc giá mặc định";
         var entity = await _unitOfWork.ICourtDefaultPriceRuleRepository.FindFirst(x => x.CourtDefaultPriceRuleID == id);
-        if (entity is null) return NotFound<bool>("Không tìm thấy cấu hình giá mặc định.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy cấu hình giá mặc định.")}"); return NotFound<bool>("Không tìm thấy cấu hình giá mặc định."); }
         _unitOfWork.ICourtDefaultPriceRuleRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(true, "Xóa cấu hình giá mặc định thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Xóa cấu hình giá mặc định thành công."); }
     }
 
     private async Task<Result<CourtDefaultPriceRuleResponse>?> ValidateRuleWindow(CourtDefaultPriceRuleRequest request, int? excludeId = null)

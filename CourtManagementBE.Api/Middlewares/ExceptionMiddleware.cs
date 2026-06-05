@@ -63,6 +63,9 @@ public class ExceptionMiddleware
             _ => "Đã xảy ra lỗi. Vui lòng thử lại sau."
         };
 
+        _logger.LogWarning("HTTP status code error {StatusCode} at {Method} {Path}: {Message}", 
+            (int)statusCode, context.Request.Method, context.Request.Path, message);
+
         var result = Result<object>.Failure(statusCode, message);
 
         context.Response.ContentType = "application/json";

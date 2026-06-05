@@ -5,29 +5,36 @@ using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class BookingComboService : BaseService, IBookingComboService
 {
-    public BookingComboService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    private readonly ILogger<BookingComboService> _logger;
+
+    public BookingComboService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<BookingComboService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<List<BookingComboResponse>>> GetByBooking(Guid bookingId)
     {
+        const string loggingHeader = "Thực hiện Get By Booking combo đặt sân";
         if (!await CanAccessBooking(bookingId)) return Unauthorized<List<BookingComboResponse>>("Bạn không có quyền truy cập booking này.");
         var list = await _unitOfWork.IBookingComboRepository.FindList(x => x.BookingID == bookingId);
-        return Success(_mapper.Map<List<BookingComboResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<BookingComboResponse>>(list)); }
     }
 
     public async Task<Result<BookingComboResponse>> Create(BookingComboRequest request)
     {
+        const string loggingHeader = "Tạo combo đặt sân";
         if (!await CanAccessBooking(request.BookingID) || !await CanAccessCombo(request.ComboID))
         {
-            return Unauthorized<BookingComboResponse>("Bạn không có quyền thêm combo này vào booking.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền thêm combo này vào booking.")}"); return Unauthorized<BookingComboResponse>("Bạn không có quyền thêm combo này vào booking."); }
         }
 
         var combo = await _unitOfWork.IComboRepository.FindFirst(x => x.ComboID == request.ComboID);
-        if (combo == null) return NotFound<BookingComboResponse>("Không tìm thấy combo.");
+        if (combo == null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo.")}"); return NotFound<BookingComboResponse>("Không tìm thấy combo."); }
 
         var entity = _mapper.Map<BookingCombos>(request);
         entity.TotalAmount = request.UnitPrice * request.Quantity;
@@ -43,14 +50,15 @@ public class BookingComboService : BaseService, IBookingComboService
 
         await _unitOfWork.IBookingComboRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Created(_mapper.Map<BookingComboResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Created(_mapper.Map<BookingComboResponse>(entity)); }
     }
 
     public async Task<Result<BookingComboResponse>> Update(int id, UpdateBookingComboRequest request)
     {
+        const string loggingHeader = "Cập nhật combo đặt sân";
         var entity = await _unitOfWork.IBookingComboRepository.FindFirst(x => x.BookingComboID == id);
-        if (entity is null) return NotFound<BookingComboResponse>("Không tìm thấy combo booking.");
-        if (!await CanAccessBooking(entity.BookingID)) return Unauthorized<BookingComboResponse>("Bạn không có quyền cập nhật combo booking này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo booking.")}"); return NotFound<BookingComboResponse>("Không tìm thấy combo booking."); }
+        if (!await CanAccessBooking(entity.BookingID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền cập nhật combo booking này.")}"); return Unauthorized<BookingComboResponse>("Bạn không có quyền cập nhật combo booking này."); }
 
         var oldTotalAmount = entity.TotalAmount;
         _mapper.Map(request, entity);
@@ -69,11 +77,12 @@ public class BookingComboService : BaseService, IBookingComboService
 
         _unitOfWork.IBookingComboRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(_mapper.Map<BookingComboResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<BookingComboResponse>(entity)); }
     }
 
     public async Task<Result<List<BookingComboResponse>>> BulkUpdate(Guid bookingId, List<BookingComboBulkUpdateItemRequest> requests)
     {
+        const string loggingHeader = "Thực hiện Bulk Update combo đặt sân";
         if (!await CanAccessBooking(bookingId)) return Unauthorized<List<BookingComboResponse>>("Bạn không có quyền cập nhật combo booking này.");
 
         // Check for duplicates in requests
@@ -98,14 +107,15 @@ public class BookingComboService : BaseService, IBookingComboService
             x => x.BookingID == bookingId,
             disableTracking: true);
 
-        return Success(_mapper.Map<List<BookingComboResponse>>(updatedEntities), "Cập nhật hàng loạt combo booking thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<BookingComboResponse>>(updatedEntities), "Cập nhật hàng loạt combo booking thành công."); }
     }
 
     public async Task<Result<bool>> Delete(int id)
     {
+        const string loggingHeader = "Xóa combo đặt sân";
         var entity = await _unitOfWork.IBookingComboRepository.FindFirst(x => x.BookingComboID == id);
-        if (entity is null) return NotFound<bool>("Không tìm thấy combo booking.");
-        if (!await CanAccessBooking(entity.BookingID)) return Unauthorized<bool>("Bạn không có quyền xóa combo booking này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy combo booking.")}"); return NotFound<bool>("Không tìm thấy combo booking."); }
+        if (!await CanAccessBooking(entity.BookingID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền xóa combo booking này.")}"); return Unauthorized<bool>("Bạn không có quyền xóa combo booking này."); }
 
         var booking = await _unitOfWork.IBookingRepository.FindFirst(x => x.BookingID == entity.BookingID);
         if (booking != null)
@@ -117,7 +127,7 @@ public class BookingComboService : BaseService, IBookingComboService
 
         _unitOfWork.IBookingComboRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(true, "Xóa combo booking thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Xóa combo booking thành công."); }
     }
 
     private async Task<bool> CanAccessBooking(Guid bookingId)

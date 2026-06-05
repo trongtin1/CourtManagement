@@ -5,17 +5,21 @@ using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Constants;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class DashboardService : BaseService, IDashboardService
 {
-    public DashboardService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser)
+    private readonly ILogger<DashboardService> _logger;
+
+    public DashboardService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<DashboardService> logger) : base(unitOfWork, mapper, currentUser)
     {
+        _logger = logger;
     }
 
     public async Task<Result<DashboardSummaryResponse>> GetSummary()
     {
+        const string loggingHeader = "Thực hiện Get Summary bảng điều khiển";
         var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var courtIds = await GetScopedCourtIds();
 
@@ -58,6 +62,6 @@ public class DashboardService : BaseService, IDashboardService
                 : "Dashboard data is scoped to the selected facility."
         };
 
-        return Success(summary);
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(summary); }
     }
 }

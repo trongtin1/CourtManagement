@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using CourtManagementBE.Application.Profiles;
+using Serilog;
 
 namespace CourtManagementBE.Api
 {
@@ -25,12 +26,24 @@ namespace CourtManagementBE.Api
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console()
+                .CreateBootstrapLogger();
 
-            // Đảm bảo cấu hình lấy được appsettings.json nếu chạy từ root thư mục ngoài
-            builder.Configuration
-                .AddJsonFile("CourtManagementBE.Api/appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"CourtManagementBE.Api/appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+            try
+            {
+                Log.Information("Starting web host");
+                var builder = WebApplication.CreateBuilder(args);
+
+                // Đảm bảo cấu hình lấy được appsettings.json nếu chạy từ root thư mục ngoài
+                builder.Configuration
+                    .AddJsonFile("CourtManagementBE.Api/appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"CourtManagementBE.Api/appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+
+                builder.Host.UseSerilog((context, services, configuration) => configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services));
 
             // ── CORS ──────────────────────────────────────────────────────
             builder.Services.AddCors(options =>
@@ -163,7 +176,6 @@ namespace CourtManagementBE.Api
             });
             // ── DI ────────────────────────────────────────────────────────
             builder.Services.AddHttpContextAccessor();                            // cần cho CurrentUserService
-
             builder.Services.AddScoped<IHttpContextHelper, HttpContextHelper>();
             builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -245,7 +257,16 @@ namespace CourtManagementBE.Api
 
             app.MapControllers();
 
-            app.Run();
+                await app.RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Host terminated unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }

@@ -5,35 +5,42 @@ using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class BookingServiceService : BaseService, IBookingServiceService
 {
-    public BookingServiceService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser)
-        : base(unitOfWork, mapper, currentUser) { }
+    private readonly ILogger<BookingServiceService> _logger;
+
+    public BookingServiceService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<BookingServiceService> logger) : base(unitOfWork, mapper, currentUser)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<List<BookingServiceResponse>>> GetByBooking(Guid bookingId)
     {
+        const string loggingHeader = "Thực hiện Get By Booking dịch vụ đặt sân";
         if (!await CanAccessBooking(bookingId)) return Unauthorized<List<BookingServiceResponse>>("Bạn không có quyền truy cập booking này.");
         var list = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == bookingId);
-        return Success(_mapper.Map<List<BookingServiceResponse>>(list));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<BookingServiceResponse>>(list)); }
     }
 
     public async Task<Result<BookingServiceResponse>> Create(BookingServiceRequest request)
     {
+        const string loggingHeader = "Tạo dịch vụ đặt sân";
         if (!await CanAccessBooking(request.BookingID) || !await CanAccessService(request.ServiceID))
         {
-            return Unauthorized<BookingServiceResponse>("Bạn không có quyền thêm dịch vụ này vào booking.");
+            { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền thêm dịch vụ này vào booking.")}"); return Unauthorized<BookingServiceResponse>("Bạn không có quyền thêm dịch vụ này vào booking."); }
         }
 
         var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == request.ServiceID);
-        if (service == null) return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ.");
+        if (service == null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy dịch vụ.")}"); return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ."); }
 
         if (service.IsTrackStock)
         {
             if (service.StockQuantity < request.Quantity)
             {
-                return BadRequest<BookingServiceResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).");
+                { _logger.LogWarning($"{loggingHeader} - {($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).")}"); return BadRequest<BookingServiceResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity})."); }
             }
             service.StockQuantity -= request.Quantity;
             _unitOfWork.IServiceRepository.Update(service);
@@ -53,14 +60,15 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         await _unitOfWork.IBookingServiceRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Created(_mapper.Map<BookingServiceResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Created(_mapper.Map<BookingServiceResponse>(entity)); }
     }
 
     public async Task<Result<BookingServiceResponse>> Update(int id, UpdateBookingServiceRequest request)
     {
+        const string loggingHeader = "Cập nhật dịch vụ đặt sân";
         var entity = await _unitOfWork.IBookingServiceRepository.FindFirst(x => x.BookingServiceID == id);
-        if (entity is null) return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ booking.");
-        if (!await CanAccessBooking(entity.BookingID)) return Unauthorized<BookingServiceResponse>("Bạn không có quyền cập nhật dịch vụ booking này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy dịch vụ booking.")}"); return NotFound<BookingServiceResponse>("Không tìm thấy dịch vụ booking."); }
+        if (!await CanAccessBooking(entity.BookingID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền cập nhật dịch vụ booking này.")}"); return Unauthorized<BookingServiceResponse>("Bạn không có quyền cập nhật dịch vụ booking này."); }
 
         var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == entity.ServiceID);
         if (service != null && service.IsTrackStock)
@@ -68,7 +76,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
             var stockDiff = request.Quantity - entity.Quantity;
             if (service.StockQuantity < stockDiff)
             {
-                return BadRequest<BookingServiceResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).");
+                { _logger.LogWarning($"{loggingHeader} - {($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity}).")}"); return BadRequest<BookingServiceResponse>($"Dịch vụ {service.ServiceName} không đủ tồn kho (Hiện còn: {service.StockQuantity})."); }
             }
             service.StockQuantity -= stockDiff;
             _unitOfWork.IServiceRepository.Update(service);
@@ -91,11 +99,12 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         _unitOfWork.IBookingServiceRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(_mapper.Map<BookingServiceResponse>(entity));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<BookingServiceResponse>(entity)); }
     }
 
     public async Task<Result<List<BookingServiceResponse>>> BulkUpdate(Guid bookingId, List<BookingServiceBulkUpdateItemRequest> requests)
     {
+        const string loggingHeader = "Thực hiện Bulk Update dịch vụ đặt sân";
         if (!await CanAccessBooking(bookingId)) return Unauthorized<List<BookingServiceResponse>>("Bạn không có quyền cập nhật dịch vụ booking này.");
 
         // Check for duplicates in requests
@@ -117,14 +126,15 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         // Load the updated list of services for return
         var finalEntities = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == bookingId);
-        return Success(_mapper.Map<List<BookingServiceResponse>>(finalEntities), "Cập nhật dịch vụ booking thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<List<BookingServiceResponse>>(finalEntities), "Cập nhật dịch vụ booking thành công."); }
     }
 
     public async Task<Result<bool>> Delete(int id)
     {
+        const string loggingHeader = "Xóa dịch vụ đặt sân";
         var entity = await _unitOfWork.IBookingServiceRepository.FindFirst(x => x.BookingServiceID == id);
-        if (entity is null) return NotFound<bool>("Không tìm thấy dịch vụ booking.");
-        if (!await CanAccessBooking(entity.BookingID)) return Unauthorized<bool>("Bạn không có quyền xóa dịch vụ booking này.");
+        if (entity is null) { _logger.LogWarning($"{loggingHeader} - {("Không tìm thấy dịch vụ booking.")}"); return NotFound<bool>("Không tìm thấy dịch vụ booking."); }
+        if (!await CanAccessBooking(entity.BookingID)) { _logger.LogWarning($"{loggingHeader} - {("Bạn không có quyền xóa dịch vụ booking này.")}"); return Unauthorized<bool>("Bạn không có quyền xóa dịch vụ booking này."); }
 
         var service = await _unitOfWork.IServiceRepository.FindFirst(x => x.ServiceID == entity.ServiceID);
         if (service != null && service.IsTrackStock)
@@ -143,7 +153,7 @@ public class BookingServiceService : BaseService, IBookingServiceService
 
         _unitOfWork.IBookingServiceRepository.Remove(entity);
         await _unitOfWork.SaveChangesAsync();
-        return Success(true, "Xóa dịch vụ booking thành công.");
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(true, "Xóa dịch vụ booking thành công."); }
     }
 
     private async Task<bool> CanAccessBooking(Guid bookingId)

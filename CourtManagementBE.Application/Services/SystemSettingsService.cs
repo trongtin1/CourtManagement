@@ -6,15 +6,21 @@ using CourtManagementBE.Domain.Common;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 
+using Microsoft.Extensions.Logging;
 namespace CourtManagementBE.Application.Services;
 
 public class SystemSettingsService : BaseService, ISystemSettingsService
 {
-    public SystemSettingsService(IUnitOfWork unitOfWork, IMapper mapper)
-        : base(unitOfWork, mapper) { }
+    private readonly ILogger<SystemSettingsService> _logger;
+
+    public SystemSettingsService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<SystemSettingsService> logger) : base(unitOfWork, mapper)
+    {
+        _logger = logger;
+    }
 
     public async Task<Result<SystemSettingsDto>> GetSettings()
     {
+        const string loggingHeader = "Thực hiện Get Settings cấu hình hệ thống";
         var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1);
         if (settings == null)
         {
@@ -22,11 +28,12 @@ public class SystemSettingsService : BaseService, ISystemSettingsService
             await _unitOfWork.ISystemSettingsRepository.Add(settings);
             await _unitOfWork.SaveChangesAsync();
         }
-        return Success(_mapper.Map<SystemSettingsDto>(settings));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<SystemSettingsDto>(settings)); }
     }
 
     public async Task<Result<SystemSettingsDto>> UpdateSettings(SystemSettingsDto dto)
     {
+        const string loggingHeader = "Thực hiện Update Settings cấu hình hệ thống";
         var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1);
         if (settings == null)
         {
@@ -40,6 +47,6 @@ public class SystemSettingsService : BaseService, ISystemSettingsService
             _unitOfWork.ISystemSettingsRepository.Update(settings);
         }
         await _unitOfWork.SaveChangesAsync();
-        return Success(_mapper.Map<SystemSettingsDto>(settings));
+        { _logger.LogInformation($"{loggingHeader} - Thành công."); return Success(_mapper.Map<SystemSettingsDto>(settings)); }
     }
 }
