@@ -16,8 +16,8 @@ using CourtManagementBE.Infrastructure.Extensions.SqlExtentions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using CourtManagementBE.Api.Profiles;
 using Microsoft.OpenApi;
+using CourtManagementBE.Application.Profiles;
 
 namespace CourtManagementBE.Api
 {

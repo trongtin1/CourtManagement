@@ -4,7 +4,7 @@ using CourtManagementBE.Application.DTOs.Response;
 using CourtManagementBE.Domain.Entities;
 using CourtManagementBE.Domain.Models;
 
-namespace CourtManagementBE.Api.Profiles;
+namespace CourtManagementBE.Application.Profiles;
 
 public class MappingProfile : Profile
 {
@@ -124,6 +124,7 @@ public class MappingProfile : Profile
         CreateMap<CustomerTypes, CustomerTypeResponse>();
         CreateMap<CustomerTypeRequest, CustomerTypes>();
 
+        // ── ServiceTypes ─────────────────────────────────────────────────
         CreateMap<ServiceTypes, ServiceTypeResponse>();
         CreateMap<ServiceTypeRequest, ServiceTypes>();
 

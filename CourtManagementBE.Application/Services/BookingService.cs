@@ -74,7 +74,8 @@ public class BookingService : BaseService, IBookingService
                 .Include(x => x.CancellationReasonNavigation)
                 .Include(x => x.BookingSlots)
                 .Include(x => x.BookingServices)
-                .Include(x => x.BookingCombos)
+                .Include(x => x.BookingCombos),
+            splitQuery: true
         );
         if (entity is null) return NotFound<BookingResponse>("Không tìm thấy đơn đặt sân.");
         if (!await CanAccessCourt(entity.CourtID)) return Unauthorized<BookingResponse>("Bạn không có quyền truy cập booking này.");
@@ -416,7 +417,7 @@ public class BookingService : BaseService, IBookingService
         if (entity.Status == newStatus) return Success(_mapper.Map<BookingResponse>(entity));
 
         // Ràng buộc quy tắc chuyển đổi trạng thái vòng đời Booking (State Machine Guard)
-        if (!IsValidTransition(entity.Status, newStatus))
+        if (!entity.CanTransitionTo(newStatus))
         {
             var oldStatusEntity = await _unitOfWork.IBookingStatusRepository.FindFirst(x => x.Code == entity.Status);
             string oldName = oldStatusEntity?.StatusName ?? entity.Status;
@@ -1017,20 +1018,5 @@ public class BookingService : BaseService, IBookingService
         return null;
     }
 
-    private static bool IsValidTransition(string currentStatus, string newStatus)
-    {
-        return (currentStatus, newStatus) switch
-        {
-            (BookingStatusConstants.Pending, BookingStatusConstants.Confirmed) => true,
-            (BookingStatusConstants.Pending, BookingStatusConstants.Cancelled) => true,
 
-            (BookingStatusConstants.Confirmed, BookingStatusConstants.CheckedIn) => true,
-            (BookingStatusConstants.Confirmed, BookingStatusConstants.Cancelled) => true,
-            (BookingStatusConstants.Confirmed, BookingStatusConstants.NoShow) => true,
-
-            (BookingStatusConstants.CheckedIn, BookingStatusConstants.Completed) => true,
-
-            _ => false
-        };
-    }
 }

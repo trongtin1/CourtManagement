@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-
 using CourtManagementBE.Domain.Enums;
+using CourtManagementBE.Domain.Constants;
 
 namespace CourtManagementBE.Domain.Entities;
 
@@ -38,4 +38,21 @@ public class Bookings
     public ICollection<BookingSlots> BookingSlots { get; set; } = [];
     public ICollection<BookingServices> BookingServices { get; set; } = [];
     public ICollection<BookingCombos> BookingCombos { get; set; } = [];
+
+    public bool CanTransitionTo(string newStatus)
+    {
+        return (Status, newStatus) switch
+        {
+            (BookingStatusConstants.Pending, BookingStatusConstants.Confirmed) => true,
+            (BookingStatusConstants.Pending, BookingStatusConstants.Cancelled) => true,
+
+            (BookingStatusConstants.Confirmed, BookingStatusConstants.CheckedIn) => true,
+            (BookingStatusConstants.Confirmed, BookingStatusConstants.Cancelled) => true,
+            (BookingStatusConstants.Confirmed, BookingStatusConstants.NoShow) => true,
+
+            (BookingStatusConstants.CheckedIn, BookingStatusConstants.Completed) => true,
+
+            _ => false
+        };
+    }
 }

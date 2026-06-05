@@ -1,4 +1,4 @@
-namespace CourtManagementBE.Domain.Models;
+namespace CourtManagementBE.Application.Common;
 
 public class JwtSettings
 {

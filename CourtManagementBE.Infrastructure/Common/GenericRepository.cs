@@ -29,12 +29,17 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     }
 
     private IQueryable<T> FindAll(Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-        bool disableTracking = true, PagingSpecification? pagingSpecification = null)
+        bool disableTracking = true, PagingSpecification? pagingSpecification = null, bool splitQuery = false)
     {
         IQueryable<T> items = _context.Set<T>();
         if (include != null)
         {
             items = include(items);
+        }
+
+        if (splitQuery)
+        {
+            items = items.AsSplitQuery();
         }
 
         if (disableTracking == true)
@@ -60,12 +65,16 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null,
         Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
         bool disableTracking = true,
-        PagingSpecification? pagingSpecification = null)
+        PagingSpecification? pagingSpecification = null,
+        bool splitQuery = false)
     {
         IQueryable<T> query = _context.Set<T>();
 
         if (include != null)
             query = include(query);
+
+        if (splitQuery)
+            query = query.AsSplitQuery();
 
         if (predicate != null)
             query = query.Where(predicate);
@@ -96,34 +105,34 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return new PageList<T>(items, totalCount, page, pageSize);
     }
 
-    public async Task<T?> FindSingle(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true)
+    public async Task<T?> FindSingle(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true, bool splitQuery = false)
     {
         T? res = default;
         using (var scope = CreateTransaction())
         {
-            res = await FindAll(include, orderBy, disableTracking).SingleOrDefaultAsync(predicate);
+            res = await FindAll(include, orderBy, disableTracking, splitQuery: splitQuery).SingleOrDefaultAsync(predicate);
             scope.Complete();
         }
         return res;
     }
 
-    public async Task<T?> FindFirst(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true)
+    public async Task<T?> FindFirst(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true, bool splitQuery = false)
     {
         T? res = default;
         using (var scope = CreateTransaction())
         {
-            res = await FindAll(include, orderBy, disableTracking).FirstOrDefaultAsync(predicate);
+            res = await FindAll(include, orderBy, disableTracking, splitQuery: splitQuery).FirstOrDefaultAsync(predicate);
             scope.Complete();
         }
         return res;
     }
 
-    public async Task<T?> FindLast(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true)
+    public async Task<T?> FindLast(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true, bool splitQuery = false)
     {
         T? res = default;
         using (var scope = CreateTransaction())
         {
-            res = await FindAll(include, orderBy, disableTracking).LastOrDefaultAsync(predicate);
+            res = await FindAll(include, orderBy, disableTracking, splitQuery: splitQuery).LastOrDefaultAsync(predicate);
             scope.Complete();
         }
         return res;
@@ -149,12 +158,12 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         _context.Set<T>().UpdateRange(entities);
     }
 
-    public async Task<List<T>> FindList(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true)
+    public async Task<List<T>> FindList(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, bool disableTracking = true, bool splitQuery = false)
     {
         List<T> res = [];
         using (var scope = CreateTransaction())
         {
-            res = await FindAll(include, orderBy, disableTracking).Where(predicate).ToListAsync();
+            res = await FindAll(include, orderBy, disableTracking, splitQuery: splitQuery).Where(predicate).ToListAsync();
             scope.Complete();
         }
         return res;
