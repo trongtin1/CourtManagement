@@ -16,4 +16,8 @@ public class SystemSettingsDto
     public int MinBookingDurationMinutes { get; set; }
     public int MaxBookingDurationMinutes { get; set; }
     public int MinAllowableGapMinutes { get; set; }
+
+    public int MaxPreBookingDays { get; set; }
+    public bool EnableDeposit { get; set; }
+    public int DepositPercent { get; set; }
 }

@@ -40,10 +40,6 @@ type FormValues = {
   // Deposit & Policies
   enableDeposit: boolean
   depositPercent: number
-  autoCancelUnpaid: boolean
-  autoCancelThresholdMinutes: number
-  requireCheckIn: boolean
-  allowRecurringBookings: boolean
 
   // Behind the scenes / existing fields
   enableCancellationFee: boolean
@@ -156,20 +152,6 @@ export function SystemSettingsPage() {
 
   useEffect(() => {
     if (settings) {
-      // Load mock settings from localStorage
-      const maxPreBookingDays = Number(
-        localStorage.getItem('sys_maxPreBookingDays') || '14',
-      )
-      const enableDeposit = localStorage.getItem('sys_enableDeposit') !== 'false'
-      const depositPercent = Number(localStorage.getItem('sys_depositPercent') || '30')
-      const autoCancelUnpaid = localStorage.getItem('sys_autoCancelUnpaid') !== 'false'
-      const autoCancelThresholdMinutes = Number(
-        localStorage.getItem('sys_autoCancelThresholdMinutes') || '15',
-      )
-      const requireCheckIn = localStorage.getItem('sys_requireCheckIn') === 'true'
-      const allowRecurringBookings =
-        localStorage.getItem('sys_allowRecurringBookings') !== 'false'
-
       form.setFieldsValue({
         openingTime: settings.openingTime
           ? dayjs(settings.openingTime, 'HH:mm:ss')
@@ -184,13 +166,9 @@ export function SystemSettingsPage() {
         enableCancellationFee: !!settings.enableCancellationFee,
         cancellationFeePercent: settings.cancellationFeePercent ?? 20,
 
-        maxPreBookingDays,
-        enableDeposit,
-        depositPercent,
-        autoCancelUnpaid,
-        autoCancelThresholdMinutes,
-        requireCheckIn,
-        allowRecurringBookings,
+        maxPreBookingDays: settings.maxPreBookingDays ?? 14,
+        enableDeposit: settings.enableDeposit ?? true,
+        depositPercent: settings.depositPercent ?? 30,
       })
     }
   }, [settings, form])
@@ -215,22 +193,10 @@ export function SystemSettingsPage() {
         bufferDurationMinutes: settings?.bufferDurationMinutes || 10,
         minAllowableGapMinutes: settings?.minAllowableGapMinutes || 60,
         timezone: settings?.timezone || 'SE Asia Standard Time',
+        maxPreBookingDays: values.maxPreBookingDays,
+        enableDeposit: values.enableDeposit,
+        depositPercent: values.depositPercent,
       })
-
-      // 2. Persist mock settings in localStorage
-      localStorage.setItem('sys_maxPreBookingDays', String(values.maxPreBookingDays))
-      localStorage.setItem('sys_enableDeposit', String(values.enableDeposit))
-      localStorage.setItem('sys_depositPercent', String(values.depositPercent))
-      localStorage.setItem('sys_autoCancelUnpaid', String(values.autoCancelUnpaid))
-      localStorage.setItem(
-        'sys_autoCancelThresholdMinutes',
-        String(values.autoCancelThresholdMinutes),
-      )
-      localStorage.setItem('sys_requireCheckIn', String(values.requireCheckIn))
-      localStorage.setItem(
-        'sys_allowRecurringBookings',
-        String(values.allowRecurringBookings),
-      )
 
       message.success('Cập nhật cấu hình hệ thống thành công!')
     } catch (err) {
@@ -422,12 +388,12 @@ export function SystemSettingsPage() {
           title={
             <span>
               <WalletOutlined className="mr-2 text-blue-500" />
-              Chính sách thanh toán & vận hành
+              Chính sách đặt cọc
             </span>
           }
         >
           <Row gutter={[32, 0]}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={24}>
               <div className="divide-y divide-slate-100">
                 <SwitchRow
                   title="Yêu cầu đặt cọc"
@@ -441,9 +407,7 @@ export function SystemSettingsPage() {
                 {/* Deposit percent — conditional */}
                 <Form.Item
                   noStyle
-                  shouldUpdate={(prev, curr) =>
-                    prev.enableDeposit !== curr.enableDeposit
-                  }
+                  shouldUpdate={(prev, curr) => prev.enableDeposit !== curr.enableDeposit}
                 >
                   {({ getFieldValue }) => {
                     if (!getFieldValue('enableDeposit')) return null
@@ -466,41 +430,6 @@ export function SystemSettingsPage() {
                     )
                   }}
                 </Form.Item>
-
-                <SwitchRow
-                  title="Tự động hủy nếu chưa thanh toán"
-                  description="Hệ thống tự hủy sau 15 phút nếu không thanh toán."
-                >
-                  <Form.Item name="autoCancelUnpaid" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </SwitchRow>
-              </div>
-            </Col>
-
-            <Col xs={24} md={12}>
-              <div className="divide-y divide-slate-100">
-                <SwitchRow
-                  title="Yêu cầu check-in"
-                  description="Khách phải check-in tại quầy lễ tân khi đến."
-                >
-                  <Form.Item name="requireCheckIn" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </SwitchRow>
-
-                <SwitchRow
-                  title="Cho phép đặt lịch lặp lại"
-                  description="Khách có thể đặt sân định kỳ hàng tuần."
-                >
-                  <Form.Item
-                    name="allowRecurringBookings"
-                    valuePropName="checked"
-                    noStyle
-                  >
-                    <Switch />
-                  </Form.Item>
-                </SwitchRow>
               </div>
             </Col>
           </Row>

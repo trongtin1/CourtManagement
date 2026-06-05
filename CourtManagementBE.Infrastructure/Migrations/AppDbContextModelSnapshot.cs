@@ -1787,10 +1787,19 @@ namespace CourtManagementBE.Migrations
                     b.Property<TimeSpan>("ClosingTime")
                         .HasColumnType("time");
 
+                    b.Property<int>("DepositPercent")
+                        .HasColumnType("int");
+
                     b.Property<bool>("EnableCancellationFee")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("EnableDeposit")
+                        .HasColumnType("bit");
+
                     b.Property<int>("MaxBookingDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxPreBookingDays")
                         .HasColumnType("int");
 
                     b.Property<int>("MinAllowableGapMinutes")

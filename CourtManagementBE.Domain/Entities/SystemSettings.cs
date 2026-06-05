@@ -22,4 +22,10 @@ public class SystemSettings
     public int MinBookingDurationMinutes { get; set; } = 60;
     public int MaxBookingDurationMinutes { get; set; } = 180;
     public int MinAllowableGapMinutes { get; set; } = 60;
+
+    // Booking & Deposit configurations
+    public int MaxPreBookingDays { get; set; } = 14;
+    public bool EnableDeposit { get; set; } = true;
+    public int DepositPercent { get; set; } = 30;
 }
+

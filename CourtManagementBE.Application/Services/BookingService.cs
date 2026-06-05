@@ -547,8 +547,15 @@ public class BookingService : BaseService, IBookingService
             // 2. Cập nhật PaidAmount của Booking
             entity.PaidAmount += request.Amount;
 
-            // 3. Nếu PaidAmount >= TotalAmount và status đang là Pending, tự động chuyển sang Confirmed
-            if (entity.PaidAmount >= entity.TotalAmount && entity.Status == BookingStatusConstants.Pending)
+            // 3. Tự động chuyển sang Confirmed nếu đã thanh toán đủ tiền hoặc đủ tiền đặt cọc tối thiểu (nếu bật)
+            var settings = await _unitOfWork.ISystemSettingsRepository.FindFirst(x => x.ID == 1) ?? new SystemSettings();
+            decimal requiredAmountToConfirm = entity.TotalAmount;
+            if (settings.EnableDeposit)
+            {
+                requiredAmountToConfirm = entity.TotalAmount * settings.DepositPercent / 100m;
+            }
+
+            if (entity.PaidAmount >= requiredAmountToConfirm && entity.Status == BookingStatusConstants.Pending)
             {
                 entity.Status = BookingStatusConstants.Confirmed;
             }
@@ -945,6 +952,18 @@ public class BookingService : BaseService, IBookingService
         List<CreateFullBookingSlotRequest> requestedSlots,
         SystemSettings settings)
     {
+        // 0. Check Max Pre-booking Days
+        var localTime = settings.GetLocalTime();
+        var currentDate = DateOnly.FromDateTime(localTime);
+        if (bookingDate < currentDate)
+        {
+            return "Không thể đặt lịch cho ngày trong quá khứ.";
+        }
+        if (bookingDate > currentDate.AddDays(settings.MaxPreBookingDays))
+        {
+            return $"Chỉ cho phép đặt sân trước tối đa {settings.MaxPreBookingDays} ngày.";
+        }
+
         // 1. Check Duration Limits
         var totalDurationMinutes = requestedSlots.Sum(x => (x.EndTime - x.StartTime).TotalMinutes);
         if (totalDurationMinutes < settings.MinBookingDurationMinutes)

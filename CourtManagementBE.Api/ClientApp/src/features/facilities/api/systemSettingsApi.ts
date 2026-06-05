@@ -8,6 +8,13 @@ export type SystemSettings = {
   enableCancellationFee: boolean
   cancellationFeePercent: number
   cancellationThresholdHours: number
+  bufferDurationMinutes: number
+  minBookingDurationMinutes: number
+  maxBookingDurationMinutes: number
+  minAllowableGapMinutes: number
+  maxPreBookingDays: number
+  enableDeposit: boolean
+  depositPercent: number
 }
 
 export const systemSettingsApi = {

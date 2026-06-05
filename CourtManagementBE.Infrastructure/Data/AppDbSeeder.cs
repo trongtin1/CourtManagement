@@ -692,7 +692,10 @@ public static class AppDbSeeder
                 BufferDurationMinutes = 10,
                 MinBookingDurationMinutes = 60,
                 MaxBookingDurationMinutes = 180,
-                MinAllowableGapMinutes = 60
+                MinAllowableGapMinutes = 60,
+                MaxPreBookingDays = 14,
+                EnableDeposit = true,
+                DepositPercent = 30
             });
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -703,6 +706,8 @@ public static class AppDbSeeder
             if (settings.MinBookingDurationMinutes == 0) { settings.MinBookingDurationMinutes = 60; isUpdated = true; }
             if (settings.MaxBookingDurationMinutes == 0) { settings.MaxBookingDurationMinutes = 180; isUpdated = true; }
             if (settings.MinAllowableGapMinutes == 0) { settings.MinAllowableGapMinutes = 60; isUpdated = true; }
+            if (settings.MaxPreBookingDays == 0) { settings.MaxPreBookingDays = 14; isUpdated = true; }
+            if (settings.DepositPercent == 0) { settings.DepositPercent = 30; isUpdated = true; }
             if (isUpdated)
             {
                 db.SystemSettings.Update(settings);
