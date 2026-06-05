@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "npm --prefix CourtManagementBE.Api/ClientApp run dev",
     "dev:client": "npm --prefix CourtManagementBE.Api/ClientApp run dev",
-    "dev:api": "dotnet watch run",
-    "start": "dotnet run",
+    "dev:api": "dotnet watch run --project CourtManagementBE.Api",
+    "start": "dotnet run --project CourtManagementBE.Api",
     "build": "dotnet build && npm --prefix CourtManagementBE.Api/ClientApp run build",
     "build:api": "dotnet build",
     "build:client": "npm --prefix CourtManagementBE.Api/ClientApp run build",
