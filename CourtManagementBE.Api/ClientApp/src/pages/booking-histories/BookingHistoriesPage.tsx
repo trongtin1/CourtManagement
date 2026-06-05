@@ -1,27 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  Table,
-  Tag,
-  Input,
-  Card,
-  Space,
-  Button,
-  Typography,
-  Row,
-  Col,
-  Alert,
-  Tooltip,
-} from 'antd'
-import {
-  HistoryOutlined,
-  SearchOutlined,
-  ReloadOutlined,
-  InfoCircleOutlined,
-} from '@ant-design/icons'
+import { Table, Tag, Input, Card, Button, Typography, Alert, Tooltip } from 'antd'
+import { SearchOutlined, ReloadOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { bookingApi } from '@/features/bookings/api/bookingApi'
 import type { BookingHistoryResponse } from '@/features/bookings/model/types'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 export function BookingHistoriesPage() {
   const [data, setData] = useState<BookingHistoryResponse[]>([])
@@ -171,21 +154,9 @@ export function BookingHistoriesPage() {
   ]
 
   return (
-    <div className="p-6 max-w-400 mx-auto">
+    <div className="p-6 max-w-400 mx-auto flex flex-col gap-6">
       {/* Title Header */}
-      <div className="flex justify-between items-center mb-6">
-        <Space direction="vertical" size={2}>
-          <Title
-            level={3}
-            className="m-0! text-slate-800 font-extrabold flex items-center gap-2"
-          >
-            <HistoryOutlined className="text-teal-600" /> Nhật ký thay đổi đơn đặt sân
-          </Title>
-          <Text type="secondary" className="text-xs">
-            Theo dõi tất cả lịch sử thay đổi trạng thái, thanh toán cọc và dời lịch của hệ
-            thống đặt sân
-          </Text>
-        </Space>
+      <div className="flex justify-end">
         <Button
           icon={<ReloadOutlined />}
           onClick={() => fetchHistory(searchBookingId)}
@@ -196,9 +167,9 @@ export function BookingHistoriesPage() {
       </div>
 
       {/* Filter Card */}
-      <Card className="mb-6 shadow-sm border border-slate-100 rounded-xl">
-        <Row gutter={16} align="middle">
-          <Col xs={24} md={18}>
+      <Card className="shadow-sm border border-slate-100 rounded-xl">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="w-full md:max-w-md">
             <Input
               placeholder="Nhập mã Booking ID (Guid) để tìm kiếm lịch sử..."
               prefix={<SearchOutlined className="text-slate-400" />}
@@ -206,26 +177,30 @@ export function BookingHistoriesPage() {
               onChange={(e) => setBookingIdInput(e.target.value)}
               onPressEnter={handleSearch}
               allowClear
-              size="large"
-              className="rounded-lg"
+              size="medium"
+              className="rounded-lg w-full"
             />
-          </Col>
-          <Col xs={24} md={6} className="flex gap-2 justify-end mt-4 md:mt-0">
+          </div>
+          <div className="flex items-center gap-3 w-full justify-end">
             <Button
               type="primary"
-              size="large"
+              size="medium"
               icon={<SearchOutlined />}
               onClick={handleSearch}
               loading={isLoading}
-              className="bg-teal-600 hover:bg-teal-700 rounded-lg flex-1 md:flex-none"
+              className="bg-teal-600 hover:bg-teal-700 rounded-lg flex-1 md:flex-none flex items-center justify-center"
             >
               Tìm kiếm
             </Button>
-            <Button size="large" onClick={handleReset} className="rounded-lg">
+            <Button
+              size="medium"
+              onClick={handleReset}
+              className="rounded-lg flex items-center justify-center"
+            >
               Xóa bộ lọc
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </Card>
 
       {/* Error Alert */}
@@ -235,7 +210,7 @@ export function BookingHistoriesPage() {
           description={error}
           type="error"
           showIcon
-          className="mb-6 rounded-lg"
+          className="rounded-lg"
         />
       )}
 

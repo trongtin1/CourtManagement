@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { courtPriceApi } from './courtPriceApi'
 import type {
   CreateCourtPriceRequest,
@@ -16,6 +16,7 @@ export const useCourtPricesByCourtQuery = (courtId: number, targetDate: string) 
     enabled: courtId > 0 && !!targetDate,
     queryKey: courtPriceKeys.courtWithDate(courtId, targetDate),
     queryFn: () => courtPriceApi.getByCourt(courtId, targetDate),
+    placeholderData: keepPreviousData,
   })
 
 export const useCreateCourtPriceMutation = () => {

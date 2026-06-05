@@ -14,6 +14,7 @@ import {
   Popover,
   Tag,
   TimePicker,
+  Spin,
 } from 'antd'
 import {
   CalendarOutlined,
@@ -1100,25 +1101,27 @@ export function CourtPriceSection({ courtId, setRules }: CourtPriceSectionProps)
       </div>
 
       {/* Calendar */}
-      <CourtWeekCalendar
-        events={events}
-        date={currentMonday.toDate()}
-        minTime={minTime}
-        maxTime={maxTime}
-        step={snap}
-        timeslots={timeSlots}
-        selectable
-        resizable
-        enableDragAndDrop
-        components={calendarComponents}
-        eventPropGetter={eventPropGetter}
-        onSelectSlot={handleSelectSlot}
-        onSelectEvent={handleSelectEvent}
-        onEventDrop={handleEventDrop}
-        onEventResize={handleEventResize}
-        formats={COURT_WEEK_CALENDAR_FORMATS}
-        className="h-240"
-      />
+      <Spin spinning={pricesQuery.isFetching} tip="Đang tải cấu hình giá...">
+        <CourtWeekCalendar
+          events={events}
+          date={currentMonday.toDate()}
+          minTime={minTime}
+          maxTime={maxTime}
+          step={snap}
+          timeslots={timeSlots}
+          selectable
+          resizable
+          enableDragAndDrop
+          components={calendarComponents}
+          eventPropGetter={eventPropGetter}
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+          onEventDrop={handleEventDrop}
+          onEventResize={handleEventResize}
+          formats={COURT_WEEK_CALENDAR_FORMATS}
+          className="h-240"
+        />
+      </Spin>
 
       {/* Edit Modal */}
       <EditModal

@@ -95,9 +95,12 @@ export default function CourtSettingsPage() {
           <Space align="start">
             <Button
               type="text"
-              icon={<ArrowLeftOutlined />}
+              shape="circle"
+              icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />}
               onClick={() => navigate(ROUTES.courts)}
-              style={{ marginTop: 6 }}
+              className="flex items-center justify-center cursor-pointer hover:bg-slate-100"
+              size="large"
+              style={{ marginTop: 4 }}
             />
             <div>
               <Title level={2} style={{ marginBottom: 4 }}>

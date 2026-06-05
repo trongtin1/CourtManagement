@@ -62,6 +62,7 @@ export function BookingsPage() {
   const {
     data: timelineData,
     isLoading: isTimelineLoading,
+    isFetching: isTimelineFetching,
     refetch: refetchTimeline,
   } = useCourtTimelineAvailabilityQuery(facilityId, selectedDate)
 
@@ -131,12 +132,14 @@ export function BookingsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 mb-3">
                     {/* Date Nav */}
                     <div className="flex items-center gap-1">
-                      <button
-                        className="flex items-center justify-center w-8 h-8 rounded-md border border-slate-200 bg-white text-slate-500 text-xs transition hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50"
+                      <Button
+                        type="text"
+                        shape="circle"
+                        icon={<LeftOutlined style={{ fontSize: '18px' }} />}
                         onClick={() => handleShiftDate(-1)}
-                      >
-                        <LeftOutlined />
-                      </button>
+                        className="flex items-center justify-center cursor-pointer hover:bg-slate-100"
+                        size="large"
+                      />
                       <DatePicker
                         allowClear={false}
                         value={dayjs(selectedDate)}
@@ -145,12 +148,14 @@ export function BookingsPage() {
                         className="w-52.5 text-sm font-semibold text-slate-900"
                         variant="borderless"
                       />
-                      <button
-                        className="flex items-center justify-center w-8 h-8 rounded-md border border-slate-200 bg-white text-slate-500 text-xs transition hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50"
+                      <Button
+                        type="text"
+                        shape="circle"
+                        icon={<RightOutlined style={{ fontSize: '18px' }} />}
                         onClick={() => handleShiftDate(1)}
-                      >
-                        <RightOutlined />
-                      </button>
+                        className="flex items-center justify-center cursor-pointer hover:bg-slate-100"
+                        size="large"
+                      />
                       {!isToday && (
                         <button
                           className="h-7.5 px-3 text-xs font-semibold border border-slate-200 rounded-md bg-slate-50 text-slate-500 transition hover:bg-sky-50 hover:border-sky-200 hover:text-sky-700"
@@ -170,7 +175,7 @@ export function BookingsPage() {
                     <div className="flex items-center gap-4">
                       {uniqueCourtTypes.length > 0 && (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
+                          <span className="text-xs font-medium text-slate-700 whitespace-nowrap">
                             Loại sân
                           </span>
                           <Select
@@ -178,7 +183,7 @@ export function BookingsPage() {
                             onChange={setFilterCourtType}
                             className="w-32.5 text-xs"
                             variant="outlined"
-                            size="small"
+                            size="middle"
                           >
                             <Select.Option value="All">Tất cả</Select.Option>
                             {uniqueCourtTypes.map((type) => (
@@ -216,15 +221,17 @@ export function BookingsPage() {
                     </div>
                   ) : (
                     <div>
-                      <BookingTimeline
-                        facilityId={facilityId}
-                        courts={filteredCourtList}
-                        onBookingClick={handleOpenDetail}
-                        onSlotClick={() => navigate('/bookings/create')}
-                        searchTimeStart=""
-                        searchTimeEnd=""
-                        hasSearchedAvailable={false}
-                      />
+                      <Spin spinning={isTimelineFetching} tip="Đang tải lịch mới...">
+                        <BookingTimeline
+                          facilityId={facilityId}
+                          courts={filteredCourtList}
+                          onBookingClick={handleOpenDetail}
+                          onSlotClick={() => navigate('/bookings/create')}
+                          searchTimeStart=""
+                          searchTimeEnd=""
+                          hasSearchedAvailable={false}
+                        />
+                      </Spin>
                     </div>
                   )}
                 </div>

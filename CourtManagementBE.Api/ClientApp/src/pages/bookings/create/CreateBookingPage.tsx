@@ -12,14 +12,19 @@ import {
   DatePicker,
   TimePicker,
   Modal,
+  Spin,
 } from 'antd'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
 import type { Event } from 'react-big-calendar'
-import '@/pages/courts/court-settings/sections/court-price.css'
-import { CalendarOutlined, DoubleRightOutlined } from '@ant-design/icons'
+import {
+  CalendarOutlined,
+  ArrowLeftOutlined,
+  LeftOutlined,
+  RightOutlined,
+} from '@ant-design/icons'
 
 import { useCombosQuery } from '@/features/combos/api/useComboQueries'
 import type { Combo } from '@/features/combos/model/types'
@@ -384,18 +389,15 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
     return `${label} (${modalStartTime.format('DD/MM/YYYY')})`
   }, [modalStartTime])
 
-  const handleSelectSlot = useCallback(
-    ({ start, end }: { start: Date; end: Date }) => {
-      if (dayjs(start).isBefore(dayjs())) {
-        return
-      }
-      setSelectedDraftSlotId(null)
-      setModalStartTime(dayjs(start))
-      setModalEndTime(dayjs(end))
-      setConfirmModalOpen(true)
-    },
-    [],
-  )
+  const handleSelectSlot = useCallback(({ start, end }: { start: Date; end: Date }) => {
+    if (dayjs(start).isBefore(dayjs())) {
+      return
+    }
+    setSelectedDraftSlotId(null)
+    setModalStartTime(dayjs(start))
+    setModalEndTime(dayjs(end))
+    setConfirmModalOpen(true)
+  }, [])
 
   const handleSelectEvent = useCallback((event: BookingCalendarEvent) => {
     if (event.resource?.isSelection && event.resource?.draftSlotId) {
@@ -421,7 +423,7 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
     }
 
     const targetDateStr = modalStartTime.format('YYYY-MM-DD')
-    
+
     // Clear draft slots if date changes
     let activeDraftSlots = [...draftSlots]
     if (activeDraftSlots.length > 0) {
@@ -526,7 +528,14 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
     setDate(targetDateStr)
     setConfirmModalOpen(false)
     setSelectedDraftSlotId(null)
-  }, [modalStartTime, modalEndTime, draftSlots, selectedDraftSlotId, weeklyTimelineQuery.data, message])
+  }, [
+    modalStartTime,
+    modalEndTime,
+    draftSlots,
+    selectedDraftSlotId,
+    weeklyTimelineQuery.data,
+    message,
+  ])
 
   const slotTotal = useMemo(() => {
     if (draftSlots.length === 0) return 0
@@ -625,29 +634,28 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
   return (
     <div className="bg-slate-50 min-h-screen pb-12">
       {/* Header Bar */}
-     <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
-      <div className="flex items-center gap-4">
-        <Button
-          onClick={handleClose}
-          icon={<DoubleRightOutlined className="rotate-180" />}
-          className="inline-flex items-center justify-center"
-        >
-          Quay lại
-        </Button> 
-      
-    <div>
-      <div className="flex items-center gap-2">
-        <CalendarOutlined className="text-blue-500 text-xl" />
-        <h1 className="m-0 text-xl font-bold text-slate-800">
-          Tạo lịch đặt sân
-        </h1>
+      <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
+        <div className="flex items-center gap-4">
+          <Button
+            type="text"
+            shape="circle"
+            onClick={handleClose}
+            icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />}
+            className="flex items-center justify-center cursor-pointer hover:bg-slate-100"
+            size="large"
+          />
+
+          <div>
+            <div className="flex items-center gap-2">
+              <CalendarOutlined className="text-blue-500 text-xl" />
+              <h1 className="m-0 text-xl font-bold text-slate-800">Tạo lịch đặt sân</h1>
+            </div>
+            <p className="m-0 text-sm text-slate-500">
+              Nhập thông tin để tạo đơn đặt sân mới
+            </p>
+          </div>
+        </div>
       </div>
-      <p className="m-0 text-sm text-slate-500">
-        Nhập thông tin để tạo đơn đặt sân mới
-      </p>
-    </div>
-  </div>
-</div>
 
       {/* Main Grid Layout - Natural Full Window Scroll */}
       <div className="max-w-375 w-full mx-auto px-8 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -658,26 +666,29 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
             {/* Step navigation header with arrows */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
               <Button
+                type="text"
+                shape="circle"
                 disabled={step === 0}
                 onClick={() => setStep((s) => s - 1)}
-                icon={<DoubleRightOutlined className="rotate-180" />}
-                className="flex items-center justify-center text-xs font-semibold text-slate-600 border-slate-200 hover:text-slate-800"
-              >
-                Trước
-              </Button>
+                icon={<LeftOutlined style={{ fontSize: '18px' }} />}
+                className="flex items-center justify-center cursor-pointer hover:bg-slate-100"
+                size="large"
+                title="Trước"
+              />
               <span className="text-xs font-bold uppercase tracking-wider text-slate-450">
                 Bước {step + 1} / 4:{' '}
                 {['Chọn sân', 'Chọn giờ', 'Dịch vụ', 'Xác nhận'][step]}
               </span>
               <Button
+                type="text"
+                shape="circle"
                 disabled={!canNext() || step === 3}
                 onClick={() => setStep((s) => s + 1)}
-                icon={<DoubleRightOutlined />}
-                iconPosition="end"
-                className="flex items-center justify-center text-xs font-semibold text-slate-600 border-slate-200 hover:text-slate-800"
-              >
-                Sau
-              </Button>
+                icon={<RightOutlined style={{ fontSize: '18px' }} />}
+                className="flex items-center justify-center cursor-pointer hover:bg-slate-100"
+                size="large"
+                title="Sau"
+              />
             </div>
             {/* Step 0: Court picker */}
             {step === 0 && (
@@ -799,22 +810,27 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                 </div>
 
                 {/* Calendar */}
-                <CourtWeekCalendar
-                  events={events}
-                  date={currentMonday.toDate()}
-                  minTime={minTime}
-                  maxTime={maxTime}
-                  step={facility?.slotDurationMinutes || 60}
-                  timeslots={1}
-                  selectable
-                  components={calendarComponents}
-                  eventPropGetter={eventPropGetter}
-                  slotPropGetter={slotPropGetter}
-                  onSelectSlot={handleSelectSlot}
-                  onSelectEvent={handleSelectEvent}
-                  formats={COURT_WEEK_CALENDAR_FORMATS}
-                  className="h-240"
-                />
+                <Spin
+                  spinning={weeklyTimelineQuery.isFetching}
+                  tip="Đang tải lịch tuần..."
+                >
+                  <CourtWeekCalendar
+                    events={events}
+                    date={currentMonday.toDate()}
+                    minTime={minTime}
+                    maxTime={maxTime}
+                    step={facility?.slotDurationMinutes || 60}
+                    timeslots={1}
+                    selectable
+                    components={calendarComponents}
+                    eventPropGetter={eventPropGetter}
+                    slotPropGetter={slotPropGetter}
+                    onSelectSlot={handleSelectSlot}
+                    onSelectEvent={handleSelectEvent}
+                    formats={COURT_WEEK_CALENDAR_FORMATS}
+                    className="h-240"
+                  />
+                </Spin>
 
                 {/* Selection Confirm Modal */}
                 <Modal
@@ -900,7 +916,9 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                             danger
                             className="flex-1"
                             onClick={() => {
-                              setDraftSlots((prev) => prev.filter((s) => s.id !== selectedDraftSlotId))
+                              setDraftSlots((prev) =>
+                                prev.filter((s) => s.id !== selectedDraftSlotId),
+                              )
                               setConfirmModalOpen(false)
                               setSelectedDraftSlotId(null)
                               message.success('Đã xóa khung giờ đã chọn')
@@ -1323,10 +1341,13 @@ export function CreateBookingPage({ onClose }: CreateBookingPageProps) {
                           className="flex items-center justify-between text-xs font-bold bg-slate-50 border border-slate-100 rounded-lg p-2"
                         >
                           <span className="text-slate-700">
-                            #{idx + 1}: {dayjs(s.startTime).format('HH:mm')} – {dayjs(s.endTime).format('HH:mm')}
+                            #{idx + 1}: {dayjs(s.startTime).format('HH:mm')} –{' '}
+                            {dayjs(s.endTime).format('HH:mm')}
                           </span>
                           <button
-                            onClick={() => setDraftSlots((prev) => prev.filter((ds) => ds.id !== s.id))}
+                            onClick={() =>
+                              setDraftSlots((prev) => prev.filter((ds) => ds.id !== s.id))
+                            }
                             className="text-red-500 hover:text-red-700 font-extrabold cursor-pointer border-0 bg-transparent text-[11px]"
                             title="Xóa"
                           >

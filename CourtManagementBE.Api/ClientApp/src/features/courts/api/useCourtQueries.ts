@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query'
 import { courtApi } from '@/features/courts/api/courtApi'
 import type { PaginationQuery } from '@/types/api'
 import type { CreateCourtRequest, UpdateCourtRequest } from '../model/types'
@@ -24,10 +29,11 @@ export const useCourtsQuery = (params?: PaginationQuery, enabled = true) => {
 }
 
 export const useCourtQuery = (id: number) => {
-  return useQuery({ 
-    queryKey: courtKeys.detail(id), 
-    queryFn: () => courtApi.getById(id), 
-    enabled: id > 0 });
+  return useQuery({
+    queryKey: courtKeys.detail(id),
+    queryFn: () => courtApi.getById(id),
+    enabled: id > 0,
+  })
 }
 
 export const useCourtSlotsAvailabilityQuery = (id: number | null, date: string) => {
@@ -35,14 +41,19 @@ export const useCourtSlotsAvailabilityQuery = (id: number | null, date: string) 
     queryKey: courtKeys.slotsAvailability(id ?? 0, date),
     queryFn: () => courtApi.getSlotsAvailability(id!, date),
     enabled: !!id && !!date,
+    placeholderData: keepPreviousData,
   })
 }
 
-export const useCourtTimelineAvailabilityQuery = (facilityId: number | null, date: string) => {
+export const useCourtTimelineAvailabilityQuery = (
+  facilityId: number | null,
+  date: string,
+) => {
   return useQuery({
     queryKey: courtKeys.timelineAvailability(facilityId ?? 0, date),
     queryFn: () => courtApi.getTimelineAvailability(facilityId!, date),
     enabled: !!facilityId && !!date,
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -57,7 +68,8 @@ export const useCreateCourtMutation = () => {
 export const useUpdateCourtMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCourtRequest }) => courtApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateCourtRequest }) =>
+      courtApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: courtKeys.all }),
   })
 }
@@ -75,6 +87,7 @@ export const useCourtWeeklyTimelineQuery = (id: number | null, date: string) => 
     queryKey: courtKeys.weeklyTimeline(id ?? 0, date),
     queryFn: () => courtApi.getWeeklyTimeline(id!, date),
     enabled: !!id && !!date,
+    placeholderData: keepPreviousData,
   })
 }
 
