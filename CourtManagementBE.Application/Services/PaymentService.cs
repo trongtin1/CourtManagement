@@ -1,4 +1,5 @@
 using AutoMapper;
+using CourtManagementBE.Application.BackgroundServices;
 using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
@@ -11,11 +12,13 @@ namespace CourtManagementBE.Application.Services;
 public class PaymentService : BaseService, IPaymentService
 {
     private readonly ILogger<PaymentService> _logger;
+    private readonly IAccountingBackgroundTaskRunner _accountingBackgroundTaskRunner;
 
-    public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<PaymentService> logger)
+    public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<PaymentService> logger, IAccountingBackgroundTaskRunner accountingBackgroundTaskRunner)
         : base(unitOfWork, mapper, currentUser)
     {
         _logger = logger;
+        _accountingBackgroundTaskRunner = accountingBackgroundTaskRunner;
     }
 
     public async Task<Result<PageList<PaymentResponse>>> GetAll(QueryResource query)
@@ -89,6 +92,11 @@ public class PaymentService : BaseService, IPaymentService
         await _unitOfWork.IPaymentRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
 
+        if (entity.Status == "success" || entity.Status == "Paid")
+        {
+            _accountingBackgroundTaskRunner.QueueProcessPaymentAccounting(entity.PaymentID.ToString());
+        }
+
         _logger.LogInformation($"{loggingHeader} - Tạo thanh toán thành công. PaymentID={entity.PaymentID}, BookingID={entity.BookingID}, BookingGroupID={entity.BookingGroupID}, Amount={entity.Amount}, Status={entity.Status}");
         return Created(_mapper.Map<PaymentResponse>(entity));
     }
@@ -122,6 +130,11 @@ public class PaymentService : BaseService, IPaymentService
         _mapper.Map(request, entity);
         _unitOfWork.IPaymentRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
+
+        if (entity.Status == "success" || entity.Status == "Paid")
+        {
+            _accountingBackgroundTaskRunner.QueueProcessPaymentAccounting(entity.PaymentID.ToString());
+        }
 
         _logger.LogInformation($"{loggingHeader} - Cập nhật thanh toán thành công. PaymentID={entity.PaymentID}, BookingID={entity.BookingID}, BookingGroupID={entity.BookingGroupID}, Amount={entity.Amount}, Status={entity.Status}");
         return Success(_mapper.Map<PaymentResponse>(entity));

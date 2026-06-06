@@ -37,6 +37,7 @@ public static class AppDbSeeder
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
         await SeedCourtAssetsAsync(db, courts, cancellationToken);
         await SeedBookingsAsync(db, courts, services, customers, cancellationToken);
+        await SeedAccountingDataAsync(db, cancellationToken);
     }
 
     private static async Task SeedAdminAsync(AppDbContext db, CancellationToken cancellationToken)
@@ -98,79 +99,79 @@ public static class AppDbSeeder
     {
 
         await SeedMasterAsync(db.PaymentStatuses, [
-            new PaymentStatuses { Code = "pending", Name = "Chờ xử lý", ColorCode = "#f59e0b", IsFinal = false, SortOrder = 1 },
-            new PaymentStatuses { Code = "success", Name = "Thành công", ColorCode = "#16a34a", IsFinal = true, SortOrder = 2 },
-            new PaymentStatuses { Code = "paid", Name = "Đã thanh toán", ColorCode = "#16a34a", IsFinal = true, SortOrder = 3 },
-            new PaymentStatuses { Code = "failed", Name = "Thất bại", ColorCode = "#dc2626", IsFinal = true, SortOrder = 4 },
-            new PaymentStatuses { Code = "refunded", Name = "Đã hoàn tiền", ColorCode = "#7c3aed", IsFinal = true, SortOrder = 5 },
+            new PaymentStatuses { Code = "pending", Name = "Chá» xá»­ lÃ½", ColorCode = "#f59e0b", IsFinal = false, SortOrder = 1 },
+            new PaymentStatuses { Code = "success", Name = "ThÃ nh cÃ´ng", ColorCode = "#16a34a", IsFinal = true, SortOrder = 2 },
+            new PaymentStatuses { Code = "paid", Name = "ÄÃ£ thanh toÃ¡n", ColorCode = "#16a34a", IsFinal = true, SortOrder = 3 },
+            new PaymentStatuses { Code = "failed", Name = "Tháº¥t báº¡i", ColorCode = "#dc2626", IsFinal = true, SortOrder = 4 },
+            new PaymentStatuses { Code = "refunded", Name = "ÄÃ£ hoÃ n tiá»n", ColorCode = "#7c3aed", IsFinal = true, SortOrder = 5 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.PaymentMethods, [
-            new PaymentMethods { Code = "cash", Name = "Tiền mặt", IsOnline = false, SortOrder = 1 },
-            new PaymentMethods { Code = "bank_transfer", Name = "Chuyển khoản", IsOnline = true, SortOrder = 2 },
-            new PaymentMethods { Code = "qr", Name = "Quét mã QR", IsOnline = true, SortOrder = 3 },
-            new PaymentMethods { Code = "momo", Name = "Ví MoMo", IsOnline = true, SortOrder = 4 },
-            new PaymentMethods { Code = "vnpay", Name = "Cổng VNPay", IsOnline = true, SortOrder = 5 },
+            new PaymentMethods { Code = "cash", Name = "Tiá»n máº·t", IsOnline = false, SortOrder = 1 },
+            new PaymentMethods { Code = "bank_transfer", Name = "Chuyá»ƒn khoáº£n", IsOnline = true, SortOrder = 2 },
+            new PaymentMethods { Code = "qr", Name = "QuÃ©t mÃ£ QR", IsOnline = true, SortOrder = 3 },
+            new PaymentMethods { Code = "momo", Name = "VÃ­ MoMo", IsOnline = true, SortOrder = 4 },
+            new PaymentMethods { Code = "vnpay", Name = "Cá»•ng VNPay", IsOnline = true, SortOrder = 5 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.CustomerTypes, [
-            new CustomerTypes { Code = "normal", Name = "Thường", DiscountPercent = 0, SortOrder = 1 },
-            new CustomerTypes { Code = "member", Name = "Thành viên", DiscountPercent = 5, SortOrder = 2 },
+            new CustomerTypes { Code = "normal", Name = "ThÆ°á»ng", DiscountPercent = 0, SortOrder = 1 },
+            new CustomerTypes { Code = "member", Name = "ThÃ nh viÃªn", DiscountPercent = 5, SortOrder = 2 },
             new CustomerTypes { Code = "vip", Name = "VIP", DiscountPercent = 10, SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.ServiceTypes, [
-            new ServiceTypes { Code = "drink", Name = "Nước uống", SortOrder = 1 },
-            new ServiceTypes { Code = "rental", Name = "Cho thuê đồ", SortOrder = 2 },
-            new ServiceTypes { Code = "equipment", Name = "Thiết bị & dụng cụ", SortOrder = 3 },
+            new ServiceTypes { Code = "drink", Name = "NÆ°á»›c uá»‘ng", SortOrder = 1 },
+            new ServiceTypes { Code = "rental", Name = "Cho thuÃª Ä‘á»“", SortOrder = 2 },
+            new ServiceTypes { Code = "equipment", Name = "Thiáº¿t bá»‹ & dá»¥ng cá»¥", SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.PriceRuleTypes, [
-            new PriceRuleTypes { Code = "normal", Name = "Bình thường", ColorCode = "#0ea5e9", SortOrder = 1 },
-            new PriceRuleTypes { Code = "off_peak", Name = "Giờ thấp điểm", ColorCode = "#22c55e", SortOrder = 2 },
-            new PriceRuleTypes { Code = "peak", Name = "Giờ cao điểm", ColorCode = "#f97316", SortOrder = 3 },
-            new PriceRuleTypes { Code = "golden", Name = "Giờ vàng", ColorCode = "#eab308", SortOrder = 4 },
-            new PriceRuleTypes { Code = "weekend", Name = "Cuối tuần", ColorCode = "#8b5cf6", SortOrder = 5 },
+            new PriceRuleTypes { Code = "normal", Name = "BÃ¬nh thÆ°á»ng", ColorCode = "#0ea5e9", SortOrder = 1 },
+            new PriceRuleTypes { Code = "off_peak", Name = "Giá» tháº¥p Ä‘iá»ƒm", ColorCode = "#22c55e", SortOrder = 2 },
+            new PriceRuleTypes { Code = "peak", Name = "Giá» cao Ä‘iá»ƒm", ColorCode = "#f97316", SortOrder = 3 },
+            new PriceRuleTypes { Code = "golden", Name = "Giá» vÃ ng", ColorCode = "#eab308", SortOrder = 4 },
+            new PriceRuleTypes { Code = "weekend", Name = "Cuá»‘i tuáº§n", ColorCode = "#8b5cf6", SortOrder = 5 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.Units, [
             new Units { Code = "bottle", Name = "Chai", Symbol = "chai", SortOrder = 1 },
-            new Units { Code = "racket", Name = "Cái", Symbol = "cái", SortOrder = 2 },
-            new Units { Code = "tube", Name = "Ống", Symbol = "ống", SortOrder = 3 },
-            new Units { Code = "piece", Name = "Chiếc", Symbol = "chiếc", SortOrder = 4 },
-            new Units { Code = "set", Name = "Bộ", Symbol = "bộ", SortOrder = 5 },
-            new Units { Code = "hour", Name = "Giờ", Symbol = "giờ", SortOrder = 6 },
+            new Units { Code = "racket", Name = "CÃ¡i", Symbol = "cÃ¡i", SortOrder = 2 },
+            new Units { Code = "tube", Name = "á»ng", Symbol = "á»‘ng", SortOrder = 3 },
+            new Units { Code = "piece", Name = "Chiáº¿c", Symbol = "chiáº¿c", SortOrder = 4 },
+            new Units { Code = "set", Name = "Bá»™", Symbol = "bá»™", SortOrder = 5 },
+            new Units { Code = "hour", Name = "Giá»", Symbol = "giá»", SortOrder = 6 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.AssetCategories, [
-            new AssetCategories { Code = "Equipment", Name = "Thiết bị", SortOrder = 1 },
-            new AssetCategories { Code = "Lighting", Name = "Hệ thống chiếu sáng", SortOrder = 2 },
-            new AssetCategories { Code = "Furniture", Name = "Nội thất", SortOrder = 3 },
+            new AssetCategories { Code = "Equipment", Name = "Thiáº¿t bá»‹", SortOrder = 1 },
+            new AssetCategories { Code = "Lighting", Name = "Há»‡ thá»‘ng chiáº¿u sÃ¡ng", SortOrder = 2 },
+            new AssetCategories { Code = "Furniture", Name = "Ná»™i tháº¥t", SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.AssetConditions, [
-            new AssetConditions { Code = "Good", Name = "Tốt", ColorCode = "#16a34a", IsUsable = true, SortOrder = 1 },
-            new AssetConditions { Code = "Maintenance", Name = "Bảo trì", ColorCode = "#f59e0b", IsUsable = false, SortOrder = 2 },
-            new AssetConditions { Code = "Broken", Name = "Hỏng", ColorCode = "#dc2626", IsUsable = false, SortOrder = 3 },
+            new AssetConditions { Code = "Good", Name = "Tá»‘t", ColorCode = "#16a34a", IsUsable = true, SortOrder = 1 },
+            new AssetConditions { Code = "Maintenance", Name = "Báº£o trÃ¬", ColorCode = "#f59e0b", IsUsable = false, SortOrder = 2 },
+            new AssetConditions { Code = "Broken", Name = "Há»ng", ColorCode = "#dc2626", IsUsable = false, SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.CourtFeatureCategories, [
-            new CourtFeatureCategories { Code = "Environment", Name = "Môi trường sân", SortOrder = 1 },
-            new CourtFeatureCategories { Code = "Property", Name = "Thuộc tính", SortOrder = 2 },
-            new CourtFeatureCategories { Code = "Surface", Name = "Bề mặt sân", SortOrder = 3 },
+            new CourtFeatureCategories { Code = "Environment", Name = "MÃ´i trÆ°á»ng sÃ¢n", SortOrder = 1 },
+            new CourtFeatureCategories { Code = "Property", Name = "Thuá»™c tÃ­nh", SortOrder = 2 },
+            new CourtFeatureCategories { Code = "Surface", Name = "Bá» máº·t sÃ¢n", SortOrder = 3 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.CancellationReasons, [
-            new CancellationReasons { Code = "customer_request", Name = "Khách yêu cầu huỷ", SortOrder = 1 },
-            new CancellationReasons { Code = "court_maintenance", Name = "Sân bảo trì", SortOrder = 2 },
-            new CancellationReasons { Code = "weather", Name = "Thời tiết xấu", SortOrder = 3 },
-            new CancellationReasons { Code = "admin_cancelled", Name = "Quản trị viên huỷ", SortOrder = 4 },
+            new CancellationReasons { Code = "customer_request", Name = "KhÃ¡ch yÃªu cáº§u huá»·", SortOrder = 1 },
+            new CancellationReasons { Code = "court_maintenance", Name = "SÃ¢n báº£o trÃ¬", SortOrder = 2 },
+            new CancellationReasons { Code = "weather", Name = "Thá»i tiáº¿t xáº¥u", SortOrder = 3 },
+            new CancellationReasons { Code = "admin_cancelled", Name = "Quáº£n trá»‹ viÃªn huá»·", SortOrder = 4 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.RefundReasons, [
-            new RefundReasons { Code = "booking_cancelled", Name = "Huỷ lịch đặt sân", SortOrder = 1 },
-            new RefundReasons { Code = "duplicate_payment", Name = "Thanh toán trùng lặp", SortOrder = 2 },
-            new RefundReasons { Code = "service_issue", Name = "Vấn đề về dịch vụ", SortOrder = 3 },
+            new RefundReasons { Code = "booking_cancelled", Name = "Huá»· lá»‹ch Ä‘áº·t sÃ¢n", SortOrder = 1 },
+            new RefundReasons { Code = "duplicate_payment", Name = "Thanh toÃ¡n trÃ¹ng láº·p", SortOrder = 2 },
+            new RefundReasons { Code = "service_issue", Name = "Váº¥n Ä‘á» vá» dá»‹ch vá»¥", SortOrder = 3 },
         ], cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
@@ -197,9 +198,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new CourtTypes { Code = "BADMINTON", Name = "Sân Cầu lông", Description = "Sân cầu lông tiêu chuẩn trong nhà" },
-            new CourtTypes { Code = "TENNIS", Name = "Sân Tennis", Description = "Sân tennis tiêu chuẩn ngoài trời" },
-            new CourtTypes { Code = "PICKLEBALL", Name = "Sân Pickleball", Description = "Sân pickleball tiêu chuẩn thi đấu" },
+            new CourtTypes { Code = "BADMINTON", Name = "SÃ¢n Cáº§u lÃ´ng", Description = "SÃ¢n cáº§u lÃ´ng tiÃªu chuáº©n trong nhÃ " },
+            new CourtTypes { Code = "TENNIS", Name = "SÃ¢n Tennis", Description = "SÃ¢n tennis tiÃªu chuáº©n ngoÃ i trá»i" },
+            new CourtTypes { Code = "PICKLEBALL", Name = "SÃ¢n Pickleball", Description = "SÃ¢n pickleball tiÃªu chuáº©n thi Ä‘áº¥u" },
         };
 
         foreach (var item in seed)
@@ -222,9 +223,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new CourtStatus { StatusCode = "available", StatusName = "Sẵn sàng", ColorCode = "#22c55e", Description = "Có thể đặt sân hoạt động bình thường", CreatedBy = AdminLogin },
-            new CourtStatus { StatusCode = "maintenance", StatusName = "Bảo trì", ColorCode = "#f97316", Description = "Tạm dừng hoạt động để bảo trì nâng cấp", CreatedBy = AdminLogin },
-            new CourtStatus { StatusCode = "closed", StatusName = "Đóng cửa", ColorCode = "#64748b", Description = "Sân đóng cửa dừng hoạt động", CreatedBy = AdminLogin },
+            new CourtStatus { StatusCode = "available", StatusName = "Sáºµn sÃ ng", ColorCode = "#22c55e", Description = "CÃ³ thá»ƒ Ä‘áº·t sÃ¢n hoáº¡t Ä‘á»™ng bÃ¬nh thÆ°á»ng", CreatedBy = AdminLogin },
+            new CourtStatus { StatusCode = "maintenance", StatusName = "Báº£o trÃ¬", ColorCode = "#f97316", Description = "Táº¡m dá»«ng hoáº¡t Ä‘á»™ng Ä‘á»ƒ báº£o trÃ¬ nÃ¢ng cáº¥p", CreatedBy = AdminLogin },
+            new CourtStatus { StatusCode = "closed", StatusName = "ÄÃ³ng cá»­a", ColorCode = "#64748b", Description = "SÃ¢n Ä‘Ã³ng cá»­a dá»«ng hoáº¡t Ä‘á»™ng", CreatedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -250,11 +251,11 @@ public static class AppDbSeeder
 
         var seed = new[]
         {
-            new { Feature = new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Trong nhà", Description = "Khu vực sân có mái che trong nhà", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
-            new { Feature = new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "Ngoài trời", Description = "Khu vực sân ngoài trời thoáng mát", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
-            new { Feature = new CourtFeatures { FeatureCode = "VIP", FeatureName = "Sân VIP", Description = "Sân tiêu chuẩn chất lượng cao dịch vụ VIP", CreatedBy = AdminLogin }, CategoryCode = "Property" },
-            new { Feature = new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "Sàn gỗ", Description = "Bề mặt sàn bằng gỗ tự nhiên cao cấp", CreatedBy = AdminLogin }, CategoryCode = "Surface" },
-            new { Feature = new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "Có máy lạnh", Description = "Sân được trang bị hệ thống điều hòa mát mẻ", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "INDOOR", FeatureName = "Trong nhÃ ", Description = "Khu vá»±c sÃ¢n cÃ³ mÃ¡i che trong nhÃ ", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "OUTDOOR", FeatureName = "NgoÃ i trá»i", Description = "Khu vá»±c sÃ¢n ngoÃ i trá»i thoÃ¡ng mÃ¡t", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
+            new { Feature = new CourtFeatures { FeatureCode = "VIP", FeatureName = "SÃ¢n VIP", Description = "SÃ¢n tiÃªu chuáº©n cháº¥t lÆ°á»£ng cao dá»‹ch vá»¥ VIP", CreatedBy = AdminLogin }, CategoryCode = "Property" },
+            new { Feature = new CourtFeatures { FeatureCode = "WOODEN_FLOOR", FeatureName = "SÃ n gá»—", Description = "Bá» máº·t sÃ n báº±ng gá»— tá»± nhiÃªn cao cáº¥p", CreatedBy = AdminLogin }, CategoryCode = "Surface" },
+            new { Feature = new CourtFeatures { FeatureCode = "AIR_CONDITIONED", FeatureName = "CÃ³ mÃ¡y láº¡nh", Description = "SÃ¢n Ä‘Æ°á»£c trang bá»‹ há»‡ thá»‘ng Ä‘iá»u hÃ²a mÃ¡t máº»", CreatedBy = AdminLogin }, CategoryCode = "Environment" },
         };
 
         foreach (var seedItem in seed)
@@ -291,10 +292,10 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Utilities { UtilityCode = "LIGHT", UtilityName = "Hệ thống đèn chiếu sáng", Description = "Hệ thống đèn cao áp ban đêm", Icon = "bulb", CreatedBy = AdminLogin },
-            new Utilities { UtilityCode = "PARKING", UtilityName = "Bãi giữ xe", Description = "Bãi giữ xe rộng rãi an toàn", Icon = "car", CreatedBy = AdminLogin },
-            new Utilities { UtilityCode = "SHOWER", UtilityName = "Phòng tắm & thay đồ", Description = "Phòng tắm có nóng lạnh hiện đại", Icon = "shower", CreatedBy = AdminLogin },
-            new Utilities { UtilityCode = "WIFI", UtilityName = "Wi-Fi miễn phí", Description = "Wi-Fi tốc độ cao cho khách hàng", Icon = "wifi", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "LIGHT", UtilityName = "Há»‡ thá»‘ng Ä‘Ã¨n chiáº¿u sÃ¡ng", Description = "Há»‡ thá»‘ng Ä‘Ã¨n cao Ã¡p ban Ä‘Ãªm", Icon = "bulb", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "PARKING", UtilityName = "BÃ£i giá»¯ xe", Description = "BÃ£i giá»¯ xe rá»™ng rÃ£i an toÃ n", Icon = "car", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "SHOWER", UtilityName = "PhÃ²ng táº¯m & thay Ä‘á»“", Description = "PhÃ²ng táº¯m cÃ³ nÃ³ng láº¡nh hiá»‡n Ä‘áº¡i", Icon = "shower", CreatedBy = AdminLogin },
+            new Utilities { UtilityCode = "WIFI", UtilityName = "Wi-Fi miá»…n phÃ­", Description = "Wi-Fi tá»‘c Ä‘á»™ cao cho khÃ¡ch hÃ ng", Icon = "wifi", CreatedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -318,8 +319,8 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Areas { FacilityID = facilityId, AreaCode = "A", AreaName = "Khu A", TotalLength = 40, TotalWidth = 25, Description = "Khu vực sân trong nhà chính" },
-            new Areas { FacilityID = facilityId, AreaCode = "B", AreaName = "Khu B", TotalLength = 36, TotalWidth = 22, Description = "Khu vực sân ngoài trời" },
+            new Areas { FacilityID = facilityId, AreaCode = "A", AreaName = "Khu A", TotalLength = 40, TotalWidth = 25, Description = "Khu vá»±c sÃ¢n trong nhÃ  chÃ­nh" },
+            new Areas { FacilityID = facilityId, AreaCode = "B", AreaName = "Khu B", TotalLength = 36, TotalWidth = 22, Description = "Khu vá»±c sÃ¢n ngoÃ i trá»i" },
         };
 
         foreach (var item in seed)
@@ -347,9 +348,9 @@ public static class AppDbSeeder
 
         var seed = new[]
         {
-            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A01", CourtName = "Sân Cầu lông A01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 1, Description = "Sân cầu lông trong nhà Khu A01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A02", CourtName = "Sân Cầu lông A02", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 2, Description = "Sân cầu lông trong nhà Khu A02", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Courts { FacilityID = facilityId, CourtTypeID = pickleball.CourtTypeID, CourtCode = "B01", CourtName = "Sân Pickleball B01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 3, Description = "Sân pickleball Khu B01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A01", CourtName = "SÃ¢n Cáº§u lÃ´ng A01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 1, Description = "SÃ¢n cáº§u lÃ´ng trong nhÃ  Khu A01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = badminton.CourtTypeID, CourtCode = "A02", CourtName = "SÃ¢n Cáº§u lÃ´ng A02", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 2, Description = "SÃ¢n cáº§u lÃ´ng trong nhÃ  Khu A02", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Courts { FacilityID = facilityId, CourtTypeID = pickleball.CourtTypeID, CourtCode = "B01", CourtName = "SÃ¢n Pickleball B01", StatusID = available.StatusID, Length = 13.4f, Width = 6.1f, Capacity = 4, SortOrder = 3, Description = "SÃ¢n pickleball Khu B01", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -377,9 +378,9 @@ public static class AppDbSeeder
 
         var seed = new[]
         {
-            new Services { ServiceCode = "WATER", ServiceName = "Nước suối đóng chai", ServiceTypeID = drinkType?.ServiceTypeID, UnitID = bottleUnit?.UnitID, MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "RACKET", ServiceName = "Thuê vợt cầu lông", ServiceTypeID = rentalType?.ServiceTypeID, UnitID = racketUnit?.UnitID, MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-            new Services { ServiceCode = "SHUTTLE", ServiceName = "Ống cầu lông (12 quả)", ServiceTypeID = equipType?.ServiceTypeID, UnitID = tubeUnit?.UnitID, MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "WATER", ServiceName = "NÆ°á»›c suá»‘i Ä‘Ã³ng chai", ServiceTypeID = drinkType?.ServiceTypeID, UnitID = bottleUnit?.UnitID, MinQuantity = 1, MaxQuantity = 50, Price = 10_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "RACKET", ServiceName = "ThuÃª vá»£t cáº§u lÃ´ng", ServiceTypeID = rentalType?.ServiceTypeID, UnitID = racketUnit?.UnitID, MinQuantity = 1, MaxQuantity = 10, Price = 30_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+            new Services { ServiceCode = "SHUTTLE", ServiceName = "á»ng cáº§u lÃ´ng (12 quáº£)", ServiceTypeID = equipType?.ServiceTypeID, UnitID = tubeUnit?.UnitID, MinQuantity = 1, MaxQuantity = 20, Price = 120_000m, CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
         };
 
         foreach (var item in seed)
@@ -400,9 +401,9 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new Customers { CustomerName = "Nguyễn Văn An", Phone = "0901111111", Email = "an@example.com", CustomerType = "member", Note = "Khách hàng Thành viên mẫu" },
-            new Customers { CustomerName = "Trần Thị Bình", Phone = "0902222222", Email = "binh@example.com", CustomerType = "vip", Note = "Khách hàng VIP mẫu" },
-            new Customers { CustomerName = "Lê Minh Châu", Phone = "0903333333", Email = "chau@example.com", CustomerType = "normal", Note = "Khách hàng Thường mẫu" },
+            new Customers { CustomerName = "Nguyá»…n VÄƒn An", Phone = "0901111111", Email = "an@example.com", CustomerType = "member", Note = "KhÃ¡ch hÃ ng ThÃ nh viÃªn máº«u" },
+            new Customers { CustomerName = "Tráº§n Thá»‹ BÃ¬nh", Phone = "0902222222", Email = "binh@example.com", CustomerType = "vip", Note = "KhÃ¡ch hÃ ng VIP máº«u" },
+            new Customers { CustomerName = "LÃª Minh ChÃ¢u", Phone = "0903333333", Email = "chau@example.com", CustomerType = "normal", Note = "KhÃ¡ch hÃ ng ThÆ°á»ng máº«u" },
         };
 
         foreach (var item in seed)
@@ -544,9 +545,9 @@ public static class AppDbSeeder
         {
             var seed = new[]
             {
-                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-NET", AssetName = "Lưới thi đấu", Category = "Equipment", Quantity = 1, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-LIGHT", AssetName = "Bộ đèn chiếu sáng", Category = "Lighting", Quantity = 1, Unit = "set", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
-                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-BENCH", AssetName = "Ghế ngồi vận động viên", Category = "Furniture", Quantity = 2, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-NET", AssetName = "LÆ°á»›i thi Ä‘áº¥u", Category = "Equipment", Quantity = 1, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-LIGHT", AssetName = "Bá»™ Ä‘Ã¨n chiáº¿u sÃ¡ng", Category = "Lighting", Quantity = 1, Unit = "set", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
+                new CourtAssets { CourtID = court.CourtID, AssetCode = $"{court.CourtCode}-BENCH", AssetName = "Gháº¿ ngá»“i váº­n Ä‘á»™ng viÃªn", Category = "Furniture", Quantity = 2, Unit = "piece", Condition = "Good", CreatedBy = AdminLogin, ModifiedBy = AdminLogin },
             };
 
             foreach (var item in seed)
@@ -601,7 +602,7 @@ public static class AppDbSeeder
             BookingDate = bookingDate,
             TotalAmount = courtPrice + serviceTotal,
             Status = BookingStatusConstants.Confirmed,
-            Note = "Đặt lịch mẫu",
+            Note = "Äáº·t lá»‹ch máº«u",
             CreatedBy = AdminLogin,
             ModifiedBy = AdminLogin,
         });
@@ -634,7 +635,7 @@ public static class AppDbSeeder
             Amount = courtPrice + serviceTotal,
             PaymentMethod = "cash",
             Status = "success",
-            Note = "Thanh toán mẫu",
+            Note = "Thanh toÃ¡n máº«u",
             PaymentDate = DateTime.Today,
         });
 
@@ -645,12 +646,12 @@ public static class AppDbSeeder
     {
         var seed = new[]
         {
-            new BookingStatuses { Code = "001", StatusName = "Pending", LabelName = "Chờ duyệt / Chờ cọc (Pending)", IsTerminal = false, CanReschedule = true, CanCombo = true, CanService = true, ColorCode = "warning" },
-            new BookingStatuses { Code = "002", StatusName = "Confirmed", LabelName = "Đã xác nhận (Confirmed)", IsTerminal = false, CanReschedule = true, CanCombo = true, CanService = true, ColorCode = "processing" },
-            new BookingStatuses { Code = "003", StatusName = "CheckedIn", LabelName = "Đã nhận sân (CheckedIn)", IsTerminal = false, CanReschedule = false, CanCombo = true, CanService = true, ColorCode = "success" },
-            new BookingStatuses { Code = "004", StatusName = "Completed", LabelName = "Hoàn tất buổi chơi (Completed)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "success" },
-            new BookingStatuses { Code = "005", StatusName = "Cancelled", LabelName = "Hủy đơn hàng (Cancelled)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "error" },
-            new BookingStatuses { Code = "006", StatusName = "NoShow", LabelName = "Khách không đến (NoShow)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "default" }
+            new BookingStatuses { Code = "001", StatusName = "Pending", LabelName = "Chá» duyá»‡t / Chá» cá»c (Pending)", IsTerminal = false, CanReschedule = true, CanCombo = true, CanService = true, ColorCode = "warning" },
+            new BookingStatuses { Code = "002", StatusName = "Confirmed", LabelName = "ÄÃ£ xÃ¡c nháº­n (Confirmed)", IsTerminal = false, CanReschedule = true, CanCombo = true, CanService = true, ColorCode = "processing" },
+            new BookingStatuses { Code = "003", StatusName = "CheckedIn", LabelName = "ÄÃ£ nháº­n sÃ¢n (CheckedIn)", IsTerminal = false, CanReschedule = false, CanCombo = true, CanService = true, ColorCode = "success" },
+            new BookingStatuses { Code = "004", StatusName = "Completed", LabelName = "HoÃ n táº¥t buá»•i chÆ¡i (Completed)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "success" },
+            new BookingStatuses { Code = "005", StatusName = "Cancelled", LabelName = "Há»§y Ä‘Æ¡n hÃ ng (Cancelled)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "error" },
+            new BookingStatuses { Code = "006", StatusName = "NoShow", LabelName = "KhÃ¡ch khÃ´ng Ä‘áº¿n (NoShow)", IsTerminal = true, CanReschedule = false, CanCombo = false, CanService = false, ColorCode = "default" }
         };
 
         foreach (var item in seed)
@@ -715,4 +716,295 @@ public static class AppDbSeeder
             }
         }
     }
-}
+
+    private static async Task SeedAccountingDataAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        async Task UpsertAccount(string id, string code, string name, string type, int level, string? parentAccountId = null)
+        {
+            var existing = await db.ChartOfAccounts.FirstOrDefaultAsync(x => x.AccountCode == code, cancellationToken);
+            if (existing is null)
+            {
+                db.ChartOfAccounts.Add(new ChartOfAccount
+                {
+                    Id = id,
+                    AccountCode = code,
+                    AccountName = name,
+                    AccountType = type,
+                    ParentAccountId = parentAccountId,
+                    Level = level,
+                    IsActive = true
+                });
+                return;
+            }
+
+            existing.AccountName = name;
+            existing.AccountType = type;
+            existing.ParentAccountId = parentAccountId;
+            existing.Level = level;
+            existing.IsActive = true;
+        }
+
+        await UpsertAccount("coa_111", "111", "Tiền mặt", "Tài sản", 1);
+        await UpsertAccount("coa_1111", "1111", "Tiền mặt VNĐ", "Tài sản", 2, "coa_111");
+        await UpsertAccount("coa_112", "112", "Tiền gửi ngân hàng", "Tài sản", 1);
+        await UpsertAccount("coa_1121", "1121", "Tiền gửi ngân hàng VNĐ", "Tài sản", 2, "coa_112");
+        await UpsertAccount("coa_131", "131", "Phải thu khách hàng", "Tài sản", 1);
+        await UpsertAccount("coa_331", "331", "Phải trả nhà cung cấp", "Nợ phải trả", 1);
+        await UpsertAccount("coa_511", "511", "Doanh thu bán hàng và cung cấp dịch vụ", "Doanh thu", 1);
+        await UpsertAccount("coa_5111", "5111", "Doanh thu dịch vụ cho thuê sân", "Doanh thu", 2, "coa_511");
+        await UpsertAccount("coa_512", "512", "Doanh thu bán hàng canteen/nước uống", "Doanh thu", 1);
+        await UpsertAccount("coa_642", "642", "Chi phí quản lý", "Chi phí", 1);
+        await db.SaveChangesAsync(cancellationToken);
+
+        async Task UpsertRule(string id, string transactionType, string debitAccount, string creditAccount, string originalSource, string description)
+        {
+            var existing = await db.AccountingRules.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (existing is null)
+            {
+                db.AccountingRules.Add(new AccountingRule
+                {
+                    Id = id,
+                    TransactionType = transactionType,
+                    DebitAccount = debitAccount,
+                    CreditAccount = creditAccount,
+                    OriginalSource = originalSource,
+                    Description = description
+                });
+                return;
+            }
+
+            existing.TransactionType = transactionType;
+            existing.DebitAccount = debitAccount;
+            existing.CreditAccount = creditAccount;
+            existing.OriginalSource = originalSource;
+            existing.Description = description;
+        }
+
+        await UpsertRule("rule_pay_cash", "BOOKING_PAYMENT", "1111", "5111", "Payments", "Thanh toán đặt sân bằng tiền mặt");
+        await UpsertRule("rule_pay_bank", "BOOKING_PAYMENT", "1121", "5111", "Payments", "Thanh toán đặt sân qua ngân hàng/cổng thanh toán");
+        await UpsertRule("rule_booking_postpaid", "BOOKING_POSTPAID", "131", "5111", "Bookings", "Ghi nhận công nợ đặt sân trả sau");
+        await db.SaveChangesAsync(cancellationToken);
+
+        async Task UpsertCondition(string id, string ruleId, string sourceTable, string fieldName, string op, string expectedValue, string logicalGroup, string description)
+        {
+            var existing = await db.AccountingRuleConditions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (existing is null)
+            {
+                db.AccountingRuleConditions.Add(new AccountingRuleCondition
+                {
+                    Id = id,
+                    RuleId = ruleId,
+                    SourceTable = sourceTable,
+                    FieldName = fieldName,
+                    Operator = op,
+                    ExpectedValue = expectedValue,
+                    LogicalGroup = logicalGroup,
+                    Description = description,
+                    IsDeleted = false
+                });
+                return;
+            }
+
+            existing.RuleId = ruleId;
+            existing.SourceTable = sourceTable;
+            existing.FieldName = fieldName;
+            existing.Operator = op;
+            existing.ExpectedValue = expectedValue;
+            existing.LogicalGroup = logicalGroup;
+            existing.Description = description;
+            existing.IsDeleted = false;
+        }
+
+        await UpsertCondition("cond_pay_cash", "rule_pay_cash", "Payments", "PaymentMethod", "=", "cash", "AND", "Phương thức thanh toán là tiền mặt");
+        await UpsertCondition("cond_pay_bank_transfer", "rule_pay_bank", "Payments", "PaymentMethod", "=", "bank_transfer", "OR", "Phương thức thanh toán là chuyển khoản");
+        await UpsertCondition("cond_pay_banking", "rule_pay_bank", "Payments", "PaymentMethod", "=", "banking", "OR", "Phương thức thanh toán là banking");
+        await UpsertCondition("cond_pay_qr", "rule_pay_bank", "Payments", "PaymentMethod", "=", "qr", "OR", "Phương thức thanh toán là quét mã QR");
+        await UpsertCondition("cond_pay_vnpay", "rule_pay_bank", "Payments", "PaymentMethod", "=", "vnpay", "OR", "Phương thức thanh toán là VNPay");
+        await UpsertCondition("cond_pay_momo", "rule_pay_bank", "Payments", "PaymentMethod", "=", "momo", "OR", "Phương thức thanh toán là ví MoMo");
+        await db.SaveChangesAsync(cancellationToken);
+
+        var customers = await db.Customers.ToListAsync(cancellationToken);
+        foreach (var customer in customers)
+        {
+            if (string.IsNullOrEmpty(customer.BusinessPartnerId))
+            {
+                var partner = await db.BusinessPartners.FirstOrDefaultAsync(x => x.PartnerCode == "KH_" + customer.Phone, cancellationToken);
+                if (partner is null)
+                {
+                    partner = new BusinessPartner
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        PartnerCode = "KH_" + customer.Phone,
+                        PartnerName = customer.CustomerName,
+                        PartnerType = "Customer",
+                        PhoneNumber = customer.Phone,
+                        Address = "Địa chỉ mẫu tại Việt Nam"
+                    };
+                    db.BusinessPartners.Add(partner);
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+
+                customer.BusinessPartnerId = partner.Id;
+                db.Customers.Update(customer);
+            }
+        }
+        await db.SaveChangesAsync(cancellationToken);
+
+        var sampleCustomer = customers.FirstOrDefault(x => x.Phone == "0902222222");
+        if (sampleCustomer is not null && !string.IsNullOrEmpty(sampleCustomer.BusinessPartnerId))
+        {
+            var exists = await db.AccountReceivables.AnyAsync(x => x.PartnerId == sampleCustomer.BusinessPartnerId, cancellationToken);
+            if (!exists)
+            {
+                db.AccountReceivables.Add(new AccountReceivable
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    PartnerId = sampleCustomer.BusinessPartnerId,
+                    OriginalAmount = 1000000m,
+                    PaidAmount = 700000m,
+                    OutstandingAmount = 300000m,
+                    DueDate = DateTime.Today.AddDays(7),
+                    Status = "Partially_Paid"
+                });
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        var entryExists = await db.JournalEntries.AnyAsync(cancellationToken);
+        if (!entryExists)
+        {
+            var entry1 = new JournalEntry
+            {
+                Id = "seeding_entry_1",
+                VoucherNo = "PT-2026-00001",
+                EntryDate = DateTime.Today.AddDays(-1),
+                DocumentType = "PT",
+                SourceTable = "Payments",
+                SourceId = "seeding_payment_1",
+                Description = "Thu tiền đặt sân A01 — Nguyễn Văn An",
+                Status = "Posted"
+            };
+            db.JournalEntries.Add(entry1);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_1_1", JournalEntryId = entry1.Id, AccountCode = "1111", DebitAmount = 540000m, CreditAmount = 0m, Description = "Thu tiền mặt" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_1_2", JournalEntryId = entry1.Id, AccountCode = "5111", DebitAmount = 0m, CreditAmount = 540000m, Description = "Doanh thu thuê sân" });
+
+            var entry2 = new JournalEntry
+            {
+                Id = "seeding_entry_2",
+                VoucherNo = "PT-2026-00002",
+                EntryDate = DateTime.Today.AddDays(-2),
+                DocumentType = "PT",
+                SourceTable = "Payments",
+                SourceId = "seeding_payment_2",
+                Description = "Thu cọc B01 — Trần Thị Bình",
+                Status = "Posted"
+            };
+            db.JournalEntries.Add(entry2);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_2_1", JournalEntryId = entry2.Id, AccountCode = "1121", DebitAmount = 2400000m, CreditAmount = 0m, Description = "Chuyển khoản Vietcombank" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_2_2", JournalEntryId = entry2.Id, AccountCode = "131", DebitAmount = 0m, CreditAmount = 2400000m, PartnerId = sampleCustomer?.BusinessPartnerId, Description = "Khách hàng trả trước cọc" });
+
+            var entry3 = new JournalEntry
+            {
+                Id = "seeding_entry_3",
+                VoucherNo = "PC-2026-00001",
+                EntryDate = DateTime.Today.AddDays(-1),
+                DocumentType = "PC",
+                SourceTable = "Payments",
+                SourceId = "seeding_payment_3",
+                Description = "Chi mua nước uống canteen",
+                Status = "Posted"
+            };
+            db.JournalEntries.Add(entry3);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_3_1", JournalEntryId = entry3.Id, AccountCode = "512", DebitAmount = 1280000m, CreditAmount = 0m, Description = "Chi phí mua hàng nước uống" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_3_2", JournalEntryId = entry3.Id, AccountCode = "1111", DebitAmount = 0m, CreditAmount = 1280000m, Description = "Chi tiền mặt" });
+
+            var entry4 = new JournalEntry
+            {
+                Id = "seeding_entry_4",
+                VoucherNo = "PT-2026-00003",
+                EntryDate = DateTime.Today,
+                DocumentType = "PT",
+                SourceTable = "Payments",
+                SourceId = "seeding_payment_4",
+                Description = "Thu tiền bán nước ca sáng (Nháp)",
+                Status = "Draft"
+            };
+            db.JournalEntries.Add(entry4);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_4_1", JournalEntryId = entry4.Id, AccountCode = "1111", DebitAmount = 860000m, CreditAmount = 0m, Description = "Tiền mặt tạm tính" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_4_2", JournalEntryId = entry4.Id, AccountCode = "512", DebitAmount = 0m, CreditAmount = 860000m, Description = "Doanh thu bán nước" });
+
+            // Seed Suppliers
+            var supplier1 = new BusinessPartner { Id = "supplier_thp", PartnerCode = "NCC-001", PartnerName = "Tân Hiệp Phát (Nước uống)", PartnerType = "Supplier", PhoneNumber = "0901111111", Address = "Bình Dương" };
+            var supplier2 = new BusinessPartner { Id = "supplier_evn", PartnerCode = "NCC-002", PartnerName = "EVN — Điện lực Q.7", PartnerType = "Supplier", PhoneNumber = "0902222222", Address = "Quận 7, TP. HCM" };
+            var supplier3 = new BusinessPartner { Id = "supplier_sawaco", PartnerCode = "NCC-003", PartnerName = "Sawaco — Nước sạch", PartnerType = "Supplier", PhoneNumber = "0903333333", Address = "Quận 3, TP. HCM" };
+            var supplier4 = new BusinessPartner { Id = "supplier_yonex", PartnerCode = "NCC-004", PartnerName = "Yonex Vietnam (Vợt, cầu)", PartnerType = "Supplier", PhoneNumber = "0904444444", Address = "Hà Nội" };
+            var supplier5 = new BusinessPartner { Id = "supplier_clean", PartnerCode = "NCC-005", PartnerName = "Cty Vệ sinh Saigon Clean", PartnerType = "Supplier", PhoneNumber = "0905555555", Address = "Bình Thạnh, TP. HCM" };
+            var supplier6 = new BusinessPartner { Id = "supplier_hoasen", PartnerCode = "NCC-006", PartnerName = "Hoa Sen (Vật tư bảo trì)", PartnerType = "Supplier", PhoneNumber = "0906666666", Address = "Bình Dương" };
+
+            db.BusinessPartners.AddRange(new[] { supplier1, supplier2, supplier3, supplier4, supplier5, supplier6 });
+
+            // Supplier 1: Tân Hiệp Phát (Mua nước 14.2M, Trả 8.4M)
+            var entry5 = new JournalEntry { Id = "seeding_entry_5", VoucherNo = "HD-2026-00001", EntryDate = DateTime.Today.AddDays(-5), DocumentType = "HD", Description = "Mua nước đóng chai Yonex/THP", Status = "Posted" };
+            db.JournalEntries.Add(entry5);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_5_1", JournalEntryId = entry5.Id, AccountCode = "642", DebitAmount = 14200000m, CreditAmount = 0m, Description = "Chi phí nước uống" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_5_2", JournalEntryId = entry5.Id, AccountCode = "331", DebitAmount = 0m, CreditAmount = 14200000m, PartnerId = supplier1.Id, Description = "Phải trả Tân Hiệp Phát" });
+
+            var entry6 = new JournalEntry { Id = "seeding_entry_6", VoucherNo = "PC-2026-00002", EntryDate = DateTime.Today.AddDays(-4), DocumentType = "PC", Description = "Trả tiền nước Tân Hiệp Phát", Status = "Posted" };
+            db.JournalEntries.Add(entry6);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_6_1", JournalEntryId = entry6.Id, AccountCode = "331", DebitAmount = 8400000m, CreditAmount = 0m, PartnerId = supplier1.Id, Description = "Thanh toán một phần công nợ" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_6_2", JournalEntryId = entry6.Id, AccountCode = "1121", DebitAmount = 0m, CreditAmount = 8400000m, Description = "Chuyển khoản thanh toán" });
+
+            // Supplier 2: EVN Q.7 (Tiền điện 8.4M, Trả 4.2M)
+            var entry7 = new JournalEntry { Id = "seeding_entry_7", VoucherNo = "HD-2026-00002", EntryDate = DateTime.Today.AddDays(-4), DocumentType = "HD", Description = "Hoá đơn tiền điện tháng 5 ca 1+2", Status = "Posted" };
+            db.JournalEntries.Add(entry7);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_7_1", JournalEntryId = entry7.Id, AccountCode = "642", DebitAmount = 8400000m, CreditAmount = 0m, Description = "Chi phí tiền điện" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_7_2", JournalEntryId = entry7.Id, AccountCode = "331", DebitAmount = 0m, CreditAmount = 8400000m, PartnerId = supplier2.Id, Description = "Phải trả EVN" });
+
+            var entry8 = new JournalEntry { Id = "seeding_entry_8", VoucherNo = "PC-2026-00003", EntryDate = DateTime.Today.AddDays(-3), DocumentType = "PC", Description = "Trả tiền điện tháng 5", Status = "Posted" };
+            db.JournalEntries.Add(entry8);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_8_1", JournalEntryId = entry8.Id, AccountCode = "331", DebitAmount = 4200000m, CreditAmount = 0m, PartnerId = supplier2.Id, Description = "Thanh toán tiền điện" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_8_2", JournalEntryId = entry8.Id, AccountCode = "1121", DebitAmount = 0m, CreditAmount = 4200000m, Description = "Chuyển khoản thanh toán" });
+
+            // Supplier 3: Sawaco (Tiền nước 2.4M, chưa trả)
+            var entry9 = new JournalEntry { Id = "seeding_entry_9", VoucherNo = "HD-2026-00003", EntryDate = DateTime.Today.AddDays(-2), DocumentType = "HD", Description = "Hoá đơn tiền nước sạch tháng 5", Status = "Posted" };
+            db.JournalEntries.Add(entry9);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_9_1", JournalEntryId = entry9.Id, AccountCode = "642", DebitAmount = 2400000m, CreditAmount = 0m, Description = "Chi phí tiền nước" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_9_2", JournalEntryId = entry9.Id, AccountCode = "331", DebitAmount = 0m, CreditAmount = 2400000m, PartnerId = supplier3.Id, Description = "Phải trả Sawaco" });
+
+            // Supplier 4: Yonex (Mua vợt/cầu 32.6M, Trả 18M)
+            var entry10 = new JournalEntry { Id = "seeding_entry_10", VoucherNo = "HD-2026-00004", EntryDate = DateTime.Today.AddDays(-6), DocumentType = "HD", Description = "Mua vợt, quả cầu lông tập luyện và bán lẻ", Status = "Posted" };
+            db.JournalEntries.Add(entry10);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_10_1", JournalEntryId = entry10.Id, AccountCode = "642", DebitAmount = 32600000m, CreditAmount = 0m, Description = "Mua vật tư thể thao" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_10_2", JournalEntryId = entry10.Id, AccountCode = "331", DebitAmount = 0m, CreditAmount = 32600000m, PartnerId = supplier4.Id, Description = "Phải trả Yonex" });
+
+            var entry11 = new JournalEntry { Id = "seeding_entry_11", VoucherNo = "PC-2026-00004", EntryDate = DateTime.Today.AddDays(-4), DocumentType = "PC", Description = "Chuyển khoản đặt cọc Yonex", Status = "Posted" };
+            db.JournalEntries.Add(entry11);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_11_1", JournalEntryId = entry11.Id, AccountCode = "331", DebitAmount = 18000000m, CreditAmount = 0m, PartnerId = supplier4.Id, Description = "Thanh toán công nợ Yonex" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_11_2", JournalEntryId = entry11.Id, AccountCode = "1121", DebitAmount = 0m, CreditAmount = 18000000m, Description = "Chuyển khoản Vietcombank" });
+
+            // Supplier 5: Saigon Clean (Phí vệ sinh 4.8M, Trả 2.4M)
+            var entry12 = new JournalEntry { Id = "seeding_entry_12", VoucherNo = "HD-2026-00005", EntryDate = DateTime.Today.AddDays(-10), DocumentType = "HD", Description = "Dịch vụ vệ sinh công nghiệp trọn gói", Status = "Posted" };
+            db.JournalEntries.Add(entry12);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_12_1", JournalEntryId = entry12.Id, AccountCode = "642", DebitAmount = 4800000m, CreditAmount = 0m, Description = "Chi phí vệ sinh" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_12_2", JournalEntryId = entry12.Id, AccountCode = "331", DebitAmount = 0m, CreditAmount = 4800000m, PartnerId = supplier5.Id, Description = "Phải trả Saigon Clean" });
+
+            var entry13 = new JournalEntry { Id = "seeding_entry_13", VoucherNo = "PC-2026-00005", EntryDate = DateTime.Today.AddDays(-8), DocumentType = "PC", Description = "Thanh toán đợt 1 dịch vụ vệ sinh", Status = "Posted" };
+            db.JournalEntries.Add(entry13);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_13_1", JournalEntryId = entry13.Id, AccountCode = "331", DebitAmount = 2400000m, CreditAmount = 0m, PartnerId = supplier5.Id, Description = "Trả tiền Saigon Clean" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_13_2", JournalEntryId = entry13.Id, AccountCode = "1111", DebitAmount = 0m, CreditAmount = 2400000m, Description = "Chi tiền mặt" });
+
+            // Supplier 6: Hoa Sen (Mua thép rào sân 12.4M, Trả 8.4M)
+            var entry14 = new JournalEntry { Id = "seeding_entry_14", VoucherNo = "HD-2026-00006", EntryDate = DateTime.Today.AddDays(-15), DocumentType = "HD", Description = "Vật tư xây dựng & sửa chữa lưới rào", Status = "Posted" };
+            db.JournalEntries.Add(entry14);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_14_1", JournalEntryId = entry14.Id, AccountCode = "642", DebitAmount = 12400000m, CreditAmount = 0m, Description = "Chi phí sửa chữa TSCĐ" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_14_2", JournalEntryId = entry14.Id, AccountCode = "331", DebitAmount = 0m, CreditAmount = 12400000m, PartnerId = supplier6.Id, Description = "Phải trả Thép Hoa Sen" });
+
+            var entry15 = new JournalEntry { Id = "seeding_entry_15", VoucherNo = "PC-2026-00006", EntryDate = DateTime.Today.AddDays(-12), DocumentType = "PC", Description = "Trả tiền sắt thép Hoa Sen", Status = "Posted" };
+            db.JournalEntries.Add(entry15);
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_15_1", JournalEntryId = entry15.Id, AccountCode = "331", DebitAmount = 8400000m, CreditAmount = 0m, PartnerId = supplier6.Id, Description = "Trả tiền Hoa Sen" });
+            db.JournalEntryLines.Add(new JournalEntryLine { Id = "seeding_line_15_2", JournalEntryId = entry15.Id, AccountCode = "1121", DebitAmount = 0m, CreditAmount = 8400000m, Description = "Chuyển khoản thanh toán" });
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }}
+

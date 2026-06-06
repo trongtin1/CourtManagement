@@ -11,6 +11,7 @@ import {
   GiftOutlined,
   ShopOutlined,
   HistoryOutlined,
+  AccountBookOutlined,
 } from '@ant-design/icons'
 import type { ReactNode } from 'react'
 
@@ -148,6 +149,10 @@ export const pageMeta: Record<string, { title: string; description: string }> = 
     title: 'Thiết lập hệ thống',
     description: 'Cấu hình thông số vận hành chung của hệ thống.',
   },
+  accounting: {
+    title: 'Kế toán',
+    description: 'Hạch toán tự động · Công nợ · Sổ quỹ · Báo cáo tài chính.',
+  },
 }
 
 export const getMenuItems = (): MenuItem[] => {
@@ -220,6 +225,11 @@ export const getMenuItems = (): MenuItem[] => {
       key: 'customers',
       icon: <UserOutlined />,
       label: <Link to="/customers">{'Kh\u00e1ch h\u00e0ng'}</Link>,
+    },
+    {
+      key: 'accounting',
+      icon: <AccountBookOutlined />,
+      label: <Link to="/accounting">Kế toán</Link>,
     },
   ]
 }

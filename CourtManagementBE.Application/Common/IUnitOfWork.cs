@@ -49,6 +49,13 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<BookingHistories> IBookingHistoryRepository { get; }
     IGenericRepository<BookingStatuses> IBookingStatusRepository { get; }
     IGenericRepository<SystemSettings> ISystemSettingsRepository { get; }
+    IGenericRepository<ChartOfAccount> IChartOfAccountRepository { get; }
+    IGenericRepository<AccountingRule> IAccountingRuleRepository { get; }
+    IGenericRepository<AccountingRuleCondition> IAccountingRuleConditionRepository { get; }
+    IGenericRepository<JournalEntry> IJournalEntryRepository { get; }
+    IGenericRepository<JournalEntryLine> IJournalEntryLineRepository { get; }
+    IGenericRepository<BusinessPartner> IBusinessPartnerRepository { get; }
+    IGenericRepository<AccountReceivable> IAccountReceivableRepository { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);

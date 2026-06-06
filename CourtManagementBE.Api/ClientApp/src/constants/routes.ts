@@ -35,5 +35,6 @@ export const ROUTES = {
   cancellationReasons: '/cancellation-reasons',
   refundReasons: '/refund-reasons',
   bookingHistories: '/booking-histories',
+  accounting: '/accounting',
   systemSettings: '/system-settings',
 } as const

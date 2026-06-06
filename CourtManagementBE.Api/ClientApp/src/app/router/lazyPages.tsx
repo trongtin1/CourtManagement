@@ -186,3 +186,9 @@ export const SystemSettingsPage = lazy(() =>
     default: m.SystemSettingsPage,
   })),
 )
+
+export const AccountingPage = lazy(() =>
+  import('@/pages/accounting/AccountingPage').then((m) => ({
+    default: m.AccountingPage,
+  })),
+)

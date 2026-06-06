@@ -10,9 +10,6 @@ public class AppDbContext : DbContext
     {
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  DbSets
-    // ══════════════════════════════════════════════════════════════════════════
 
     // ── Auth ──────────────────────────────────────────────────────────────────
     public DbSet<User> Users => Set<User>();
@@ -69,6 +66,16 @@ public class AppDbContext : DbContext
     public DbSet<CancellationReasons> CancellationReasons => Set<CancellationReasons>();
     public DbSet<RefundReasons> RefundReasons => Set<RefundReasons>();
     public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
+
+    // ── Kế toán / Accounting ──────────────────────────────────────────────────
+    public DbSet<ChartOfAccount> ChartOfAccounts => Set<ChartOfAccount>();
+    public DbSet<AccountingRule> AccountingRules => Set<AccountingRule>();
+    public DbSet<AccountingRuleSource> AccountingRuleSources => Set<AccountingRuleSource>();
+    public DbSet<AccountingRuleCondition> AccountingRuleConditions => Set<AccountingRuleCondition>();
+    public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
+    public DbSet<BusinessPartner> BusinessPartners => Set<BusinessPartner>();
+    public DbSet<AccountReceivable> AccountReceivables => Set<AccountReceivable>();
 
     // ── Audit Log ─────────────────────────────────────────────────────────────
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -311,7 +318,13 @@ public class AppDbContext : DbContext
             e.Property(x => x.Email).HasColumnType("varchar(255)");
             e.Property(x => x.CustomerType).HasColumnType("varchar(20)").HasDefaultValue("normal");
             e.Property(x => x.Note).HasColumnType("nvarchar(500)");
+            e.Property(x => x.BusinessPartnerId).HasColumnType("varchar(50)");
             e.HasIndex(x => x.Phone);
+
+            e.HasOne(x => x.BusinessPartner)
+                .WithOne()
+                .HasForeignKey<Customers>(x => x.BusinessPartnerId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // ── Bookings ─────────────────────────────────────────────────────────
@@ -460,7 +473,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.PaymentMethod).HasColumnType("varchar(30)");
             e.Property(x => x.Status).HasColumnType("varchar(20)");
             e.Property(x => x.Note).HasColumnType("nvarchar(300)");
-            
+
             e.HasIndex(x => x.BookingID);
             e.HasIndex(x => x.BookingGroupID);
 
@@ -607,6 +620,95 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.ID);
             e.Property(x => x.Timezone).HasColumnType("varchar(50)").HasDefaultValue("Asia/Ho_Chi_Minh").IsRequired();
             e.Property(x => x.CancellationFeePercent).HasColumnType("decimal(5,2)").HasDefaultValue(20.0m);
+        });
+
+        // ── Accounting ───────────────────────────────────────────────────────
+        modelBuilder.Entity<ChartOfAccount>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.AccountCode).IsUnique();
+            e.Property(x => x.AccountCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.AccountName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.AccountType).HasColumnType("varchar(50)").IsRequired();
+        });
+
+        modelBuilder.Entity<AccountingRule>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.Property(x => x.TransactionType).HasColumnType("varchar(100)").IsRequired();
+            e.Property(x => x.DebitAccount).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.CreditAccount).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.OriginalSource).HasColumnType("varchar(100)");
+        });
+
+        modelBuilder.Entity<AccountingRuleSource>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.RuleId);
+            e.Property(x => x.SourceTable).HasColumnType("varchar(100)").IsRequired();
+            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+        });
+
+        modelBuilder.Entity<AccountingRuleCondition>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.RuleId);
+            e.Property(x => x.RuleId).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.SourceTable).HasColumnType("varchar(100)").IsRequired();
+            e.Property(x => x.FieldName).HasColumnType("varchar(100)").IsRequired();
+            e.Property(x => x.Operator).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.ExpectedValue).HasColumnType("nvarchar(200)").IsRequired();
+        });
+
+        modelBuilder.Entity<JournalEntry>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.VoucherNo).IsUnique();
+            e.Property(x => x.VoucherNo).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.DocumentType).HasColumnType("varchar(50)");
+            e.Property(x => x.SourceTable).HasColumnType("varchar(100)");
+            e.Property(x => x.SourceId).HasColumnType("varchar(100)");
+            e.Property(x => x.Status).HasColumnType("varchar(50)").HasDefaultValue("Draft");
+        });
+
+        modelBuilder.Entity<JournalEntryLine>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.JournalEntryId);
+            e.HasIndex(x => x.AccountCode);
+            e.HasIndex(x => x.PartnerId);
+            e.Property(x => x.JournalEntryId).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.AccountCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.DebitAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.CreditAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.PartnerId).HasColumnType("varchar(50)");
+        });
+
+        modelBuilder.Entity<BusinessPartner>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.PartnerCode).IsUnique();
+            e.Property(x => x.PartnerCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.PartnerName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.PartnerType).HasColumnType("varchar(50)");
+        });
+
+        modelBuilder.Entity<AccountReceivable>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.PartnerId);
+            e.Property(x => x.PartnerId).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.OriginalAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.OutstandingAmount).HasColumnType("decimal(18,2)");
+            e.Property(x => x.Status).HasColumnType("varchar(50)");
         });
     }
 

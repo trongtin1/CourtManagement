@@ -15,4 +15,8 @@ public class Customers
     public string Note { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreateDate { get; set; } = DateTimeOffset.UtcNow;
+
+    // Kế toán / Accounting
+    public string? BusinessPartnerId { get; set; }
+    public BusinessPartner? BusinessPartner { get; set; }
 }

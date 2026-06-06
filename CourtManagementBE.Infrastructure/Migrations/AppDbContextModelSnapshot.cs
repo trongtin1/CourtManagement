@@ -22,6 +22,145 @@ namespace CourtManagementBE.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AccountReceivable", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OutstandingAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PartnerId")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("AccountReceivables");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AccountingRule", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("CreditAccount")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("DebitAccount")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalSource")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AccountingRules");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AccountingRuleCondition", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExpectedValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LogicalGroup")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Operator")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("RuleId")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("SourceTable")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RuleId");
+
+                    b.ToTable("AccountingRuleConditions");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AccountingRuleSource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RuleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SourceTable")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RuleId");
+
+                    b.ToTable("AccountingRuleSources");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Areas", b =>
                 {
                     b.Property<int>("AreaID")
@@ -529,6 +668,39 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Bookings");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.BusinessPartner", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PartnerCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("PartnerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PartnerType")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartnerCode")
+                        .IsUnique();
+
+                    b.ToTable("BusinessPartners");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.CancellationReasons", b =>
                 {
                     b.Property<int>("CancellationReasonID")
@@ -564,6 +736,40 @@ namespace CourtManagementBE.Migrations
                         .IsUnique();
 
                     b.ToTable("CancellationReasons");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.ChartOfAccount", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("AccountCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AccountType")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ParentAccountId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountCode")
+                        .IsUnique();
+
+                    b.ToTable("ChartOfAccounts");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.ComboServices", b =>
@@ -1330,6 +1536,9 @@ namespace CourtManagementBE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerID"));
 
+                    b.Property<string>("BusinessPartnerId")
+                        .HasColumnType("varchar(50)");
+
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
 
@@ -1365,6 +1574,10 @@ namespace CourtManagementBE.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("CustomerID");
+
+                    b.HasIndex("BusinessPartnerId")
+                        .IsUnique()
+                        .HasFilter("[BusinessPartnerId] IS NOT NULL");
 
                     b.HasIndex("Phone");
 
@@ -1412,6 +1625,85 @@ namespace CourtManagementBE.Migrations
                     b.HasKey("FacilityID");
 
                     b.ToTable("Facilities");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.JournalEntry", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("EntryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("SourceTable")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Draft");
+
+                    b.Property<string>("VoucherNo")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VoucherNo")
+                        .IsUnique();
+
+                    b.ToTable("JournalEntries");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.JournalEntryLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("AccountCode")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<decimal>("CreditAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DebitAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JournalEntryId")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("PartnerId")
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountCode");
+
+                    b.HasIndex("JournalEntryId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("JournalEntryLines");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.PaymentMethods", b =>
@@ -2191,6 +2483,16 @@ namespace CourtManagementBE.Migrations
                         .IsRequired();
 
                     b.Navigation("Court");
+                });
+
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.Customers", b =>
+                {
+                    b.HasOne("CourtManagementBE.Domain.Entities.BusinessPartner", "BusinessPartner")
+                        .WithOne()
+                        .HasForeignKey("CourtManagementBE.Domain.Entities.Customers", "BusinessPartnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BusinessPartner");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Payments", b =>

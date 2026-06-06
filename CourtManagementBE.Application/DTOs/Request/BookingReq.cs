@@ -8,6 +8,7 @@ public class BookingRequest
     [Required] public int CustomerID { get; set; }
     [Required] public DateOnly BookingDate { get; set; }
     public decimal TotalAmount { get; set; }
+    public bool IsPostpaid { get; set; }
     [Required, MaxLength(20)] public string Status { get; set; } = "pending";
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
     public int? CancellationReasonID { get; set; }
@@ -20,6 +21,7 @@ public class CreateFullBookingRequest
     [Required] public int CustomerID { get; set; }
     [Required] public DateOnly BookingDate { get; set; }
     [MaxLength(500)] public string Note { get; set; } = string.Empty;
+    public bool IsPostpaid { get; set; }
     public List<CreateFullBookingSlotRequest> Slots { get; set; } = [];
     public List<CreateFullBookingServiceRequest> Services { get; set; } = [];
     public List<CreateFullBookingComboRequest> Combos { get; set; } = [];

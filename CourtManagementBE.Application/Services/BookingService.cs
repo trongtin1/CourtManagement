@@ -1,4 +1,5 @@
 using AutoMapper;
+using CourtManagementBE.Application.BackgroundServices;
 using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
@@ -17,11 +18,18 @@ namespace CourtManagementBE.Application.Services;
 public class BookingService : BaseService, IBookingService
 {
     private readonly ILogger<BookingService> _logger;
+    private readonly IAccountingBackgroundTaskRunner _accountingBackgroundTaskRunner;
 
-    public BookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<BookingService> logger)
+    public BookingService(
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        ICurrentUserContext currentUser,
+        ILogger<BookingService> logger,
+        IAccountingBackgroundTaskRunner accountingBackgroundTaskRunner)
         : base(unitOfWork, mapper, currentUser)
     {
         _logger = logger;
+        _accountingBackgroundTaskRunner = accountingBackgroundTaskRunner;
     }
 
     public async Task<Result<PageList<BookingResponse>>> GetAll(BookingResource query)
@@ -136,6 +144,10 @@ public class BookingService : BaseService, IBookingService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation($"{loggingHeader} - Tạo đơn đặt sân thành công.");
+        if (request.IsPostpaid && entity.TotalAmount > entity.PaidAmount)
+        {
+            _accountingBackgroundTaskRunner.QueueRecordReceivable(entity.BookingID.ToString());
+        }
         return Created(_mapper.Map<BookingResponse>(entity));
     }
 
@@ -375,6 +387,10 @@ public class BookingService : BaseService, IBookingService
             await _unitOfWork.CommitTransactionAsync();
 
             _logger.LogInformation($"{loggingHeader} - Tạo booking đầy đủ thành công. BookingID={booking.BookingID}, CourtID={booking.CourtID}, CustomerID={booking.CustomerID}, BookingDate={booking.BookingDate}, SốSlot={bookingSlots.Count}, SốDịchVụ={serviceLines.Count}, SốCombo={comboLines.Count}, TổngTiền={booking.TotalAmount:N0}đ");
+            if (request.IsPostpaid && booking.TotalAmount > booking.PaidAmount)
+            {
+                _accountingBackgroundTaskRunner.QueueRecordReceivable(booking.BookingID.ToString());
+            }
             return Created(_mapper.Map<BookingResponse>(booking));
         }
         catch (Exception ex)
@@ -703,8 +719,10 @@ public class BookingService : BaseService, IBookingService
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
+            _accountingBackgroundTaskRunner.QueueProcessPaymentAccounting(payment.PaymentID.ToString());
+
             _logger.LogInformation($"{loggingHeader} - Thanh toán booking thành công. BookingID={id}, SốTiền={request.Amount}, TiềnĐãThanhToánCũ={oldPaidAmount}, TiềnĐãThanhToánMới={entity.PaidAmount}, TrạngTháiMới={entity.Status}, KhấuTrừCọcNhóm={isGroupDeposit}");
-            return Success(_mapper.Map<BookingResponse>(entity), "Thanh toán thành công.");
+            return Success(_mapper.Map<BookingResponse>(entity), "Thanh toÃ¡n thÃ nh cÃ´ng.");
         }
         catch (Exception ex)
         {
@@ -1201,3 +1219,5 @@ public class BookingService : BaseService, IBookingService
 
 
 }
+
+
