@@ -1,5 +1,48 @@
 namespace CourtManagementBE.Application.DTOs;
 
+public class AccountingOptionDto
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class AccountingAccountTypeOptionDto : AccountingOptionDto
+{
+    public string NormalBalance { get; set; } = string.Empty;
+}
+
+public class JournalDocumentTypeOptionDto : AccountingOptionDto
+{
+    public string VoucherPrefix { get; set; } = string.Empty;
+}
+
+public class BankAccountOptionDto
+{
+    public int BankAccountID { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string BankName { get; set; } = string.Empty;
+    public string AccountNumberMasked { get; set; } = string.Empty;
+    public string AccountCode { get; set; } = string.Empty;
+    public decimal OpeningBalance { get; set; }
+    public string ColorCode { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class CashFundOptionDto
+{
+    public int CashFundID { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string AccountCode { get; set; } = string.Empty;
+    public decimal OpeningBalance { get; set; }
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+}
+
 public class JournalEntryResponseDto
 {
     public string Id { get; set; } = string.Empty;

@@ -61,6 +61,11 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<BookingHistories>? _bookingHistoryRepository;
     private IGenericRepository<BookingStatuses>? _bookingStatusRepository;
     private IGenericRepository<SystemSettings>? _systemSettingsRepository;
+    private IGenericRepository<AccountingAccountTypes>? _accountingAccountTypeRepository;
+    private IGenericRepository<JournalDocumentTypes>? _journalDocumentTypeRepository;
+    private IGenericRepository<BusinessPartnerTypes>? _businessPartnerTypeRepository;
+    private IGenericRepository<BankAccount>? _bankAccountRepository;
+    private IGenericRepository<CashFund>? _cashFundRepository;
     private IGenericRepository<ChartOfAccount>? _chartOfAccountRepository;
     private IGenericRepository<AccountingRule>? _accountingRuleRepository;
     private IGenericRepository<AccountingRuleCondition>? _accountingRuleConditionRepository;
@@ -120,6 +125,11 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<BookingHistories> IBookingHistoryRepository => _bookingHistoryRepository ??= new GenericRepository<BookingHistories>(_context);
     public IGenericRepository<BookingStatuses> IBookingStatusRepository => _bookingStatusRepository ??= new GenericRepository<BookingStatuses>(_context);
     public IGenericRepository<SystemSettings> ISystemSettingsRepository => _systemSettingsRepository ??= new GenericRepository<SystemSettings>(_context);
+    public IGenericRepository<AccountingAccountTypes> IAccountingAccountTypeRepository => _accountingAccountTypeRepository ??= new GenericRepository<AccountingAccountTypes>(_context);
+    public IGenericRepository<JournalDocumentTypes> IJournalDocumentTypeRepository => _journalDocumentTypeRepository ??= new GenericRepository<JournalDocumentTypes>(_context);
+    public IGenericRepository<BusinessPartnerTypes> IBusinessPartnerTypeRepository => _businessPartnerTypeRepository ??= new GenericRepository<BusinessPartnerTypes>(_context);
+    public IGenericRepository<BankAccount> IBankAccountRepository => _bankAccountRepository ??= new GenericRepository<BankAccount>(_context);
+    public IGenericRepository<CashFund> ICashFundRepository => _cashFundRepository ??= new GenericRepository<CashFund>(_context);
     public IGenericRepository<ChartOfAccount> IChartOfAccountRepository => _chartOfAccountRepository ??= new GenericRepository<ChartOfAccount>(_context);
     public IGenericRepository<AccountingRule> IAccountingRuleRepository => _accountingRuleRepository ??= new GenericRepository<AccountingRule>(_context);
     public IGenericRepository<AccountingRuleCondition> IAccountingRuleConditionRepository => _accountingRuleConditionRepository ??= new GenericRepository<AccountingRuleCondition>(_context);

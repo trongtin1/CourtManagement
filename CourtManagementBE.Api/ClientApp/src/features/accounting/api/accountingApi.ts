@@ -1,8 +1,13 @@
 import { apiGet, apiPost, apiPut } from '@/services/api/apiClient'
 import type {
+  AccountingAccountTypeOption,
+  AccountingOption,
   AccountingRule,
+  BankAccountOption,
+  CashFundOption,
   ChartOfAccount,
   ChartOfAccountRequest,
+  JournalDocumentTypeOption,
   JournalEntry,
   JournalEntryQuery,
   JournalEntryUpdateRequest,
@@ -15,6 +20,11 @@ import type {
 } from '../model/types'
 
 export const accountingApi = {
+  getAccountTypes: () => apiGet<AccountingAccountTypeOption[]>('/accounting/account-types'),
+  getDocumentTypes: () => apiGet<JournalDocumentTypeOption[]>('/accounting/document-types'),
+  getPartnerTypes: () => apiGet<AccountingOption[]>('/accounting/partner-types'),
+  getBankAccounts: () => apiGet<BankAccountOption[]>('/accounting/bank-accounts'),
+  getCashFunds: () => apiGet<CashFundOption[]>('/accounting/cash-funds'),
   getJournal: (params?: JournalEntryQuery) => apiGet<JournalEntry[]>('/accounting/journal', params as Record<string, unknown> | undefined),
   postJournalBatch: (body: PostJournalEntriesRequest) => apiPost<PostJournalEntriesResponse>('/accounting/journal/post-batch', body),
   updateDraftJournal: (id: string, body: JournalEntryUpdateRequest) => apiPut<JournalEntry>(`/accounting/journal/${id}`, body),

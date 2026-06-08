@@ -1,3 +1,5 @@
+import type { JournalEntryStatus } from '../constants/accountingConstants'
+
 export type JournalEntryLine = {
   id: string
   journalEntryId: string
@@ -17,7 +19,7 @@ export type JournalEntry = {
   sourceTable: string
   sourceId: string
   description: string
-  status: 'Draft' | 'Posted' | string
+  status: JournalEntryStatus | string
   totalDebit: number
   totalCredit: number
   isBalanced: boolean
@@ -71,6 +73,44 @@ export type ChartOfAccountRequest = {
   parentAccountId?: string | null
   level: number
   isActive?: boolean
+}
+
+export type AccountingOption = {
+  code: string
+  name: string
+  description: string
+  sortOrder: number
+  isActive: boolean
+}
+
+export type AccountingAccountTypeOption = AccountingOption & {
+  normalBalance: string
+}
+
+export type JournalDocumentTypeOption = AccountingOption & {
+  voucherPrefix: string
+}
+
+export type BankAccountOption = {
+  bankAccountID: number
+  code: string
+  bankName: string
+  accountNumberMasked: string
+  accountCode: string
+  openingBalance: number
+  colorCode: string
+  sortOrder: number
+  isActive: boolean
+}
+
+export type CashFundOption = {
+  cashFundID: number
+  code: string
+  name: string
+  accountCode: string
+  openingBalance: number
+  sortOrder: number
+  isActive: boolean
 }
 
 export type AccountingRuleCondition = {

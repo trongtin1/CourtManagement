@@ -9,14 +9,15 @@ using CourtManagementBE.Application.Common;
 using CourtManagementBE.Application.DTOs;
 using CourtManagementBE.Application.IServices;
 using CourtManagementBE.Domain.Common;
+using CourtManagementBE.Domain.Constants;
 using CourtManagementBE.Domain.Entities;
 
 namespace CourtManagementBE.Application.Services;
 
 public class AccountingService : BaseService, IAccountingService
 {
-    private const string DraftStatus = "Draft";
-    private const string PostedStatus = "Posted";
+    private const string DraftStatus = AccountingConstants.JournalEntryStatus.Draft;
+    private const string PostedStatus = AccountingConstants.JournalEntryStatus.Posted;
 
     private readonly ILogger<AccountingService> _logger;
 
@@ -27,6 +28,92 @@ public class AccountingService : BaseService, IAccountingService
         : base(unitOfWork, mapper)
     {
         _logger = logger;
+    }
+
+    public async Task<Result<List<AccountingAccountTypeOptionDto>>> GetAccountTypesAsync()
+    {
+        var accountTypes = await _unitOfWork.IAccountingAccountTypeRepository.FindList(x => x.IsActive);
+        return Success(accountTypes
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new AccountingAccountTypeOptionDto
+            {
+                Code = x.Code,
+                Name = x.Name,
+                Description = x.Description,
+                SortOrder = x.SortOrder,
+                IsActive = x.IsActive,
+                NormalBalance = x.NormalBalance
+            }).ToList());
+    }
+
+    public async Task<Result<List<JournalDocumentTypeOptionDto>>> GetDocumentTypesAsync()
+    {
+        var documentTypes = await _unitOfWork.IJournalDocumentTypeRepository.FindList(x => x.IsActive);
+        return Success(documentTypes
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new JournalDocumentTypeOptionDto
+            {
+                Code = x.Code,
+                Name = x.Name,
+                Description = x.Description,
+                SortOrder = x.SortOrder,
+                IsActive = x.IsActive,
+                VoucherPrefix = x.VoucherPrefix
+            }).ToList());
+    }
+
+    public async Task<Result<List<AccountingOptionDto>>> GetPartnerTypesAsync()
+    {
+        var partnerTypes = await _unitOfWork.IBusinessPartnerTypeRepository.FindList(x => x.IsActive);
+        return Success(partnerTypes.OrderBy(x => x.SortOrder).Select(ToOption).ToList());
+    }
+
+    public async Task<Result<List<BankAccountOptionDto>>> GetBankAccountsAsync()
+    {
+        var bankAccounts = await _unitOfWork.IBankAccountRepository.FindList(x => x.IsActive);
+        return Success(bankAccounts
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new BankAccountOptionDto
+            {
+                BankAccountID = x.BankAccountID,
+                Code = x.Code,
+                BankName = x.BankName,
+                AccountNumberMasked = x.AccountNumberMasked,
+                AccountCode = x.AccountCode,
+                OpeningBalance = x.OpeningBalance,
+                ColorCode = x.ColorCode,
+                SortOrder = x.SortOrder,
+                IsActive = x.IsActive
+            }).ToList());
+    }
+
+    public async Task<Result<List<CashFundOptionDto>>> GetCashFundsAsync()
+    {
+        var cashFunds = await _unitOfWork.ICashFundRepository.FindList(x => x.IsActive);
+        return Success(cashFunds
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new CashFundOptionDto
+            {
+                CashFundID = x.CashFundID,
+                Code = x.Code,
+                Name = x.Name,
+                AccountCode = x.AccountCode,
+                OpeningBalance = x.OpeningBalance,
+                SortOrder = x.SortOrder,
+                IsActive = x.IsActive
+            }).ToList());
+    }
+
+    private static AccountingOptionDto ToOption(MasterDataBase item)
+    {
+        return new AccountingOptionDto
+        {
+            Code = item.Code,
+            Name = item.Name,
+            Description = item.Description,
+            SortOrder = item.SortOrder,
+            IsActive = item.IsActive
+        };
     }
 
     public async Task<Result<List<JournalEntryResponseDto>>> GetJournalEntriesAsync(JournalEntryQueryDto query)
@@ -133,7 +220,7 @@ public class AccountingService : BaseService, IAccountingService
             Id = a.Id,
             AccountCode = a.AccountCode,
             AccountName = a.AccountName,
-            AccountType = a.AccountType,
+            AccountType = NormalizeAccountType(a.AccountType, a.AccountCode),
             ParentAccountId = a.ParentAccountId,
             Level = a.Level,
             IsActive = a.IsActive
@@ -144,13 +231,15 @@ public class AccountingService : BaseService, IAccountingService
     {
         var exists = await _unitOfWork.IChartOfAccountRepository.FindFirst(x => x.AccountCode == request.AccountCode);
         if (exists != null) return Conflict<ChartOfAccountResponseDto>("MÃ£ tÃ i khoáº£n Ä‘Ã£ tá»“n táº¡i.");
+        var accountType = await _unitOfWork.IAccountingAccountTypeRepository.FindFirst(x => x.Code == request.AccountType && x.IsActive);
+        if (accountType == null) return BadRequest<ChartOfAccountResponseDto>("Loáº¡i tÃ i khoáº£n khÃ´ng há»£p lá»‡.");
 
         var entity = new ChartOfAccount
         {
             Id = Guid.NewGuid().ToString("N"),
             AccountCode = request.AccountCode,
             AccountName = request.AccountName,
-            AccountType = request.AccountType,
+            AccountType = accountType.Code,
             ParentAccountId = request.ParentAccountId,
             Level = request.Level,
             IsActive = request.IsActive
@@ -163,11 +252,29 @@ public class AccountingService : BaseService, IAccountingService
             Id = entity.Id,
             AccountCode = entity.AccountCode,
             AccountName = entity.AccountName,
-            AccountType = entity.AccountType,
+            AccountType = NormalizeAccountType(entity.AccountType, entity.AccountCode),
             ParentAccountId = entity.ParentAccountId,
             Level = entity.Level,
             IsActive = entity.IsActive
         });
+    }
+
+    private static string NormalizeAccountType(string accountType, string accountCode)
+    {
+        if (accountType is "Asset" or "Liability" or "Equity" or "Revenue" or "Expense")
+        {
+            return accountType;
+        }
+
+        return accountCode switch
+        {
+            var code when code.StartsWith("1") => "Asset",
+            var code when code.StartsWith("3") => "Liability",
+            var code when code.StartsWith("4") => "Equity",
+            var code when code.StartsWith("5") => "Revenue",
+            var code when code.StartsWith("6") => "Expense",
+            _ => accountType
+        };
     }
 
     public async Task<Result<List<AccountingRuleResponseDto>>> GetAccountingRulesAsync()

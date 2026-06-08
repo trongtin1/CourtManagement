@@ -17,6 +17,41 @@ public class AccountingController : ControllerBase
         _service = service;
     }
 
+    [HttpGet("account-types")]
+    public async Task<IActionResult> GetAccountTypes()
+    {
+        var r = await _service.GetAccountTypesAsync();
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpGet("document-types")]
+    public async Task<IActionResult> GetDocumentTypes()
+    {
+        var r = await _service.GetDocumentTypesAsync();
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpGet("partner-types")]
+    public async Task<IActionResult> GetPartnerTypes()
+    {
+        var r = await _service.GetPartnerTypesAsync();
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpGet("bank-accounts")]
+    public async Task<IActionResult> GetBankAccounts()
+    {
+        var r = await _service.GetBankAccountsAsync();
+        return StatusCode((int)r.StatusCode, r);
+    }
+
+    [HttpGet("cash-funds")]
+    public async Task<IActionResult> GetCashFunds()
+    {
+        var r = await _service.GetCashFundsAsync();
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpGet("journal")]
     public async Task<IActionResult> GetJournal([FromQuery] JournalEntryQueryDto query)
     {

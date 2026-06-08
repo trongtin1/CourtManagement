@@ -192,6 +192,38 @@ public static class AppDbSeeder
         }
     }
 
+    private static async Task SeedAccountingMasterAsync<T>(
+        DbSet<T> dbSet,
+        IEnumerable<T> seed,
+        CancellationToken cancellationToken)
+        where T : MasterDataBase
+    {
+        foreach (var item in seed)
+        {
+            var existing = await dbSet.FirstOrDefaultAsync(x => x.Code == item.Code, cancellationToken);
+            if (existing is null)
+            {
+                dbSet.Add(item);
+                continue;
+            }
+
+            existing.Name = item.Name;
+            existing.Description = item.Description;
+            existing.SortOrder = item.SortOrder;
+            existing.IsActive = item.IsActive;
+
+            if (existing is AccountingAccountTypes existingAccountType && item is AccountingAccountTypes accountType)
+            {
+                existingAccountType.NormalBalance = accountType.NormalBalance;
+            }
+
+            if (existing is JournalDocumentTypes existingDocumentType && item is JournalDocumentTypes documentType)
+            {
+                existingDocumentType.VoucherPrefix = documentType.VoucherPrefix;
+            }
+        }
+    }
+
     private static async Task<List<CourtTypes>> GetOrCreateCourtTypesAsync(
         AppDbContext db,
         CancellationToken cancellationToken)
@@ -717,8 +749,110 @@ public static class AppDbSeeder
         }
     }
 
+    private static async Task UpsertCashFundAsync(
+        AppDbContext db,
+        string code,
+        string name,
+        string accountCode,
+        decimal openingBalance,
+        int sortOrder,
+        CancellationToken cancellationToken)
+    {
+        var existing = await db.CashFunds.FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        if (existing is null)
+        {
+            db.CashFunds.Add(new CashFund
+            {
+                Code = code,
+                Name = name,
+                AccountCode = accountCode,
+                OpeningBalance = openingBalance,
+                SortOrder = sortOrder,
+                IsActive = true
+            });
+            return;
+        }
+
+        existing.Name = name;
+        existing.AccountCode = accountCode;
+        existing.OpeningBalance = openingBalance;
+        existing.SortOrder = sortOrder;
+        existing.IsActive = true;
+    }
+
+    private static async Task UpsertBankAccountAsync(
+        AppDbContext db,
+        string code,
+        string bankName,
+        string accountNumberMasked,
+        string accountCode,
+        decimal openingBalance,
+        string colorCode,
+        int sortOrder,
+        CancellationToken cancellationToken)
+    {
+        var existing = await db.BankAccounts.FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        if (existing is null)
+        {
+            db.BankAccounts.Add(new BankAccount
+            {
+                Code = code,
+                BankName = bankName,
+                AccountNumberMasked = accountNumberMasked,
+                AccountCode = accountCode,
+                OpeningBalance = openingBalance,
+                ColorCode = colorCode,
+                SortOrder = sortOrder,
+                IsActive = true
+            });
+            return;
+        }
+
+        existing.BankName = bankName;
+        existing.AccountNumberMasked = accountNumberMasked;
+        existing.AccountCode = accountCode;
+        existing.OpeningBalance = openingBalance;
+        existing.ColorCode = colorCode;
+        existing.SortOrder = sortOrder;
+        existing.IsActive = true;
+    }
+
     private static async Task SeedAccountingDataAsync(AppDbContext db, CancellationToken cancellationToken)
     {
+        await SeedAccountingMasterAsync(db.AccountingAccountTypes, [
+            new AccountingAccountTypes { Code = "Asset", Name = "Tài sản", NormalBalance = "Debit", SortOrder = 1 },
+            new AccountingAccountTypes { Code = "Liability", Name = "Nợ phải trả", NormalBalance = "Credit", SortOrder = 2 },
+            new AccountingAccountTypes { Code = "Equity", Name = "Vốn chủ sở hữu", NormalBalance = "Credit", SortOrder = 3 },
+            new AccountingAccountTypes { Code = "Revenue", Name = "Doanh thu", NormalBalance = "Credit", SortOrder = 4 },
+            new AccountingAccountTypes { Code = "Expense", Name = "Chi phí", NormalBalance = "Debit", SortOrder = 5 },
+        ], cancellationToken);
+
+        await SeedAccountingMasterAsync(db.JournalDocumentTypes, [
+            new JournalDocumentTypes { Code = "PT", Name = "Phiếu thu", VoucherPrefix = "PT", SortOrder = 1 },
+            new JournalDocumentTypes { Code = "PC", Name = "Phiếu chi", VoucherPrefix = "PC", SortOrder = 2 },
+            new JournalDocumentTypes { Code = "BC", Name = "Báo có ngân hàng", VoucherPrefix = "BC", SortOrder = 3 },
+            new JournalDocumentTypes { Code = "BN", Name = "Báo nợ ngân hàng", VoucherPrefix = "BN", SortOrder = 4 },
+            new JournalDocumentTypes { Code = "HD", Name = "Hóa đơn", VoucherPrefix = "HD", SortOrder = 5 },
+            new JournalDocumentTypes { Code = "CN", Name = "Chứng từ công nợ", VoucherPrefix = "CN", SortOrder = 6 },
+        ], cancellationToken);
+
+        await SeedAccountingMasterAsync(db.BusinessPartnerTypes, [
+            new BusinessPartnerTypes { Code = "Customer", Name = "Khách hàng", SortOrder = 1 },
+            new BusinessPartnerTypes { Code = "Supplier", Name = "Nhà cung cấp", SortOrder = 2 },
+            new BusinessPartnerTypes { Code = "Employee", Name = "Nhân viên", SortOrder = 3 },
+            new BusinessPartnerTypes { Code = "Other", Name = "Khác", SortOrder = 4 },
+        ], cancellationToken);
+
+        await UpsertCashFundAsync(db, "cash-main", "Quỹ tiền mặt chính", "1111", 12000000m, 1, cancellationToken);
+        await UpsertCashFundAsync(db, "cash-q1", "Quỹ tiền mặt chi nhánh Quận 1", "1111", 6200000m, 2, cancellationToken);
+        await UpsertCashFundAsync(db, "cash-tdc", "Quỹ tiền mặt chi nhánh Thủ Đức", "1111", 1600000m, 3, cancellationToken);
+
+        await UpsertBankAccountAsync(db, "vcb", "Vietcombank", "**** 4821", "1121", 184200000m, "#10b981", 1, cancellationToken);
+        await UpsertBankAccountAsync(db, "bidv", "BIDV", "**** 7392", "1121", 96400000m, "#06b6d4", 2, cancellationToken);
+        await UpsertBankAccountAsync(db, "mb", "MB Bank", "**** 1024", "1121", 82800000m, "#8b5cf6", 3, cancellationToken);
+        await UpsertBankAccountAsync(db, "tcb", "Techcombank", "**** 5560", "1121", 49400000m, "#f43f5e", 4, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+
         async Task UpsertAccount(string id, string code, string name, string type, int level, string? parentAccountId = null)
         {
             var existing = await db.ChartOfAccounts.FirstOrDefaultAsync(x => x.AccountCode == code, cancellationToken);
@@ -744,16 +878,16 @@ public static class AppDbSeeder
             existing.IsActive = true;
         }
 
-        await UpsertAccount("coa_111", "111", "Tiền mặt", "Tài sản", 1);
-        await UpsertAccount("coa_1111", "1111", "Tiền mặt VNĐ", "Tài sản", 2, "coa_111");
-        await UpsertAccount("coa_112", "112", "Tiền gửi ngân hàng", "Tài sản", 1);
-        await UpsertAccount("coa_1121", "1121", "Tiền gửi ngân hàng VNĐ", "Tài sản", 2, "coa_112");
-        await UpsertAccount("coa_131", "131", "Phải thu khách hàng", "Tài sản", 1);
-        await UpsertAccount("coa_331", "331", "Phải trả nhà cung cấp", "Nợ phải trả", 1);
-        await UpsertAccount("coa_511", "511", "Doanh thu bán hàng và cung cấp dịch vụ", "Doanh thu", 1);
-        await UpsertAccount("coa_5111", "5111", "Doanh thu dịch vụ cho thuê sân", "Doanh thu", 2, "coa_511");
-        await UpsertAccount("coa_512", "512", "Doanh thu bán hàng canteen/nước uống", "Doanh thu", 1);
-        await UpsertAccount("coa_642", "642", "Chi phí quản lý", "Chi phí", 1);
+        await UpsertAccount("coa_111", "111", "Tiền mặt", "Asset", 1);
+        await UpsertAccount("coa_1111", "1111", "Tiền mặt VNĐ", "Asset", 2, "coa_111");
+        await UpsertAccount("coa_112", "112", "Tiền gửi ngân hàng", "Asset", 1);
+        await UpsertAccount("coa_1121", "1121", "Tiền gửi ngân hàng VNĐ", "Asset", 2, "coa_112");
+        await UpsertAccount("coa_131", "131", "Phải thu khách hàng", "Asset", 1);
+        await UpsertAccount("coa_331", "331", "Phải trả nhà cung cấp", "Liability", 1);
+        await UpsertAccount("coa_511", "511", "Doanh thu bán hàng và cung cấp dịch vụ", "Revenue", 1);
+        await UpsertAccount("coa_5111", "5111", "Doanh thu dịch vụ cho thuê sân", "Revenue", 2, "coa_511");
+        await UpsertAccount("coa_512", "512", "Doanh thu bán hàng canteen/nước uống", "Revenue", 1);
+        await UpsertAccount("coa_642", "642", "Chi phí quản lý", "Expense", 1);
         await db.SaveChangesAsync(cancellationToken);
 
         async Task UpsertRule(string id, string transactionType, string debitAccount, string creditAccount, string originalSource, string description)

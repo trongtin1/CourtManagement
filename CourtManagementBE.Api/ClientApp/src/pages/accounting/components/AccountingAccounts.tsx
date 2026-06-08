@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Button, Card, Descriptions, Form, Input, Modal, Select, Space, Switch, Table, Tag, message } from 'antd'
 import { DownloadOutlined, FilterOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
-import { useAccountingAccountsQuery, useCreateAccountMutation } from '@/features/accounting/api/useAccountingQueries'
+import { useAccountingAccountsQuery, useAccountingAccountTypesQuery, useCreateAccountMutation } from '@/features/accounting/api/useAccountingQueries'
 import type { ChartOfAccount, ChartOfAccountRequest } from '@/features/accounting/model/types'
 
 const typeColorMap: Record<string, string> = {
+  Asset: 'blue',
+  Liability: 'gold',
+  Equity: 'purple',
+  Revenue: 'green',
+  Expense: 'red',
   'Tài sản': 'blue',
   'Doanh thu': 'green',
   'Chi phí': 'red',
@@ -96,8 +101,18 @@ export function AccountingAccounts() {
   const isSubAccount = !!parentId
 
   const query = useAccountingAccountsQuery()
+  const accountTypesQuery = useAccountingAccountTypesQuery()
   const createMut = useCreateAccountMutation()
   const accounts = useMemo(() => query.data ?? [], [query.data])
+  const accountTypes = useMemo(() => accountTypesQuery.data ?? [], [accountTypesQuery.data])
+  const accountTypeNameMap = useMemo(
+    () => Object.fromEntries(accountTypes.map((type) => [type.code, type.name])),
+    [accountTypes],
+  )
+  const accountTypeOptions = useMemo(
+    () => accountTypes.map((type) => ({ label: type.name, value: type.code })),
+    [accountTypes],
+  )
 
   const selectedAccount = useMemo(() => accounts.find((a) => a.accountCode === selectedCode) ?? accounts[0] ?? null, [accounts, selectedCode])
 
@@ -132,7 +147,16 @@ export function AccountingAccounts() {
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => query.refetch()} loading={query.isFetching}>Tải lại</Button>
           <Button icon={<DownloadOutlined />}>Xuất Excel</Button>
-          <Button icon={<PlusOutlined />} type="primary" onClick={() => setIsModalOpen(true)}>Thêm tài khoản</Button>
+          <Button
+            icon={<PlusOutlined />}
+            type="primary"
+            onClick={() => {
+              form.setFieldsValue({ isActive: true, accountType: accountTypes[0]?.code ?? 'Asset', level: 1 })
+              setIsModalOpen(true)
+            }}
+          >
+            Thêm tài khoản
+          </Button>
         </Space>
       </div>
 
@@ -164,7 +188,7 @@ export function AccountingAccounts() {
                 ),
               },
               { title: 'Cấp', dataIndex: 'level', width: 80, align: 'center', render: (lv: number) => <Tag color={lv === 1 ? 'purple' : 'default'}>Cấp {lv}</Tag> },
-              { title: 'Loại', dataIndex: 'accountType', width: 130, render: (type: string) => <Tag color={typeColorMap[type] ?? 'default'}>{type}</Tag> },
+              { title: 'Loại', dataIndex: 'accountType', width: 130, render: (type: string) => <Tag color={typeColorMap[type] ?? 'default'}>{accountTypeNameMap[type] ?? type}</Tag> },
               { title: 'Trạng thái', dataIndex: 'isActive', width: 120, align: 'center', render: (active: boolean) => <Tag color={active ? 'green' : 'red'}>{active ? 'Hoạt động' : 'Ngưng hoạt động'}</Tag> },
             ]}
             dataSource={accountTree}
@@ -185,7 +209,7 @@ export function AccountingAccounts() {
               <Descriptions column={1} size="small" bordered>
                 <Descriptions.Item label="Tên tài khoản">{selectedAccount.accountName}</Descriptions.Item>
                 <Descriptions.Item label="Cấp tài khoản"><Tag color="purple">Cấp {selectedAccount.level}</Tag></Descriptions.Item>
-                <Descriptions.Item label="Loại"><Tag color={typeColorMap[selectedAccount.accountType] ?? 'default'}>{selectedAccount.accountType}</Tag></Descriptions.Item>
+                <Descriptions.Item label="Loại"><Tag color={typeColorMap[selectedAccount.accountType] ?? 'default'}>{accountTypeNameMap[selectedAccount.accountType] ?? selectedAccount.accountType}</Tag></Descriptions.Item>
                 <Descriptions.Item label="Trạng thái"><Switch checked={selectedAccount.isActive} disabled size="small" /></Descriptions.Item>
               </Descriptions>
             </Space>
@@ -197,7 +221,7 @@ export function AccountingAccounts() {
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ isActive: true, accountType: 'Tài sản', level: 1 }}
+          initialValues={{ isActive: true, accountType: accountTypes[0]?.code ?? 'Asset', level: 1 }}
           onFinish={onCreate}
           onValuesChange={(changedValues) => {
             if (changedValues.parentAccountId !== undefined) {
@@ -221,7 +245,7 @@ export function AccountingAccounts() {
           <Form.Item name="accountCode" label="Mã tài khoản" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="accountName" label="Tên tài khoản" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="accountType" label="Loại tài khoản" rules={[{ required: true }]}>
-            <Select disabled={isSubAccount} options={[{ label: 'Tài sản', value: 'Tài sản' }, { label: 'Nợ phải trả', value: 'Nợ phải trả' }, { label: 'Doanh thu', value: 'Doanh thu' }, { label: 'Chi phí', value: 'Chi phí' }]} />
+            <Select disabled={isSubAccount} loading={accountTypesQuery.isLoading} options={accountTypeOptions} />
           </Form.Item>
           <Form.Item name="parentAccountId" label="Tài khoản cha"><Select allowClear placeholder="Để trống nếu là tài khoản cấp 1" options={flatOptions} /></Form.Item>
           <Form.Item name="level" label="Cấp tài khoản (Tự động tính)"><Input type="number" disabled /></Form.Item>

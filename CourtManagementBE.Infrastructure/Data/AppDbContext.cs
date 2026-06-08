@@ -68,6 +68,11 @@ public class AppDbContext : DbContext
     public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
 
     // ── Kế toán / Accounting ──────────────────────────────────────────────────
+    public DbSet<AccountingAccountTypes> AccountingAccountTypes => Set<AccountingAccountTypes>();
+    public DbSet<JournalDocumentTypes> JournalDocumentTypes => Set<JournalDocumentTypes>();
+    public DbSet<BusinessPartnerTypes> BusinessPartnerTypes => Set<BusinessPartnerTypes>();
+    public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
+    public DbSet<CashFund> CashFunds => Set<CashFund>();
     public DbSet<ChartOfAccount> ChartOfAccounts => Set<ChartOfAccount>();
     public DbSet<AccountingRule> AccountingRules => Set<AccountingRule>();
     public DbSet<AccountingRuleSource> AccountingRuleSources => Set<AccountingRuleSource>();
@@ -543,6 +548,17 @@ public class AppDbContext : DbContext
         ConfigureMasterData<CourtFeatureCategories>(modelBuilder, "CourtFeatureCategoryID");
         ConfigureMasterData<CancellationReasons>(modelBuilder, "CancellationReasonID");
         ConfigureMasterData<RefundReasons>(modelBuilder, "RefundReasonID");
+        ConfigureMasterData<AccountingAccountTypes>(modelBuilder, "AccountingAccountTypeID");
+        modelBuilder.Entity<AccountingAccountTypes>(e =>
+        {
+            e.Property(x => x.NormalBalance).HasColumnType("varchar(20)").IsRequired();
+        });
+        ConfigureMasterData<JournalDocumentTypes>(modelBuilder, "JournalDocumentTypeID");
+        modelBuilder.Entity<JournalDocumentTypes>(e =>
+        {
+            e.Property(x => x.VoucherPrefix).HasColumnType("varchar(20)").IsRequired();
+        });
+        ConfigureMasterData<BusinessPartnerTypes>(modelBuilder, "BusinessPartnerTypeID");
 
         // ── AuditLog ─────────────────────────────────────────────────────────
         modelBuilder.Entity<AuditLog>(e =>
@@ -623,6 +639,28 @@ public class AppDbContext : DbContext
         });
 
         // ── Accounting ───────────────────────────────────────────────────────
+        modelBuilder.Entity<BankAccount>(e =>
+        {
+            e.HasKey(x => x.BankAccountID);
+            e.Property(x => x.Code).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.BankName).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.AccountNumberMasked).HasColumnType("varchar(50)");
+            e.Property(x => x.AccountCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.OpeningBalance).HasColumnType("decimal(18,2)");
+            e.Property(x => x.ColorCode).HasColumnType("varchar(20)");
+            e.HasIndex(x => x.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<CashFund>(e =>
+        {
+            e.HasKey(x => x.CashFundID);
+            e.Property(x => x.Code).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.Name).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.AccountCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.OpeningBalance).HasColumnType("decimal(18,2)");
+            e.HasIndex(x => x.Code).IsUnique();
+        });
+
         modelBuilder.Entity<ChartOfAccount>(e =>
         {
             e.HasKey(x => x.Id);

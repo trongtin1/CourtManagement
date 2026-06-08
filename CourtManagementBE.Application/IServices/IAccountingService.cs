@@ -5,6 +5,11 @@ namespace CourtManagementBE.Application.IServices;
 
 public interface IAccountingService
 {
+    Task<Result<List<AccountingAccountTypeOptionDto>>> GetAccountTypesAsync();
+    Task<Result<List<JournalDocumentTypeOptionDto>>> GetDocumentTypesAsync();
+    Task<Result<List<AccountingOptionDto>>> GetPartnerTypesAsync();
+    Task<Result<List<BankAccountOptionDto>>> GetBankAccountsAsync();
+    Task<Result<List<CashFundOptionDto>>> GetCashFundsAsync();
     Task<Result<List<JournalEntryResponseDto>>> GetJournalEntriesAsync(JournalEntryQueryDto query);
     Task<Result<PostJournalEntriesResponseDto>> PostJournalEntriesAsync(List<string> entryIds);
     Task<Result<JournalEntryResponseDto>> UpdateDraftJournalEntryAsync(string id, JournalEntryUpdateDto dto);
