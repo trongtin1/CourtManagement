@@ -163,7 +163,7 @@ public class AccountingService : BaseService, IAccountingService
     {
         if (entryIds == null || entryIds.Count == 0)
         {
-            return BadRequest<PostJournalEntriesResponseDto>("KhÃ´ng cÃ³ bÃºt toÃ¡n nÃ o Ä‘á»ƒ ghi sá»•.");
+            return BadRequest<PostJournalEntriesResponseDto>("Không có bút toán nào để ghi sổ.");
         }
 
         await _unitOfWork.BeginTransactionAsync();
@@ -189,8 +189,8 @@ public class AccountingService : BaseService, IAccountingService
     public async Task<Result<JournalEntryResponseDto>> UpdateDraftJournalEntryAsync(string id, JournalEntryUpdateDto dto)
     {
         var entry = await _unitOfWork.IJournalEntryRepository.FindFirst(e => e.Id == id);
-        if (entry == null) return NotFound<JournalEntryResponseDto>("KhÃ´ng tÃ¬m tháº¥y bÃºt toÃ¡n.");
-        if (entry.Status != DraftStatus) return BadRequest<JournalEntryResponseDto>("Chá»‰ Ä‘Æ°á»£c sá»­a bÃºt toÃ¡n Draft.");
+        if (entry == null) return NotFound<JournalEntryResponseDto>("Không tìm thấy bút toán.");
+        if (entry.Status != DraftStatus) return BadRequest<JournalEntryResponseDto>("Chỉ được sửa bút toán Draft.");
 
         if (!string.IsNullOrWhiteSpace(dto.Description)) entry.Description = dto.Description;
         _unitOfWork.IJournalEntryRepository.Update(entry);
@@ -230,9 +230,9 @@ public class AccountingService : BaseService, IAccountingService
     public async Task<Result<ChartOfAccountResponseDto>> CreateChartOfAccountAsync(ChartOfAccountRequestDto request)
     {
         var exists = await _unitOfWork.IChartOfAccountRepository.FindFirst(x => x.AccountCode == request.AccountCode);
-        if (exists != null) return Conflict<ChartOfAccountResponseDto>("MÃ£ tÃ i khoáº£n Ä‘Ã£ tá»“n táº¡i.");
+        if (exists != null) return Conflict<ChartOfAccountResponseDto>("Mã tài khoản đã tồn tại.");
         var accountType = await _unitOfWork.IAccountingAccountTypeRepository.FindFirst(x => x.Code == request.AccountType && x.IsActive);
-        if (accountType == null) return BadRequest<ChartOfAccountResponseDto>("Loáº¡i tÃ i khoáº£n khÃ´ng há»£p lá»‡.");
+        if (accountType == null) return BadRequest<ChartOfAccountResponseDto>("Loại tài khoản không hợp lệ.");
 
         var entity = new ChartOfAccount
         {
@@ -306,7 +306,7 @@ public class AccountingService : BaseService, IAccountingService
     private async Task<Result<JournalEntryResponseDto>> GetJournalEntryByIdAsync(string id)
     {
         var entry = await _unitOfWork.IJournalEntryRepository.FindFirst(e => e.Id == id);
-        if (entry == null) return NotFound<JournalEntryResponseDto>("KhÃ´ng tÃ¬m tháº¥y bÃºt toÃ¡n.");
+        if (entry == null) return NotFound<JournalEntryResponseDto>("Không tìm thấy bút toán.");
         var lines = await _unitOfWork.IJournalEntryLineRepository.FindList(l => l.JournalEntryId == id);
         return Success(new JournalEntryResponseDto
         {
@@ -335,11 +335,11 @@ public class AccountingService : BaseService, IAccountingService
 
     public async Task ProcessPaymentAccountingAsync(string paymentId)
     {
-        const string loggingHeader = "Sinh bÃºt toÃ¡n nhÃ¡p thanh toÃ¡n tá»± Ä‘á»™ng";
+        const string loggingHeader = "Sinh bút toán nháp thanh toán tự động";
 
         if (!int.TryParse(paymentId, out int id))
         {
-            _logger.LogWarning($"{loggingHeader} - MÃ£ PaymentID khÃ´ng há»£p lá»‡: {paymentId}");
+            _logger.LogWarning($"{loggingHeader} - Mã PaymentID không hợp lệ: {paymentId}");
             return;
         }
 
@@ -347,27 +347,27 @@ public class AccountingService : BaseService, IAccountingService
 
         if (payment == null)
         {
-            _logger.LogWarning($"{loggingHeader} - KhÃ´ng tÃ¬m tháº¥y giao dá»‹ch thanh toÃ¡n. PaymentID={id}");
+            _logger.LogWarning($"{loggingHeader} - Không tìm thấy giao dịch thanh toán. PaymentID={id}");
             return;
         }
 
         if (payment.Status != "success" && payment.Status != "Paid")
         {
-            _logger.LogInformation($"{loggingHeader} - Giao dá»‹ch thanh toÃ¡n chÆ°a hoÃ n thÃ nh (Status={payment.Status}). Bá» qua háº¡ch toÃ¡n.");
+            _logger.LogInformation($"{loggingHeader} - Giao dịch thanh toán chưa hoàn thành (Status={payment.Status}). Bỏ qua hạch toán.");
             return;
         }
 
-        // Kiá»ƒm tra xem Ä‘Ã£ cÃ³ bÃºt toÃ¡n cho Payment nÃ y chÆ°a Ä‘á»ƒ trÃ¡nh nhÃ¢n Ä‘Ã´i khi queue background cháº¡y láº¡i.
+        // Kiểm tra xem đã có bút toán cho Payment này chưa để tránh nhân đôi khi queue background chạy lại.
         var existsCount = await _unitOfWork.IJournalEntryRepository.Count(j => j.SourceTable == "Payments" && j.SourceId == paymentId);
         if (existsCount > 0)
         {
-            _logger.LogInformation($"{loggingHeader} - Giao dá»‹ch nÃ y Ä‘Ã£ cÃ³ bÃºt toÃ¡n nhÃ¡p/Ä‘Ã£ ghi sá»• trÆ°á»›c Ä‘Ã³. PaymentID={paymentId}");
+            _logger.LogInformation($"{loggingHeader} - Giao dịch này đã có bút toán nháp/đã ghi sổ trước đó. PaymentID={paymentId}");
             return;
         }
 
-        _logger.LogInformation($"{loggingHeader} - Báº¯t Ä‘áº§u sinh nhÃ¡p cho PaymentID={paymentId}, Sá»‘ tiá»n={payment.Amount}, PhÆ°Æ¡ng thá»©c={payment.PaymentMethod}");
+        _logger.LogInformation($"{loggingHeader} - Bắt đầu sinh nháp cho PaymentID={paymentId}, Số tiền={payment.Amount}, Phương thức={payment.PaymentMethod}");
 
-        // Láº¥y thÃ´ng tin khÃ¡ch hÃ ng tá»« Booking Ä‘á»ƒ láº¥y BusinessPartner tÆ°Æ¡ng á»©ng
+        // Lấy thông tin khách hàng từ Booking để lấy BusinessPartner tương ứng
         string? partnerId = null;
         decimal courtAmount = payment.Amount;
         decimal serviceAmount = 0;
@@ -386,7 +386,7 @@ public class AccountingService : BaseService, IAccountingService
                     partnerId = await EnsureBusinessPartnerAsync(booking.Customer);
                 }
 
-                // TÃ¡ch doanh thu tiá»n dá»‹ch vá»¥ náº¿u cÃ³
+                // Tách doanh thu tiền dịch vụ nếu có
                 var serviceTotal = booking.BookingServices.Sum(s => s.TotalAmount);
                 if (serviceTotal > 0)
                 {
@@ -396,7 +396,7 @@ public class AccountingService : BaseService, IAccountingService
             }
         }
 
-        // Táº£i cÃ¡c quy táº¯c liÃªn quan Ä‘áº¿n Payments
+        // Tải các quy tắc liên quan đến Payments
         var isReceivableSettlement = false;
         if (payment.BookingID.HasValue)
         {
@@ -420,11 +420,11 @@ public class AccountingService : BaseService, IAccountingService
 
         if (matchedRule == null)
         {
-            _logger.LogWarning($"{loggingHeader} - KhÃ´ng tÃ¬m tháº¥y quy táº¯c Ä‘á»‹nh khoáº£n nÃ o phÃ¹ há»£p cho PaymentID={paymentId}.");
+            _logger.LogWarning($"{loggingHeader} - Không tìm thấy quy tắc định khoản nào phù hợp cho PaymentID={paymentId}.");
             return;
         }
 
-        // Khá»Ÿi táº¡o bÃºt toÃ¡n kÃ©p (JournalEntry)
+        // Khởi tạo bút toán kép (JournalEntry)
         var entryId = Guid.NewGuid().ToString("N");
         var voucherNo = $"PT-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
 
@@ -433,16 +433,16 @@ public class AccountingService : BaseService, IAccountingService
             Id = entryId,
             VoucherNo = voucherNo,
             EntryDate = DateTime.UtcNow,
-            DocumentType = "PT", // Phiáº¿u Thu
+            DocumentType = "PT", // Phiếu Thu
             SourceTable = "Payments",
             SourceId = paymentId,
-            Description = payment.Note ?? $"Thu tiá»n thanh toÃ¡n cho giao dá»‹ch #{paymentId}",
+            Description = payment.Note ?? $"Thu tiền thanh toán cho giao dịch #{paymentId}",
             Status = DraftStatus
         };
 
         var lines = new List<JournalEntryLine>();
 
-        // DÃ²ng Ná»£ (Debit): ThÆ°á»ng lÃ  Tiá»n máº·t (111) hoáº·c NgÃ¢n hÃ ng (112)
+        // Dòng Nợ (Debit): Thường là Tiền mặt (111) hoặc Ngân hàng (112)
         lines.Add(new JournalEntryLine
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -451,10 +451,10 @@ public class AccountingService : BaseService, IAccountingService
             DebitAmount = payment.Amount,
             CreditAmount = 0,
             PartnerId = partnerId,
-            Description = $"Ná»£ tÃ i khoáº£n dÃ²ng tiá»n theo quy táº¯c {matchedRule.Id}"
+            Description = $"Nợ tài khoản dòng tiền theo quy tắc {matchedRule.Id}"
         });
 
-        // DÃ²ng CÃ³ (Credit): ThÆ°á»ng lÃ  Doanh thu (511) hoáº·c Pháº£i thu (131)
+        // Dòng Có (Credit): Thường là Doanh thu (511) hoặc Phải thu (131)
         if (isReceivableSettlement)
         {
             lines.Add(new JournalEntryLine
@@ -465,12 +465,12 @@ public class AccountingService : BaseService, IAccountingService
                 DebitAmount = 0,
                 CreditAmount = payment.Amount,
                 PartnerId = partnerId,
-                Description = "Thu há»“i cÃ´ng ná»£ pháº£i thu khÃ¡ch hÃ ng"
+                Description = "Thu hồi công nợ phải thu khách hàng"
             });
         }
         else if (serviceAmount > 0)
         {
-            // TÃ¡ch CÃ³ thÃ nh 2 dÃ²ng: Tiá»n sÃ¢n vÃ  Tiá»n dá»‹ch vá»¥
+            // Tách Có thành 2 dòng: Tiền sân và Tiền dịch vụ
             if (courtAmount > 0)
             {
                 lines.Add(new JournalEntryLine
@@ -481,7 +481,7 @@ public class AccountingService : BaseService, IAccountingService
                     DebitAmount = 0,
                     CreditAmount = courtAmount,
                     PartnerId = partnerId,
-                    Description = "Doanh thu cho thuÃª sÃ¢n"
+                    Description = "Doanh thu cho thuê sân"
                 });
             }
 
@@ -489,16 +489,16 @@ public class AccountingService : BaseService, IAccountingService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 JournalEntryId = entryId,
-                AccountCode = "512", // Doanh thu bÃ¡n hÃ ng canteen/dá»‹ch vá»¥
+                AccountCode = "512", // Doanh thu bán hàng canteen/dịch vụ
                 DebitAmount = 0,
                 CreditAmount = serviceAmount,
                 PartnerId = partnerId,
-                Description = "Doanh thu dá»‹ch vá»¥ canteen/nÆ°á»›c uá»‘ng"
+                Description = "Doanh thu dịch vụ canteen/nước uống"
             });
         }
         else
         {
-            // Háº¡ch toÃ¡n má»™t dÃ²ng CÃ³ duy nháº¥t
+            // Hạch toán một dòng Có duy nhất
             lines.Add(new JournalEntryLine
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -507,25 +507,25 @@ public class AccountingService : BaseService, IAccountingService
                 DebitAmount = 0,
                 CreditAmount = payment.Amount,
                 PartnerId = partnerId,
-                Description = $"CÃ³ tÃ i khoáº£n doanh thu/cÃ´ng ná»£ theo quy táº¯c {matchedRule.Id}"
+                Description = $"Có tài khoản doanh thu/công nợ theo quy tắc {matchedRule.Id}"
             });
         }
 
-        // LÆ°u vÃ o Database
+        // Lưu vào Database
         await _unitOfWork.IJournalEntryRepository.Add(entry);
         await _unitOfWork.IJournalEntryLineRepository.AddRange(lines);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation($"{loggingHeader} - ÄÃ£ sinh bÃºt toÃ¡n nhÃ¡p {voucherNo} (Ná»£={matchedRule.DebitAccount}, CÃ³={matchedRule.CreditAccount}). BÃºt toÃ¡n sáº½ Ä‘Æ°á»£c ghi sá»• khi duyá»‡t/chá»‘t ca/chá»‘t ngÃ y.");
+        _logger.LogInformation($"{loggingHeader} - Đã sinh bút toán nháp {voucherNo} (Nợ={matchedRule.DebitAccount}, Có={matchedRule.CreditAccount}). Bút toán sẽ được ghi sổ khi duyệt/chốt ca/chốt ngày.");
     }
 
     public async Task RecordReceivableAsync(string bookingId)
     {
-        const string loggingHeader = "Sinh bÃºt toÃ¡n nhÃ¡p cÃ´ng ná»£ pháº£i thu";
+        const string loggingHeader = "Sinh bút toán nháp công nợ phải thu";
 
         if (!Guid.TryParse(bookingId, out Guid bId))
         {
-            _logger.LogWarning($"{loggingHeader} - MÃ£ BookingID khÃ´ng há»£p lá»‡: {bookingId}");
+            _logger.LogWarning($"{loggingHeader} - Mã BookingID không hợp lệ: {bookingId}");
             return;
         }
 
@@ -536,32 +536,32 @@ public class AccountingService : BaseService, IAccountingService
 
         if (booking == null)
         {
-            _logger.LogWarning($"{loggingHeader} - KhÃ´ng tÃ¬m tháº¥y Ä‘áº·t sÃ¢n. BookingID={bookingId}");
+            _logger.LogWarning($"{loggingHeader} - Không tìm thấy đặt sân. BookingID={bookingId}");
             return;
         }
 
         if (booking.Customer == null)
         {
-            _logger.LogWarning($"{loggingHeader} - Booking khÃ´ng cÃ³ khÃ¡ch hÃ ng. BookingID={bookingId}");
+            _logger.LogWarning($"{loggingHeader} - Booking không có khách hàng. BookingID={bookingId}");
             return;
         }
 
         var existsCount = await _unitOfWork.IJournalEntryRepository.Count(j => j.SourceTable == "Bookings" && j.SourceId == bookingId);
         if (existsCount > 0)
         {
-            _logger.LogInformation($"{loggingHeader} - Booking nÃ y Ä‘Ã£ cÃ³ bÃºt toÃ¡n nhÃ¡p/Ä‘Ã£ ghi sá»• trÆ°á»›c Ä‘Ã³. BookingID={bookingId}");
+            _logger.LogInformation($"{loggingHeader} - Booking này đã có bút toán nháp/đã ghi sổ trước đó. BookingID={bookingId}");
             return;
         }
 
         var partnerId = await EnsureBusinessPartnerAsync(booking.Customer);
 
-        // Táº¡o báº£n ghi theo dÃµi cÃ´ng ná»£ AccountReceivable
+        // Tạo bản ghi theo dõi công nợ AccountReceivable
         var arId = Guid.NewGuid().ToString("N");
         var outstanding = booking.TotalAmount - booking.PaidAmount;
 
         if (outstanding <= 0)
         {
-            _logger.LogInformation($"{loggingHeader} - Äáº·t sÃ¢n Ä‘Ã£ thanh toÃ¡n háº¿t, khÃ´ng táº¡o cÃ´ng ná»£. BookingID={bookingId}");
+            _logger.LogInformation($"{loggingHeader} - Đặt sân đã thanh toán hết, không tạo công nợ. BookingID={bookingId}");
             return;
         }
 
@@ -572,11 +572,11 @@ public class AccountingService : BaseService, IAccountingService
             OriginalAmount = booking.TotalAmount,
             PaidAmount = booking.PaidAmount,
             OutstandingAmount = outstanding,
-            DueDate = DateTime.Today.AddDays(7), // Háº¡n thanh toÃ¡n máº·c Ä‘á»‹nh lÃ  7 ngÃ y
+            DueDate = DateTime.Today.AddDays(7), // Hạn thanh toán mặc định là 7 ngày
             Status = "Unpaid"
         };
 
-        // Táº¡o bÃºt toÃ¡n háº¡ch toÃ¡n Ná»£ 131 / CÃ³ 511
+        // Tạo bút toán hạch toán Nợ 131 / Có 511
         var entryId = Guid.NewGuid().ToString("N");
         var voucherNo = $"CN-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
 
@@ -585,10 +585,10 @@ public class AccountingService : BaseService, IAccountingService
             Id = entryId,
             VoucherNo = voucherNo,
             EntryDate = DateTime.UtcNow,
-            DocumentType = "PT", // Pháº£i thu
+            DocumentType = "PT", // Phải thu
             SourceTable = "Bookings",
             SourceId = bookingId,
-            Description = $"Ghi nháº­n cÃ´ng ná»£ pháº£i thu cho Ä‘áº·t sÃ¢n #{bookingId}",
+            Description = $"Ghi nhận công nợ phải thu cho đặt sân #{bookingId}",
             Status = DraftStatus
         };
 
@@ -598,21 +598,21 @@ public class AccountingService : BaseService, IAccountingService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 JournalEntryId = entryId,
-                AccountCode = "131", // Pháº£i thu khÃ¡ch hÃ ng
+                AccountCode = "131", // Phải thu khách hàng
                 DebitAmount = outstanding,
                 CreditAmount = 0,
                 PartnerId = partnerId,
-                Description = "Ghi nháº­n ná»£ pháº£i thu"
+                Description = "Ghi nhận nợ phải thu"
             },
             new JournalEntryLine
             {
                 Id = Guid.NewGuid().ToString("N"),
                 JournalEntryId = entryId,
-                AccountCode = "5111", // Doanh thu dá»‹ch vá»¥ cho thuÃª sÃ¢n
+                AccountCode = "5111", // Doanh thu dịch vụ cho thuê sân
                 DebitAmount = 0,
                 CreditAmount = outstanding,
                 PartnerId = partnerId,
-                Description = "Doanh thu treo ghi ná»£"
+                Description = "Doanh thu treo ghi nợ"
             }
         };
 
@@ -621,7 +621,7 @@ public class AccountingService : BaseService, IAccountingService
         await _unitOfWork.IJournalEntryLineRepository.AddRange(lines);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation($"{loggingHeader} - ÄÃ£ táº¡o cÃ´ng ná»£ {arId} vÃ  bÃºt toÃ¡n nhÃ¡p {voucherNo} cho Ä‘á»‘i tÃ¡c {partnerId} sá»‘ tiá»n {outstanding}â‚«. BÃºt toÃ¡n sáº½ Ä‘Æ°á»£c ghi sá»• khi duyá»‡t/chá»‘t ca/chá»‘t ngÃ y.");
+        _logger.LogInformation($"{loggingHeader} - Đã tạo công nợ {arId} và bút toán nháp {voucherNo} cho đối tác {partnerId} số tiền {outstanding}đ. Bút toán sẽ được ghi sổ khi duyệt/chốt ca/chốt ngày.");
     }
 
     private async Task<string> EnsureBusinessPartnerAsync(Customers customer)
