@@ -92,7 +92,7 @@ public class PaymentService : BaseService, IPaymentService
         await _unitOfWork.IPaymentRepository.Add(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        if (entity.Status == "success" || entity.Status == "Paid")
+        if (entity.Status == "success" || entity.Status == "Paid" || entity.Status == "refunded")
         {
             _accountingBackgroundTaskRunner.QueueProcessPaymentAccounting(entity.PaymentID.ToString());
         }
@@ -131,7 +131,7 @@ public class PaymentService : BaseService, IPaymentService
         _unitOfWork.IPaymentRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        if (entity.Status == "success" || entity.Status == "Paid")
+        if (entity.Status == "success" || entity.Status == "Paid" || entity.Status == "refunded")
         {
             _accountingBackgroundTaskRunner.QueueProcessPaymentAccounting(entity.PaymentID.ToString());
         }

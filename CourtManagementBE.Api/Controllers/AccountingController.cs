@@ -94,6 +94,13 @@ public class AccountingController : ControllerBase
         return StatusCode((int)r.StatusCode, r);
     }
 
+    [HttpPost("rules")]
+    public async Task<IActionResult> CreateRule([FromBody] AccountingRuleCreateRequestDto request)
+    {
+        var r = await _service.CreateAccountingRuleAsync(request);
+        return StatusCode((int)r.StatusCode, r);
+    }
+
     [HttpGet("vouchers")]
     public async Task<IActionResult> GetVouchers()
     {

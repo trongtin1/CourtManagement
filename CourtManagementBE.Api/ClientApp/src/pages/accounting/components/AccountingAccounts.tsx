@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Button, Card, Descriptions, Form, Input, Modal, Select, Space, Switch, Table, Tag, message } from 'antd'
-import { DownloadOutlined, FilterOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { FilterOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useAccountingAccountsQuery, useAccountingAccountTypesQuery, useCreateAccountMutation } from '@/features/accounting/api/useAccountingQueries'
 import type { ChartOfAccount, ChartOfAccountRequest } from '@/features/accounting/model/types'
 
@@ -116,7 +116,7 @@ export function AccountingAccounts() {
 
   const selectedAccount = useMemo(() => accounts.find((a) => a.accountCode === selectedCode) ?? accounts[0] ?? null, [accounts, selectedCode])
 
-  const flatOptions = accounts.map((a) => ({ label: `${a.accountCode} — ${a.accountName}`, value: a.id }))
+  const flatOptions = useMemo(() => accounts.map((a) => ({ label: `${a.accountCode} — ${a.accountName}`, value: a.id })), [accounts])
 
   const accountTree = useMemo(() => {
     const fullTree = buildAccountTree(accounts)
@@ -146,7 +146,6 @@ export function AccountingAccounts() {
         </div>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => query.refetch()} loading={query.isFetching}>Tải lại</Button>
-          <Button icon={<DownloadOutlined />}>Xuất Excel</Button>
           <Button
             icon={<PlusOutlined />}
             type="primary"

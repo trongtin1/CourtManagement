@@ -69,6 +69,7 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<ChartOfAccount>? _chartOfAccountRepository;
     private IGenericRepository<AccountingRule>? _accountingRuleRepository;
     private IGenericRepository<AccountingRuleCondition>? _accountingRuleConditionRepository;
+    private IGenericRepository<AccountingRuleLine>? _accountingRuleLineRepository;
     private IGenericRepository<JournalEntry>? _journalEntryRepository;
     private IGenericRepository<JournalEntryLine>? _journalEntryLineRepository;
     private IGenericRepository<BusinessPartner>? _businessPartnerRepository;
@@ -133,6 +134,7 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<ChartOfAccount> IChartOfAccountRepository => _chartOfAccountRepository ??= new GenericRepository<ChartOfAccount>(_context);
     public IGenericRepository<AccountingRule> IAccountingRuleRepository => _accountingRuleRepository ??= new GenericRepository<AccountingRule>(_context);
     public IGenericRepository<AccountingRuleCondition> IAccountingRuleConditionRepository => _accountingRuleConditionRepository ??= new GenericRepository<AccountingRuleCondition>(_context);
+    public IGenericRepository<AccountingRuleLine> IAccountingRuleLineRepository => _accountingRuleLineRepository ??= new GenericRepository<AccountingRuleLine>(_context);
     public IGenericRepository<JournalEntry> IJournalEntryRepository => _journalEntryRepository ??= new GenericRepository<JournalEntry>(_context);
     public IGenericRepository<JournalEntryLine> IJournalEntryLineRepository => _journalEntryLineRepository ??= new GenericRepository<JournalEntryLine>(_context);
     public IGenericRepository<BusinessPartner> IBusinessPartnerRepository => _businessPartnerRepository ??= new GenericRepository<BusinessPartner>(_context);

@@ -172,6 +172,14 @@ public class AccountingService : BaseService, IAccountingService
             var entries = await _unitOfWork.IJournalEntryRepository.FindList(e => entryIds.Contains(e.Id) && e.Status == DraftStatus);
             foreach (var entry in entries)
             {
+                var lines = await _unitOfWork.IJournalEntryLineRepository.FindList(l => l.JournalEntryId == entry.Id);
+                var validationError = await ValidateJournalLinesAsync(lines);
+                if (!string.IsNullOrWhiteSpace(validationError))
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return BadRequest<PostJournalEntriesResponseDto>($"Bút toán {entry.VoucherNo} chưa hợp lệ: {validationError}");
+                }
+
                 entry.Status = PostedStatus;
                 _unitOfWork.IJournalEntryRepository.Update(entry);
             }
@@ -192,10 +200,6 @@ public class AccountingService : BaseService, IAccountingService
         if (entry == null) return NotFound<JournalEntryResponseDto>("Không tìm thấy bút toán.");
         if (entry.Status != DraftStatus) return BadRequest<JournalEntryResponseDto>("Chỉ được sửa bút toán Draft.");
 
-        if (!string.IsNullOrWhiteSpace(dto.Description)) entry.Description = dto.Description;
-        _unitOfWork.IJournalEntryRepository.Update(entry);
-        await _unitOfWork.IJournalEntryLineRepository.RemoveWithPredicate(l => l.JournalEntryId == id);
-
         var newLines = dto.Lines.Select(l => new JournalEntryLine
         {
             Id = string.IsNullOrWhiteSpace(l.Id) ? Guid.NewGuid().ToString("N") : l.Id!,
@@ -206,6 +210,13 @@ public class AccountingService : BaseService, IAccountingService
             PartnerId = l.PartnerId,
             Description = l.Description
         }).ToList();
+
+        var validationError = await ValidateJournalLinesAsync(newLines);
+        if (!string.IsNullOrWhiteSpace(validationError)) return BadRequest<JournalEntryResponseDto>(validationError);
+
+        if (!string.IsNullOrWhiteSpace(dto.Description)) entry.Description = dto.Description;
+        _unitOfWork.IJournalEntryRepository.Update(entry);
+        await _unitOfWork.IJournalEntryLineRepository.RemoveWithPredicate(l => l.JournalEntryId == id);
         await _unitOfWork.IJournalEntryLineRepository.AddRange(newLines);
         await _unitOfWork.SaveChangesAsync();
 
@@ -277,30 +288,489 @@ public class AccountingService : BaseService, IAccountingService
         };
     }
 
+    private async Task<string?> ValidateJournalLinesAsync(List<JournalEntryLine> lines)
+    {
+        if (lines.Count < 2) return "Bút toán phải có ít nhất 2 dòng.";
+
+        var accountCodes = lines.Select(x => x.AccountCode).Distinct().ToList();
+        var accounts = await _unitOfWork.IChartOfAccountRepository.FindList(x => accountCodes.Contains(x.AccountCode) && x.IsActive);
+        var validAccountCodes = accounts.Select(x => x.AccountCode).ToHashSet();
+
+        foreach (var line in lines)
+        {
+            if (!validAccountCodes.Contains(line.AccountCode)) return $"Tài khoản {line.AccountCode} không tồn tại hoặc đã ngưng hoạt động.";
+            if (line.DebitAmount < 0 || line.CreditAmount < 0) return "Số tiền Nợ/Có không được âm.";
+            if (line.DebitAmount > 0 && line.CreditAmount > 0) return "Một dòng bút toán không được vừa Nợ vừa Có.";
+            if (line.DebitAmount == 0 && line.CreditAmount == 0) return "Một dòng bút toán phải có số tiền Nợ hoặc Có.";
+        }
+
+        var totalDebit = lines.Sum(x => x.DebitAmount);
+        var totalCredit = lines.Sum(x => x.CreditAmount);
+        if (totalDebit <= 0 || totalCredit <= 0) return "Tổng Nợ và tổng Có phải lớn hơn 0.";
+        if (totalDebit != totalCredit) return $"Bút toán chưa cân. Tổng Nợ={totalDebit:N0}, Tổng Có={totalCredit:N0}.";
+
+        return null;
+    }
+
+    private async Task<string> GenerateVoucherNoAsync(string prefix)
+    {
+        var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+        var voucherPrefix = $"{prefix}-{datePart}-";
+        var count = await _unitOfWork.IJournalEntryRepository.Count(x => x.VoucherNo.StartsWith(voucherPrefix));
+        return $"{voucherPrefix}{count + 1:0000}";
+    }
+
+    private static string ResolveCashAccount(string paymentMethod)
+    {
+        return string.Equals(paymentMethod, "cash", StringComparison.OrdinalIgnoreCase) ? "1111" : "1121";
+    }
+
+    private static bool IsGroupDepositReceived(Payments payment)
+    {
+        return !payment.BookingID.HasValue && payment.BookingGroupID.HasValue && payment.Amount > 0;
+    }
+
+    private static bool IsGroupDepositDeduction(Payments payment)
+    {
+        return payment.BookingID.HasValue &&
+               payment.BookingGroupID.HasValue &&
+               payment.Amount > 0 &&
+               payment.Note?.Contains("[GROUP_DEPOSIT_DEDUCTION]", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static bool IsRefundPayment(Payments payment)
+    {
+        return string.Equals(payment.Status, "refunded", StringComparison.OrdinalIgnoreCase) ||
+               payment.Amount < 0 ||
+               payment.RefundedAmount > 0;
+    }
+
+    private async Task CreateRefundJournalAsync(Payments payment, string paymentId)
+    {
+        var amount = payment.RefundedAmount > 0 ? payment.RefundedAmount : Math.Abs(payment.Amount);
+        if (amount <= 0) return;
+
+        var entryId = Guid.NewGuid().ToString("N");
+        var voucherNo = await GenerateVoucherNoAsync("PC");
+        var cashAccount = ResolveCashAccount(payment.PaymentMethod);
+        string? partnerId = null;
+
+        if (payment.BookingID.HasValue)
+        {
+            var booking = await _unitOfWork.IBookingRepository.FindFirst(
+                predicate: b => b.BookingID == payment.BookingID.Value,
+                include: q => (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Bookings, object>)q.Include(b => b.Customer!));
+
+            if (booking?.Customer != null)
+            {
+                partnerId = await EnsureBusinessPartnerAsync(booking.Customer);
+            }
+        }
+
+        var entry = new JournalEntry
+        {
+            Id = entryId,
+            VoucherNo = voucherNo,
+            EntryDate = DateTime.UtcNow,
+            DocumentType = "PC",
+            SourceTable = "Payments",
+            SourceId = paymentId,
+            Description = payment.Note ?? $"Hoàn tiền giao dịch #{paymentId}",
+            Status = PostedStatus
+        };
+
+        var lines = new List<JournalEntryLine>
+        {
+            new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = "5111",
+                DebitAmount = amount,
+                CreditAmount = 0,
+                PartnerId = partnerId,
+                Description = "Giảm doanh thu do hoàn tiền"
+            },
+            new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = cashAccount,
+                DebitAmount = 0,
+                CreditAmount = amount,
+                PartnerId = partnerId,
+                Description = "Chi tiền hoàn khách"
+            }
+        };
+
+        await _unitOfWork.IJournalEntryRepository.Add(entry);
+        await _unitOfWork.IJournalEntryLineRepository.AddRange(lines);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    private async Task CreateGroupDepositReceivedJournalAsync(Payments payment, string paymentId)
+    {
+        var entryId = Guid.NewGuid().ToString("N");
+        var voucherNo = await GenerateVoucherNoAsync("PT");
+        var cashAccount = ResolveCashAccount(payment.PaymentMethod);
+
+        var entry = new JournalEntry
+        {
+            Id = entryId,
+            VoucherNo = voucherNo,
+            EntryDate = DateTime.UtcNow,
+            DocumentType = "PT",
+            SourceTable = "Payments",
+            SourceId = paymentId,
+            Description = payment.Note ?? $"Nạp cọc nhóm booking #{payment.BookingGroupID}",
+            Status = PostedStatus
+        };
+
+        var lines = new List<JournalEntryLine>
+        {
+            new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = cashAccount,
+                DebitAmount = payment.Amount,
+                CreditAmount = 0,
+                Description = "Thu tiền cọc nhóm"
+            },
+            new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = "338",
+                DebitAmount = 0,
+                CreditAmount = payment.Amount,
+                Description = "Ghi nhận tiền cọc nhóm chưa thành doanh thu"
+            }
+        };
+
+        await _unitOfWork.IJournalEntryRepository.Add(entry);
+        await _unitOfWork.IJournalEntryLineRepository.AddRange(lines);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    private async Task UpdateReceivableAfterPaymentAsync(string partnerId, decimal paidAmount)
+    {
+        var remaining = paidAmount;
+        var receivables = await _unitOfWork.IAccountReceivableRepository.FindList(x =>
+            x.PartnerId == partnerId &&
+            x.OutstandingAmount > 0 &&
+            x.Status != AccountingConstants.ReceivableStatus.Cancelled &&
+            x.Status != AccountingConstants.ReceivableStatus.WrittenOff);
+
+        foreach (var receivable in receivables.OrderBy(x => x.DueDate))
+        {
+            if (remaining <= 0) break;
+
+            var applied = Math.Min(receivable.OutstandingAmount, remaining);
+            receivable.PaidAmount += applied;
+            receivable.OutstandingAmount -= applied;
+            receivable.Status = receivable.OutstandingAmount <= 0
+                ? AccountingConstants.ReceivableStatus.Paid
+                : AccountingConstants.ReceivableStatus.PartiallyPaid;
+
+            _unitOfWork.IAccountReceivableRepository.Update(receivable);
+            remaining -= applied;
+        }
+    }
+
+    private async Task<AccountingRule?> FindMatchingAccountingRuleAsync(string transactionType, Payments payment)
+    {
+        var rules = await _unitOfWork.IAccountingRuleRepository.FindList(r => r.IsActive && r.TransactionType == transactionType);
+        foreach (var rule in rules.OrderBy(r => r.Priority))
+        {
+            var conditions = await _unitOfWork.IAccountingRuleConditionRepository.FindList(c => c.RuleId == rule.Id);
+            if (EvaluateConditions(payment, conditions.OrderBy(c => c.SortOrder).ToList()))
+            {
+                return rule;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<AccountingRule?> FindMatchingAccountingRuleAsync(string transactionType, Bookings booking)
+    {
+        var rules = await _unitOfWork.IAccountingRuleRepository.FindList(r => r.IsActive && r.TransactionType == transactionType);
+        foreach (var rule in rules.OrderBy(r => r.Priority))
+        {
+            var conditions = await _unitOfWork.IAccountingRuleConditionRepository.FindList(c => c.RuleId == rule.Id);
+            if (EvaluateConditions(booking, conditions.OrderBy(c => c.SortOrder).ToList()))
+            {
+                return rule;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<(string CashAccount, string CourtRevenueAccount)> ResolveAccountsFromRuleAsync(AccountingRule rule, bool isReceivableSettlement)
+    {
+        var ruleLines = await _unitOfWork.IAccountingRuleLineRepository.FindList(l => l.RuleId == rule.Id);
+        var cashAccount = ruleLines
+            .FirstOrDefault(l => string.Equals(l.EntryType, "Debit", StringComparison.OrdinalIgnoreCase))
+            ?.AccountCode;
+        var creditAccount = ruleLines
+            .FirstOrDefault(l =>
+                string.Equals(l.EntryType, "Credit", StringComparison.OrdinalIgnoreCase) &&
+                l.AccountCode != "512")
+            ?.AccountCode;
+
+        return (
+            string.IsNullOrWhiteSpace(cashAccount) ? "1111" : cashAccount,
+            string.IsNullOrWhiteSpace(creditAccount) ? (isReceivableSettlement ? "131" : "5111") : creditAccount
+        );
+    }
+
+    private async Task<List<JournalEntryLine>> BuildJournalEntryLinesFromRuleAsync(
+        string entryId,
+        AccountingRule rule,
+        Payments payment,
+        decimal courtAmount,
+        decimal serviceAmount,
+        string? partnerId)
+    {
+        var ruleLines = await _unitOfWork.IAccountingRuleLineRepository.FindList(l => l.RuleId == rule.Id);
+        return ruleLines.Select(line =>
+        {
+            var amount = ResolveRuleLineAmount(line.ValueSource, payment, courtAmount, serviceAmount);
+            if (amount <= 0)
+            {
+                return null;
+            }
+
+            var isDebit = string.Equals(line.EntryType, "Debit", StringComparison.OrdinalIgnoreCase);
+            return new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = line.AccountCode,
+                DebitAmount = isDebit ? amount : 0,
+                CreditAmount = isDebit ? 0 : amount,
+                PartnerId = partnerId,
+                Description = string.IsNullOrWhiteSpace(line.DescriptionTemplate)
+                    ? rule.Description
+                    : line.DescriptionTemplate
+            };
+        }).Where(line => line != null).Select(line => line!).ToList();
+    }
+
+    private async Task<List<JournalEntryLine>> BuildJournalEntryLinesFromRuleAsync(
+        string entryId,
+        AccountingRule rule,
+        Bookings booking,
+        string? partnerId)
+    {
+        var ruleLines = await _unitOfWork.IAccountingRuleLineRepository.FindList(l => l.RuleId == rule.Id);
+        return ruleLines.Select(line =>
+        {
+            var amount = ResolveRuleLineAmount(line.ValueSource, booking);
+            if (amount <= 0)
+            {
+                return null;
+            }
+
+            var isDebit = string.Equals(line.EntryType, "Debit", StringComparison.OrdinalIgnoreCase);
+            return new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = line.AccountCode,
+                DebitAmount = isDebit ? amount : 0,
+                CreditAmount = isDebit ? 0 : amount,
+                PartnerId = partnerId,
+                Description = string.IsNullOrWhiteSpace(line.DescriptionTemplate)
+                    ? rule.Description
+                    : line.DescriptionTemplate
+            };
+        }).Where(line => line != null).Select(line => line!).ToList();
+    }
+
+    private static decimal ResolveRuleLineAmount(string valueSource, Payments payment, decimal courtAmount, decimal serviceAmount)
+    {
+        return valueSource switch
+        {
+            "Amount" or "PaymentAmount" or "TotalAmount" => payment.Amount,
+            "CourtAmount" => courtAmount,
+            "ServiceAmount" => serviceAmount,
+            "RefundedAmount" => payment.RefundedAmount,
+            _ => payment.Amount
+        };
+    }
+
+    private static decimal ResolveRuleLineAmount(string valueSource, Bookings booking)
+    {
+        return valueSource switch
+        {
+            "TotalAmount" => booking.TotalAmount,
+            "PaidAmount" => booking.PaidAmount,
+            "OutstandingAmount" => booking.TotalAmount - booking.PaidAmount,
+            _ => booking.TotalAmount
+        };
+    }
+
     public async Task<Result<List<AccountingRuleResponseDto>>> GetAccountingRulesAsync()
     {
         var rules = await _unitOfWork.IAccountingRuleRepository.FindList(_ => true);
         var conditions = await _unitOfWork.IAccountingRuleConditionRepository.FindList(_ => true);
+        var ruleLines = await _unitOfWork.IAccountingRuleLineRepository.FindList(_ => true);
         var data = rules.Select(r => new AccountingRuleResponseDto
         {
             Id = r.Id,
+            RuleName = r.RuleName,
             TransactionType = r.TransactionType,
-            DebitAccount = r.DebitAccount,
-            CreditAccount = r.CreditAccount,
-            OriginalSource = r.OriginalSource,
+            SourceTable = r.SourceTable,
             Description = r.Description,
-            Conditions = conditions.Where(c => c.RuleId == r.Id).Select(c => new AccountingRuleConditionResponseDto
+            Priority = r.Priority,
+            IsActive = r.IsActive,
+            Conditions = conditions.Where(c => c.RuleId == r.Id).OrderBy(c => c.SortOrder).Select(c => new AccountingRuleConditionResponseDto
             {
                 Id = c.Id,
                 RuleId = c.RuleId,
-                SourceTable = c.SourceTable,
                 FieldName = c.FieldName,
                 Operator = c.Operator,
                 ExpectedValue = c.ExpectedValue,
-                Description = c.Description
+                LogicalGroup = c.LogicalGroup,
+                SortOrder = c.SortOrder
+            }).ToList(),
+            Lines = ruleLines.Where(l => l.RuleId == r.Id).Select(l => new AccountingRuleLineResponseDto
+            {
+                Id = l.Id,
+                RuleId = l.RuleId,
+                AccountCode = l.AccountCode,
+                EntryType = l.EntryType,
+                ValueSource = l.ValueSource,
+                DescriptionTemplate = l.DescriptionTemplate
             }).ToList()
-        }).ToList();
+        }).OrderBy(r => r.Priority).ToList();
         return Success(data);
+    }
+
+    public async Task<Result<AccountingRuleResponseDto>> CreateAccountingRuleAsync(AccountingRuleCreateRequestDto request)
+    {
+        request.Id = request.Id.Trim();
+        request.RuleName = request.RuleName.Trim();
+        request.TransactionType = request.TransactionType.Trim();
+        request.SourceTable = request.SourceTable.Trim();
+
+        if (string.IsNullOrWhiteSpace(request.Id) ||
+            string.IsNullOrWhiteSpace(request.RuleName) ||
+            string.IsNullOrWhiteSpace(request.TransactionType) ||
+            string.IsNullOrWhiteSpace(request.SourceTable))
+        {
+            return BadRequest<AccountingRuleResponseDto>("Mã rule, tên rule, loại giao dịch và bảng nguồn là bắt buộc.");
+        }
+
+        if (request.Conditions.Count == 0)
+        {
+            return BadRequest<AccountingRuleResponseDto>("Rule phải có ít nhất một điều kiện.");
+        }
+
+        if (request.Lines.Count < 2)
+        {
+            return BadRequest<AccountingRuleResponseDto>("Rule phải có ít nhất hai dòng bút toán.");
+        }
+
+        if (!request.Lines.Any(l => string.Equals(l.EntryType, "Debit", StringComparison.OrdinalIgnoreCase)) ||
+            !request.Lines.Any(l => string.Equals(l.EntryType, "Credit", StringComparison.OrdinalIgnoreCase)))
+        {
+            return BadRequest<AccountingRuleResponseDto>("Rule phải có ít nhất một dòng Nợ và một dòng Có.");
+        }
+
+        var exists = await _unitOfWork.IAccountingRuleRepository.FindFirst(x => x.Id == request.Id);
+        if (exists != null)
+        {
+            return Conflict<AccountingRuleResponseDto>("Mã rule đã tồn tại.");
+        }
+
+        var accountCodes = request.Lines.Select(l => l.AccountCode.Trim()).Distinct().ToList();
+        var accounts = await _unitOfWork.IChartOfAccountRepository.FindList(x => accountCodes.Contains(x.AccountCode) && x.IsActive);
+        var validAccountCodes = accounts.Select(x => x.AccountCode).ToHashSet();
+        var invalidAccount = accountCodes.FirstOrDefault(code => !validAccountCodes.Contains(code));
+        if (!string.IsNullOrWhiteSpace(invalidAccount))
+        {
+            return BadRequest<AccountingRuleResponseDto>($"Tài khoản {invalidAccount} không tồn tại hoặc đã ngưng hoạt động.");
+        }
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var rule = new AccountingRule
+            {
+                Id = request.Id,
+                RuleName = request.RuleName,
+                TransactionType = request.TransactionType,
+                SourceTable = request.SourceTable,
+                Description = request.Description.Trim(),
+                Priority = request.Priority,
+                IsActive = request.IsActive
+            };
+
+            var conditions = request.Conditions.Select((condition, index) => new AccountingRuleCondition
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                RuleId = rule.Id,
+                FieldName = condition.FieldName.Trim(),
+                Operator = condition.Operator.Trim(),
+                ExpectedValue = condition.ExpectedValue.Trim(),
+                LogicalGroup = string.IsNullOrWhiteSpace(condition.LogicalGroup) ? "AND" : condition.LogicalGroup.Trim(),
+                SortOrder = condition.SortOrder > 0 ? condition.SortOrder : (index + 1) * 10
+            }).ToList();
+
+            var lines = request.Lines.Select(line => new AccountingRuleLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                RuleId = rule.Id,
+                AccountCode = line.AccountCode.Trim(),
+                EntryType = line.EntryType.Trim(),
+                ValueSource = line.ValueSource.Trim(),
+                DescriptionTemplate = line.DescriptionTemplate.Trim()
+            }).ToList();
+
+            await _unitOfWork.IAccountingRuleRepository.Add(rule);
+            await _unitOfWork.IAccountingRuleConditionRepository.AddRange(conditions);
+            await _unitOfWork.IAccountingRuleLineRepository.AddRange(lines);
+            await _unitOfWork.CommitTransactionAsync();
+
+            return Created(new AccountingRuleResponseDto
+            {
+                Id = rule.Id,
+                RuleName = rule.RuleName,
+                TransactionType = rule.TransactionType,
+                SourceTable = rule.SourceTable,
+                Description = rule.Description,
+                Priority = rule.Priority,
+                IsActive = rule.IsActive,
+                Conditions = conditions.OrderBy(c => c.SortOrder).Select(c => new AccountingRuleConditionResponseDto
+                {
+                    Id = c.Id,
+                    RuleId = c.RuleId,
+                    FieldName = c.FieldName,
+                    Operator = c.Operator,
+                    ExpectedValue = c.ExpectedValue,
+                    LogicalGroup = c.LogicalGroup,
+                    SortOrder = c.SortOrder
+                }).ToList(),
+                Lines = lines.Select(l => new AccountingRuleLineResponseDto
+                {
+                    Id = l.Id,
+                    RuleId = l.RuleId,
+                    AccountCode = l.AccountCode,
+                    EntryType = l.EntryType,
+                    ValueSource = l.ValueSource,
+                    DescriptionTemplate = l.DescriptionTemplate
+                }).ToList()
+            });
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
     }
 
     private async Task<Result<JournalEntryResponseDto>> GetJournalEntryByIdAsync(string id)
@@ -351,7 +821,7 @@ public class AccountingService : BaseService, IAccountingService
             return;
         }
 
-        if (payment.Status != "success" && payment.Status != "Paid")
+        if (payment.Status != "success" && payment.Status != "Paid" && !IsRefundPayment(payment))
         {
             _logger.LogInformation($"{loggingHeader} - Giao dịch thanh toán chưa hoàn thành (Status={payment.Status}). Bỏ qua hạch toán.");
             return;
@@ -368,6 +838,18 @@ public class AccountingService : BaseService, IAccountingService
         _logger.LogInformation($"{loggingHeader} - Bắt đầu sinh nháp cho PaymentID={paymentId}, Số tiền={payment.Amount}, Phương thức={payment.PaymentMethod}");
 
         // Lấy thông tin khách hàng từ Booking để lấy BusinessPartner tương ứng
+        if (IsRefundPayment(payment))
+        {
+            await CreateRefundJournalAsync(payment, paymentId);
+            return;
+        }
+
+        if (IsGroupDepositReceived(payment))
+        {
+            await CreateGroupDepositReceivedJournalAsync(payment, paymentId);
+            return;
+        }
+
         string? partnerId = null;
         decimal courtAmount = payment.Amount;
         decimal serviceAmount = 0;
@@ -403,30 +885,19 @@ public class AccountingService : BaseService, IAccountingService
             var bookingSourceId = payment.BookingID.Value.ToString();
             isReceivableSettlement = await _unitOfWork.IJournalEntryRepository.Count(j => j.SourceTable == "Bookings" && j.SourceId == bookingSourceId) > 0;
         }
-        var rules = await _unitOfWork.IAccountingRuleRepository.FindList(r => r.OriginalSource == "Payments");
-
-        AccountingRule? matchedRule = null;
-
-        foreach (var rule in rules)
-        {
-            var conditions = await _unitOfWork.IAccountingRuleConditionRepository.FindList(c => c.RuleId == rule.Id);
-
-            if (EvaluateConditions(payment, conditions))
-            {
-                matchedRule = rule;
-                break;
-            }
-        }
-
+        var transactionType = isReceivableSettlement ? "RECEIVABLE_PAYMENT" : "BOOKING_PAYMENT";
+        var matchedRule = await FindMatchingAccountingRuleAsync(transactionType, payment);
         if (matchedRule == null)
         {
-            _logger.LogWarning($"{loggingHeader} - Không tìm thấy quy tắc định khoản nào phù hợp cho PaymentID={paymentId}.");
+            _logger.LogWarning($"{loggingHeader} - Không tìm thấy quy tắc định khoản phù hợp cho PaymentID={paymentId}, TransactionType={transactionType}.");
             return;
         }
 
+        var (cashAccount, courtRevenueAccount) = await ResolveAccountsFromRuleAsync(matchedRule, isReceivableSettlement);
+
         // Khởi tạo bút toán kép (JournalEntry)
         var entryId = Guid.NewGuid().ToString("N");
-        var voucherNo = $"PT-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+        var voucherNo = await GenerateVoucherNoAsync("PT");
 
         var entry = new JournalEntry
         {
@@ -437,8 +908,29 @@ public class AccountingService : BaseService, IAccountingService
             SourceTable = "Payments",
             SourceId = paymentId,
             Description = payment.Note ?? $"Thu tiền thanh toán cho giao dịch #{paymentId}",
-            Status = DraftStatus
+            Status = PostedStatus
         };
+
+        if (!IsGroupDepositDeduction(payment))
+        {
+            var ruleBasedLines = await BuildJournalEntryLinesFromRuleAsync(entryId, matchedRule, payment, courtAmount, serviceAmount, partnerId);
+            if (ruleBasedLines.Count < 2)
+            {
+                _logger.LogWarning($"{loggingHeader} - Quy tắc {matchedRule.Id} không sinh đủ dòng bút toán cho PaymentID={paymentId}.");
+                return;
+            }
+
+            await _unitOfWork.IJournalEntryRepository.Add(entry);
+            await _unitOfWork.IJournalEntryLineRepository.AddRange(ruleBasedLines);
+            if (isReceivableSettlement && partnerId != null)
+            {
+                await UpdateReceivableAfterPaymentAsync(partnerId, payment.Amount);
+            }
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation($"{loggingHeader} - Đã sinh bút toán nháp {voucherNo} theo quy tắc {matchedRule.Id}. Bút toán sẽ được ghi sổ khi duyệt/chốt ca/chốt ngày.");
+            return;
+        }
 
         var lines = new List<JournalEntryLine>();
 
@@ -447,15 +939,70 @@ public class AccountingService : BaseService, IAccountingService
         {
             Id = Guid.NewGuid().ToString("N"),
             JournalEntryId = entryId,
-            AccountCode = matchedRule.DebitAccount,
+            AccountCode = cashAccount,
             DebitAmount = payment.Amount,
             CreditAmount = 0,
             PartnerId = partnerId,
-            Description = $"Nợ tài khoản dòng tiền theo quy tắc {matchedRule.Id}"
+            Description = "Ghi nhận tiền thu thanh toán"
         });
 
         // Dòng Có (Credit): Thường là Doanh thu (511) hoặc Phải thu (131)
-        if (isReceivableSettlement)
+        if (IsGroupDepositDeduction(payment))
+        {
+            lines.Clear();
+            lines.Add(new JournalEntryLine
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                JournalEntryId = entryId,
+                AccountCode = "338",
+                DebitAmount = payment.Amount,
+                CreditAmount = 0,
+                PartnerId = partnerId,
+                Description = "Khấu trừ tiền cọc nhóm"
+            });
+
+            if (serviceAmount > 0)
+            {
+                if (courtAmount > 0)
+                {
+                    lines.Add(new JournalEntryLine
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        JournalEntryId = entryId,
+                        AccountCode = courtRevenueAccount,
+                        DebitAmount = 0,
+                        CreditAmount = courtAmount,
+                        PartnerId = partnerId,
+                        Description = "Ghi nhận doanh thu thuê sân từ cọc nhóm"
+                    });
+                }
+
+                lines.Add(new JournalEntryLine
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    JournalEntryId = entryId,
+                    AccountCode = "512",
+                    DebitAmount = 0,
+                    CreditAmount = serviceAmount,
+                    PartnerId = partnerId,
+                    Description = "Ghi nhận doanh thu dịch vụ từ cọc nhóm"
+                });
+            }
+            else
+            {
+                lines.Add(new JournalEntryLine
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    JournalEntryId = entryId,
+                    AccountCode = courtRevenueAccount,
+                    DebitAmount = 0,
+                    CreditAmount = payment.Amount,
+                    PartnerId = partnerId,
+                    Description = "Ghi nhận doanh thu từ cọc nhóm"
+                });
+            }
+        }
+        else if (isReceivableSettlement)
         {
             lines.Add(new JournalEntryLine
             {
@@ -477,7 +1024,7 @@ public class AccountingService : BaseService, IAccountingService
                 {
                     Id = Guid.NewGuid().ToString("N"),
                     JournalEntryId = entryId,
-                    AccountCode = matchedRule.CreditAccount,
+                    AccountCode = courtRevenueAccount,
                     DebitAmount = 0,
                     CreditAmount = courtAmount,
                     PartnerId = partnerId,
@@ -503,25 +1050,29 @@ public class AccountingService : BaseService, IAccountingService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 JournalEntryId = entryId,
-                AccountCode = matchedRule.CreditAccount,
+                AccountCode = courtRevenueAccount,
                 DebitAmount = 0,
                 CreditAmount = payment.Amount,
                 PartnerId = partnerId,
-                Description = $"Có tài khoản doanh thu/công nợ theo quy tắc {matchedRule.Id}"
+                Description = "Ghi nhận doanh thu cho thuê sân"
             });
         }
 
         // Lưu vào Database
         await _unitOfWork.IJournalEntryRepository.Add(entry);
         await _unitOfWork.IJournalEntryLineRepository.AddRange(lines);
+        if (isReceivableSettlement && !IsGroupDepositDeduction(payment) && partnerId != null)
+        {
+            await UpdateReceivableAfterPaymentAsync(partnerId, payment.Amount);
+        }
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation($"{loggingHeader} - Đã sinh bút toán nháp {voucherNo} (Nợ={matchedRule.DebitAccount}, Có={matchedRule.CreditAccount}). Bút toán sẽ được ghi sổ khi duyệt/chốt ca/chốt ngày.");
+        _logger.LogInformation($"{loggingHeader} - Đã sinh bút toán nháp {voucherNo} (Nợ={cashAccount}, Có={courtRevenueAccount}/131/512/338 theo nghiệp vụ). Bút toán sẽ được ghi sổ khi duyệt/chốt ca/chốt ngày.");
     }
 
     public async Task RecordReceivableAsync(string bookingId)
     {
-        const string loggingHeader = "Sinh bút toán nháp công nợ phải thu";
+        const string loggingHeader = "Ghi nhận công nợ/doanh thu đặt sân";
 
         if (!Guid.TryParse(bookingId, out Guid bId))
         {
@@ -549,79 +1100,102 @@ public class AccountingService : BaseService, IAccountingService
         var existsCount = await _unitOfWork.IJournalEntryRepository.Count(j => j.SourceTable == "Bookings" && j.SourceId == bookingId);
         if (existsCount > 0)
         {
-            _logger.LogInformation($"{loggingHeader} - Booking này đã có bút toán nháp/đã ghi sổ trước đó. BookingID={bookingId}");
+            _logger.LogInformation($"{loggingHeader} - Booking này đã có bút toán hạch toán trước đó. BookingID={bookingId}");
             return;
         }
 
         var partnerId = await EnsureBusinessPartnerAsync(booking.Customer);
-
-        // Tạo bản ghi theo dõi công nợ AccountReceivable
-        var arId = Guid.NewGuid().ToString("N");
         var outstanding = booking.TotalAmount - booking.PaidAmount;
 
-        if (outstanding <= 0)
-        {
-            _logger.LogInformation($"{loggingHeader} - Đặt sân đã thanh toán hết, không tạo công nợ. BookingID={bookingId}");
-            return;
-        }
+        // Tìm quy tắc định khoản phù hợp cho Bookings
+        var transactionType = "BOOKING_POSTPAID";
+        var matchedRule = await FindMatchingAccountingRuleAsync(transactionType, booking);
 
-        var ar = new AccountReceivable
-        {
-            Id = arId,
-            PartnerId = partnerId,
-            OriginalAmount = booking.TotalAmount,
-            PaidAmount = booking.PaidAmount,
-            OutstandingAmount = outstanding,
-            DueDate = DateTime.Today.AddDays(7), // Hạn thanh toán mặc định là 7 ngày
-            Status = "Unpaid"
-        };
-
-        // Tạo bút toán hạch toán Nợ 131 / Có 511
+        // Khởi tạo bút toán kép (JournalEntry) - ghi sổ trực tiếp (Posted)
         var entryId = Guid.NewGuid().ToString("N");
-        var voucherNo = $"CN-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+        var voucherNo = await GenerateVoucherNoAsync("CN");
 
         var entry = new JournalEntry
         {
             Id = entryId,
             VoucherNo = voucherNo,
             EntryDate = DateTime.UtcNow,
-            DocumentType = "PT", // Phải thu
+            DocumentType = "HD", // Hóa đơn / Ghi nhận doanh thu
             SourceTable = "Bookings",
             SourceId = bookingId,
-            Description = $"Ghi nhận công nợ phải thu cho đặt sân #{bookingId}",
-            Status = DraftStatus
+            Description = $"Ghi nhận doanh thu/công nợ đặt sân #{bookingId}",
+            Status = PostedStatus
         };
 
-        var lines = new List<JournalEntryLine>
+        List<JournalEntryLine> lines;
+        if (matchedRule != null)
         {
-            new JournalEntryLine
+            lines = await BuildJournalEntryLinesFromRuleAsync(entryId, matchedRule, booking, partnerId);
+            _logger.LogInformation($"{loggingHeader} - Khớp quy tắc {matchedRule.Id} cho BookingID={bookingId}");
+        }
+        else
+        {
+            // Fallback mặc định: Nợ 131 / Có 5111 nếu chưa thanh toán hết
+            if (outstanding <= 0)
             {
-                Id = Guid.NewGuid().ToString("N"),
-                JournalEntryId = entryId,
-                AccountCode = "131", // Phải thu khách hàng
-                DebitAmount = outstanding,
-                CreditAmount = 0,
-                PartnerId = partnerId,
-                Description = "Ghi nhận nợ phải thu"
-            },
-            new JournalEntryLine
-            {
-                Id = Guid.NewGuid().ToString("N"),
-                JournalEntryId = entryId,
-                AccountCode = "5111", // Doanh thu dịch vụ cho thuê sân
-                DebitAmount = 0,
-                CreditAmount = outstanding,
-                PartnerId = partnerId,
-                Description = "Doanh thu treo ghi nợ"
+                _logger.LogInformation($"{loggingHeader} - Đặt sân đã thanh toán hết và không khớp quy tắc nào. BookingID={bookingId}");
+                return;
             }
-        };
 
-        await _unitOfWork.IAccountReceivableRepository.Add(ar);
+            lines = new List<JournalEntryLine>
+            {
+                new JournalEntryLine
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    JournalEntryId = entryId,
+                    AccountCode = "131", // Phải thu khách hàng
+                    DebitAmount = outstanding,
+                    CreditAmount = 0,
+                    PartnerId = partnerId,
+                    Description = "Ghi nhận nợ phải thu"
+                },
+                new JournalEntryLine
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    JournalEntryId = entryId,
+                    AccountCode = "5111", // Doanh thu dịch vụ cho thuê sân
+                    DebitAmount = 0,
+                    CreditAmount = outstanding,
+                    PartnerId = partnerId,
+                    Description = "Doanh thu treo ghi nợ"
+                }
+            };
+        }
+
+        if (lines.Count < 2)
+        {
+            _logger.LogWarning($"{loggingHeader} - Không đủ số dòng hạch toán hợp lệ cho BookingID={bookingId}");
+            return;
+        }
+
+        // Tạo bản ghi theo dõi công nợ AccountReceivable nếu có dùng tài khoản 131 trong các dòng hạch toán
+        var usesReceivable = lines.Any(l => l.AccountCode == "131" && l.DebitAmount > 0);
+        if (usesReceivable && outstanding > 0)
+        {
+            var arId = Guid.NewGuid().ToString("N");
+            var ar = new AccountReceivable
+            {
+                Id = arId,
+                PartnerId = partnerId,
+                OriginalAmount = booking.TotalAmount,
+                PaidAmount = booking.PaidAmount,
+                OutstandingAmount = outstanding,
+                DueDate = DateTime.Today.AddDays(7), // Hạn thanh toán mặc định là 7 ngày
+                Status = "Unpaid"
+            };
+            await _unitOfWork.IAccountReceivableRepository.Add(ar);
+        }
+
         await _unitOfWork.IJournalEntryRepository.Add(entry);
         await _unitOfWork.IJournalEntryLineRepository.AddRange(lines);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation($"{loggingHeader} - Đã tạo công nợ {arId} và bút toán nháp {voucherNo} cho đối tác {partnerId} số tiền {outstanding}đ. Bút toán sẽ được ghi sổ khi duyệt/chốt ca/chốt ngày.");
+        _logger.LogInformation($"{loggingHeader} - Đã tạo bút toán {voucherNo} (Posted) cho BookingID={bookingId}");
     }
 
     private async Task<string> EnsureBusinessPartnerAsync(Customers customer)
@@ -658,27 +1232,63 @@ public class AccountingService : BaseService, IAccountingService
             return true;
         }
 
-        var hasOrCondition = conditions.Any(c => string.Equals(c.LogicalGroup, "OR", StringComparison.OrdinalIgnoreCase));
-        var anyOrMatched = false;
+        // Group conditions by their LogicalGroup. If empty/null, assign a random unique group name.
+        var groups = conditions.GroupBy(c => string.IsNullOrWhiteSpace(c.LogicalGroup)
+            ? Guid.NewGuid().ToString()
+            : c.LogicalGroup.Trim().ToUpper());
 
-        foreach (var condition in conditions)
+        foreach (var group in groups)
         {
-            var isOr = string.Equals(condition.LogicalGroup, "OR", StringComparison.OrdinalIgnoreCase);
-            var matched = EvaluateCondition(payment, condition);
-
-            if (isOr)
+            var groupMatched = true;
+            foreach (var condition in group)
             {
-                anyOrMatched |= matched;
-                continue;
+                if (!EvaluateCondition(payment, condition))
+                {
+                    groupMatched = false;
+                    break; // All conditions inside a group must match (AND)
+                }
             }
 
-            if (!matched)
+            if (groupMatched)
             {
-                return false;
+                return true; // If any group matches completely, the rule matches (OR)
             }
         }
 
-        return !hasOrCondition || anyOrMatched;
+        return false;
+    }
+
+    private bool EvaluateConditions(Bookings booking, List<AccountingRuleCondition> conditions)
+    {
+        if (conditions == null || !conditions.Any())
+        {
+            return true;
+        }
+
+        // Group conditions by their LogicalGroup. If empty/null, assign a random unique group name.
+        var groups = conditions.GroupBy(c => string.IsNullOrWhiteSpace(c.LogicalGroup)
+            ? Guid.NewGuid().ToString()
+            : c.LogicalGroup.Trim().ToUpper());
+
+        foreach (var group in groups)
+        {
+            var groupMatched = true;
+            foreach (var condition in group)
+            {
+                if (!EvaluateCondition(booking, condition))
+                {
+                    groupMatched = false;
+                    break; // All conditions inside a group must match (AND)
+                }
+            }
+
+            if (groupMatched)
+            {
+                return true; // If any group matches completely, the rule matches (OR)
+            }
+        }
+
+        return false;
     }
 
     private static bool EvaluateCondition(Payments payment, AccountingRuleCondition condition)
@@ -706,6 +1316,55 @@ public class AccountingService : BaseService, IAccountingService
                 ">" => payment.Amount > expectedValue,
                 "<" => payment.Amount < expectedValue,
                 "!=" => payment.Amount != expectedValue,
+                _ => false
+            };
+        }
+
+        return false;
+    }
+
+    private static bool EvaluateCondition(Bookings booking, AccountingRuleCondition condition)
+    {
+        if (string.Equals(condition.FieldName, "Status", StringComparison.OrdinalIgnoreCase))
+        {
+            return condition.Operator switch
+            {
+                "=" => string.Equals(booking.Status, condition.ExpectedValue, StringComparison.OrdinalIgnoreCase),
+                "!=" => !string.Equals(booking.Status, condition.ExpectedValue, StringComparison.OrdinalIgnoreCase),
+                _ => false
+            };
+        }
+
+        if (string.Equals(condition.FieldName, "TotalAmount", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!decimal.TryParse(condition.ExpectedValue, out var expectedValue))
+            {
+                return false;
+            }
+
+            return condition.Operator switch
+            {
+                "=" => booking.TotalAmount == expectedValue,
+                ">" => booking.TotalAmount > expectedValue,
+                "<" => booking.TotalAmount < expectedValue,
+                "!=" => booking.TotalAmount != expectedValue,
+                _ => false
+            };
+        }
+
+        if (string.Equals(condition.FieldName, "PaidAmount", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!decimal.TryParse(condition.ExpectedValue, out var expectedValue))
+            {
+                return false;
+            }
+
+            return condition.Operator switch
+            {
+                "=" => booking.PaidAmount == expectedValue,
+                ">" => booking.PaidAmount > expectedValue,
+                "<" => booking.PaidAmount < expectedValue,
+                "!=" => booking.PaidAmount != expectedValue,
                 _ => false
             };
         }
@@ -756,8 +1415,8 @@ public class AccountingService : BaseService, IAccountingService
         var entries = await _unitOfWork.IJournalEntryRepository.FindList(e => e.Status == PostedStatus);
         var entryIds = entries.Select(e => e.Id).ToList();
 
-        var lines = await _unitOfWork.IJournalEntryLineRepository.FindList(l => 
-            entryIds.Contains(l.JournalEntryId) && 
+        var lines = await _unitOfWork.IJournalEntryLineRepository.FindList(l =>
+            entryIds.Contains(l.JournalEntryId) &&
             l.AccountCode.StartsWith(accountCodePrefix));
 
         var transactions = lines.Select(l =>
@@ -775,7 +1434,7 @@ public class AccountingService : BaseService, IAccountingService
         }).OrderBy(x => x.Date).ToList();
 
         var allPostedLines = await _unitOfWork.IJournalEntryLineRepository.FindList(l => entryIds.Contains(l.JournalEntryId));
-        
+
         var cashFunds = new List<CashflowFundDto>
         {
             new CashflowFundDto { Key = "cash-main", Name = "Quỹ chính — CN Quận 7", Bal = allPostedLines.Where(l => l.AccountCode == "1111").Sum(l => l.DebitAmount - l.CreditAmount) + 12000000m },

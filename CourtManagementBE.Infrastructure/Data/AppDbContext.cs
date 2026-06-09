@@ -75,8 +75,8 @@ public class AppDbContext : DbContext
     public DbSet<CashFund> CashFunds => Set<CashFund>();
     public DbSet<ChartOfAccount> ChartOfAccounts => Set<ChartOfAccount>();
     public DbSet<AccountingRule> AccountingRules => Set<AccountingRule>();
-    public DbSet<AccountingRuleSource> AccountingRuleSources => Set<AccountingRuleSource>();
     public DbSet<AccountingRuleCondition> AccountingRuleConditions => Set<AccountingRuleCondition>();
+    public DbSet<AccountingRuleLine> AccountingRuleLines => Set<AccountingRuleLine>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
     public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
     public DbSet<BusinessPartner> BusinessPartners => Set<BusinessPartner>();
@@ -675,18 +675,12 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.Property(x => x.RuleName).HasColumnType("nvarchar(200)").IsRequired();
             e.Property(x => x.TransactionType).HasColumnType("varchar(100)").IsRequired();
-            e.Property(x => x.DebitAccount).HasColumnType("varchar(50)").IsRequired();
-            e.Property(x => x.CreditAccount).HasColumnType("varchar(50)").IsRequired();
-            e.Property(x => x.OriginalSource).HasColumnType("varchar(100)");
-        });
-
-        modelBuilder.Entity<AccountingRuleSource>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.RuleId);
-            e.Property(x => x.SourceTable).HasColumnType("varchar(100)").IsRequired();
-            e.Property(x => x.CreatedBy).HasColumnType("varchar(100)");
+            e.Property(x => x.SourceTable).HasColumnType("varchar(100)").IsRequired().HasDefaultValue("");
+            e.Property(x => x.Description).HasColumnType("nvarchar(500)");
+            e.Property(x => x.Priority).HasDefaultValue(0);
+            e.Property(x => x.IsActive).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<AccountingRuleCondition>(e =>
@@ -695,10 +689,23 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).HasColumnType("varchar(50)");
             e.HasIndex(x => x.RuleId);
             e.Property(x => x.RuleId).HasColumnType("varchar(50)").IsRequired();
-            e.Property(x => x.SourceTable).HasColumnType("varchar(100)").IsRequired();
             e.Property(x => x.FieldName).HasColumnType("varchar(100)").IsRequired();
             e.Property(x => x.Operator).HasColumnType("varchar(50)").IsRequired();
             e.Property(x => x.ExpectedValue).HasColumnType("nvarchar(200)").IsRequired();
+            e.Property(x => x.LogicalGroup).HasColumnType("varchar(20)").IsRequired();
+            e.Property(x => x.SortOrder).HasDefaultValue(0);
+        });
+
+        modelBuilder.Entity<AccountingRuleLine>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnType("varchar(50)");
+            e.HasIndex(x => x.RuleId);
+            e.Property(x => x.RuleId).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.AccountCode).HasColumnType("varchar(50)").IsRequired();
+            e.Property(x => x.EntryType).HasColumnType("varchar(20)").IsRequired();
+            e.Property(x => x.ValueSource).HasColumnType("varchar(100)").IsRequired();
+            e.Property(x => x.DescriptionTemplate).HasColumnType("nvarchar(500)");
         });
 
         modelBuilder.Entity<JournalEntry>(e =>

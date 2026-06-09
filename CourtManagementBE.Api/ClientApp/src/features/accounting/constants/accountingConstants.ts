@@ -28,10 +28,13 @@ export const ACCOUNTING_RULE_LOGICAL_OPERATOR = {
   OR: 'OR',
 } as const
 
-export type JournalEntryStatus = (typeof JOURNAL_ENTRY_STATUS)[keyof typeof JOURNAL_ENTRY_STATUS]
+export type JournalEntryStatus =
+  (typeof JOURNAL_ENTRY_STATUS)[keyof typeof JOURNAL_ENTRY_STATUS]
 export type ReceivableStatus = (typeof RECEIVABLE_STATUS)[keyof typeof RECEIVABLE_STATUS]
-export type AccountingRuleOperator = (typeof ACCOUNTING_RULE_OPERATOR)[keyof typeof ACCOUNTING_RULE_OPERATOR]
-export type AccountingRuleLogicalOperator = (typeof ACCOUNTING_RULE_LOGICAL_OPERATOR)[keyof typeof ACCOUNTING_RULE_LOGICAL_OPERATOR]
+export type AccountingRuleOperator =
+  (typeof ACCOUNTING_RULE_OPERATOR)[keyof typeof ACCOUNTING_RULE_OPERATOR]
+export type AccountingRuleLogicalOperator =
+  (typeof ACCOUNTING_RULE_LOGICAL_OPERATOR)[keyof typeof ACCOUNTING_RULE_LOGICAL_OPERATOR]
 
 export const JOURNAL_ENTRY_STATUS_LABELS: Record<JournalEntryStatus, string> = {
   [JOURNAL_ENTRY_STATUS.DRAFT]: 'Nháp',
@@ -49,36 +52,68 @@ export const RECEIVABLE_STATUS_LABELS: Record<ReceivableStatus, string> = {
   [RECEIVABLE_STATUS.CANCELLED]: 'Đã hủy',
 }
 
+// Keep operators showing the symbol directly as requested: "label vẫn hiện các operator thay vì text"
 export const ACCOUNTING_RULE_OPERATOR_LABELS: Record<AccountingRuleOperator, string> = {
-  [ACCOUNTING_RULE_OPERATOR.EQUAL]: 'Bằng',
-  [ACCOUNTING_RULE_OPERATOR.NOT_EQUAL]: 'Khác',
-  [ACCOUNTING_RULE_OPERATOR.GREATER_THAN]: 'Lớn hơn',
-  [ACCOUNTING_RULE_OPERATOR.LESS_THAN]: 'Nhỏ hơn',
-  [ACCOUNTING_RULE_OPERATOR.GREATER_OR_EQUAL]: 'Lớn hơn hoặc bằng',
-  [ACCOUNTING_RULE_OPERATOR.LESS_OR_EQUAL]: 'Nhỏ hơn hoặc bằng',
+  [ACCOUNTING_RULE_OPERATOR.EQUAL]: '=',
+  [ACCOUNTING_RULE_OPERATOR.NOT_EQUAL]: '!=',
+  [ACCOUNTING_RULE_OPERATOR.GREATER_THAN]: '>',
+  [ACCOUNTING_RULE_OPERATOR.LESS_THAN]: '<',
+  [ACCOUNTING_RULE_OPERATOR.GREATER_OR_EQUAL]: '>=',
+  [ACCOUNTING_RULE_OPERATOR.LESS_OR_EQUAL]: '<=',
 }
 
-export const ACCOUNTING_RULE_LOGICAL_OPERATOR_LABELS: Record<AccountingRuleLogicalOperator, string> = {
+export const ACCOUNTING_RULE_LOGICAL_OPERATOR_LABELS: Record<
+  AccountingRuleLogicalOperator,
+  string
+> = {
   [ACCOUNTING_RULE_LOGICAL_OPERATOR.AND]: 'Và',
   [ACCOUNTING_RULE_LOGICAL_OPERATOR.OR]: 'Hoặc',
 }
 
-export const JOURNAL_ENTRY_STATUS_OPTIONS = Object.values(JOURNAL_ENTRY_STATUS).map((value) => ({
-  label: JOURNAL_ENTRY_STATUS_LABELS[value],
-  value,
-}))
+export const JOURNAL_ENTRY_STATUS_OPTIONS = Object.values(JOURNAL_ENTRY_STATUS).map(
+  (value) => ({
+    label: JOURNAL_ENTRY_STATUS_LABELS[value],
+    value,
+  }),
+)
 
-export const RECEIVABLE_STATUS_OPTIONS = Object.values(RECEIVABLE_STATUS).map((value) => ({
-  label: RECEIVABLE_STATUS_LABELS[value],
-  value,
-}))
+export const RECEIVABLE_STATUS_OPTIONS = Object.values(RECEIVABLE_STATUS).map(
+  (value) => ({
+    label: RECEIVABLE_STATUS_LABELS[value],
+    value,
+  }),
+)
 
-export const ACCOUNTING_RULE_OPERATOR_OPTIONS = Object.values(ACCOUNTING_RULE_OPERATOR).map((value) => ({
+export const ACCOUNTING_RULE_OPERATOR_OPTIONS = Object.values(
+  ACCOUNTING_RULE_OPERATOR,
+).map((value) => ({
   label: ACCOUNTING_RULE_OPERATOR_LABELS[value],
   value,
 }))
 
-export const ACCOUNTING_RULE_LOGICAL_OPERATOR_OPTIONS = Object.values(ACCOUNTING_RULE_LOGICAL_OPERATOR).map((value) => ({
+export const ACCOUNTING_RULE_LOGICAL_OPERATOR_OPTIONS = Object.values(
+  ACCOUNTING_RULE_LOGICAL_OPERATOR,
+).map((value) => ({
   label: ACCOUNTING_RULE_LOGICAL_OPERATOR_LABELS[value],
   value,
 }))
+
+export const TRANSACTION_TYPE_OPTIONS = [
+  { label: 'BOOKING_PAYMENT', value: 'BOOKING_PAYMENT' },
+  { label: 'RECEIVABLE_PAYMENT', value: 'RECEIVABLE_PAYMENT' },
+  { label: 'BOOKING_POSTPAID', value: 'BOOKING_POSTPAID' },
+]
+
+export const SOURCE_TABLE_OPTIONS = [
+  { label: 'Payments (Thanh toán)', value: 'Payments' },
+  { label: 'Bookings (Đặt sân)', value: 'Bookings' },
+]
+
+export const VALUE_SOURCE_OPTIONS = [
+  { label: 'Amount (Tổng tiền giao dịch)', value: 'Amount' },
+  { label: 'CourtAmount (Tiền thuê sân)', value: 'CourtAmount' },
+  { label: 'ServiceAmount (Tiền dịch vụ)', value: 'ServiceAmount' },
+  { label: 'TotalAmount (Tổng tiền booking)', value: 'TotalAmount' },
+  { label: 'PaidAmount (Đã thanh toán)', value: 'PaidAmount' },
+  { label: 'OutstandingAmount (Còn nợ)', value: 'OutstandingAmount' },
+]

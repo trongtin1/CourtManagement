@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Alert, Button, Card, Col, DatePicker, Form, Input, InputNumber, Modal, Row, Space, Statistic, Table, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { Dayjs } from 'dayjs'
-import { CheckCircleOutlined, DownloadOutlined, EditOutlined, ExclamationCircleOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, EditOutlined, ExclamationCircleOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   useAccountingJournalQuery,
   usePostJournalBatchMutation,
@@ -215,10 +215,7 @@ export function AccountingJournal() {
         className="border-slate-200 shadow-sm"
         title="Nhật ký bút toán"
         extra={
-          <Space>
-            <span className="text-xs text-slate-500">{entries.length} bút toán</span>
-            <Button icon={<DownloadOutlined />} size="small">Xuất sổ</Button>
-          </Space>
+          <span className="text-xs text-slate-500">{entries.length} bút toán</span>
         }
       >
         <Space className="w-full mb-4" wrap>

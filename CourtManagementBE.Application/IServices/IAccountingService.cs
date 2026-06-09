@@ -16,6 +16,7 @@ public interface IAccountingService
     Task<Result<List<ChartOfAccountResponseDto>>> GetChartOfAccountsAsync();
     Task<Result<ChartOfAccountResponseDto>> CreateChartOfAccountAsync(ChartOfAccountRequestDto request);
     Task<Result<List<AccountingRuleResponseDto>>> GetAccountingRulesAsync();
+    Task<Result<AccountingRuleResponseDto>> CreateAccountingRuleAsync(AccountingRuleCreateRequestDto request);
     Task<Result<List<VoucherResponseDto>>> GetVouchersAsync();
     Task<Result<CashflowResponseDto>> GetCashflowAsync(string type);
     Task<Result<List<ReceivableResponseDto>>> GetReceivablesAsync();

@@ -87,50 +87,63 @@ export type AccountingAccountTypeOption = AccountingOption & {
   normalBalance: string
 }
 
-export type JournalDocumentTypeOption = AccountingOption & {
-  voucherPrefix: string
-}
-
-export type BankAccountOption = {
-  bankAccountID: number
-  code: string
-  bankName: string
-  accountNumberMasked: string
-  accountCode: string
-  openingBalance: number
-  colorCode: string
-  sortOrder: number
-  isActive: boolean
-}
-
-export type CashFundOption = {
-  cashFundID: number
-  code: string
-  name: string
-  accountCode: string
-  openingBalance: number
-  sortOrder: number
-  isActive: boolean
-}
 
 export type AccountingRuleCondition = {
   id: string
   ruleId: string
-  sourceTable: string
   fieldName: string
   operator: string
   expectedValue: string
-  description: string
+  logicalGroup: string
+  sortOrder: number
+}
+
+export type AccountingRuleLine = {
+  id: string
+  ruleId: string
+  accountCode: string
+  entryType: string
+  valueSource: string
+  descriptionTemplate: string
 }
 
 export type AccountingRule = {
   id: string
+  ruleName: string
   transactionType: string
-  debitAccount: string
-  creditAccount: string
-  originalSource: string
+  sourceTable: string
   description: string
+  priority: number
+  isActive: boolean
   conditions: AccountingRuleCondition[]
+  lines: AccountingRuleLine[]
+}
+
+export type AccountingRuleConditionCreate = {
+  fieldName: string
+  operator: string
+  expectedValue: string
+  logicalGroup: string
+  sortOrder?: number
+}
+
+export type AccountingRuleLineCreate = {
+  accountCode: string
+  entryType: string
+  valueSource: string
+  descriptionTemplate: string
+}
+
+export type AccountingRuleCreateRequest = {
+  id: string
+  ruleName: string
+  transactionType: string
+  sourceTable: string
+  description: string
+  priority: number
+  isActive: boolean
+  conditions: AccountingRuleConditionCreate[]
+  lines: AccountingRuleLineCreate[]
 }
 
 export type VoucherResponse = {

@@ -100,21 +100,29 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("CreditAccount")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("DebitAccount")
-                        .IsRequired()
-                        .HasColumnType("varchar(50)");
-
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("OriginalSource")
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("RuleName")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SourceTable")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(100)")
+                        .HasDefaultValue("");
 
                     b.Property<string>("TransactionType")
                         .IsRequired()
@@ -130,10 +138,6 @@ namespace CourtManagementBE.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ExpectedValue")
                         .IsRequired()
                         .HasColumnType("nvarchar(200)");
@@ -142,12 +146,9 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<string>("LogicalGroup")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Operator")
                         .IsRequired()
@@ -157,9 +158,10 @@ namespace CourtManagementBE.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("SourceTable")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)");
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.HasKey("Id");
 
@@ -168,29 +170,28 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("AccountingRuleConditions");
                 });
 
-            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AccountingRuleSource", b =>
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.AccountingRuleLine", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(50)");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("AccountCode")
                         .IsRequired()
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("varchar(50)");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                    b.Property<string>("DescriptionTemplate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("RuleId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(50)");
 
-                    b.Property<string>("SourceTable")
+                    b.Property<string>("ValueSource")
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
@@ -198,7 +199,7 @@ namespace CourtManagementBE.Migrations
 
                     b.HasIndex("RuleId");
 
-                    b.ToTable("AccountingRuleSources");
+                    b.ToTable("AccountingRuleLines");
                 });
 
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.Areas", b =>

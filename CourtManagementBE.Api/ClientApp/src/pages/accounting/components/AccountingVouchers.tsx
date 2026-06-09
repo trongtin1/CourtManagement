@@ -1,5 +1,5 @@
 import { Card, Table, Tag, Space, Input, DatePicker, Select, Button, Statistic, Row, Col } from 'antd'
-import { DownloadOutlined, EyeOutlined, PrinterOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { ReloadOutlined } from '@ant-design/icons'
 import { useAccountingVouchersQuery } from '@/features/accounting/api/useAccountingQueries'
 import { useState } from 'react'
 
@@ -60,9 +60,6 @@ export function AccountingVouchers() {
         </div>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => query.refetch()} loading={query.isFetching}>Tải lại</Button>
-          <Button type="primary" icon={<PlusOutlined />}>
-            Tạo chứng từ mới
-          </Button>
         </Space>
       </div>
 
@@ -130,7 +127,6 @@ export function AccountingVouchers() {
               { label: 'Đã huỷ', value: 'cancel' },
             ]}
           />
-          <Button icon={<DownloadOutlined />}>Excel</Button>
         </Space>
 
         <Table
@@ -173,18 +169,7 @@ export function AccountingVouchers() {
                 const s = stateMap[state] || { color: 'default', label: state }
                 return <Tag color={s.color}>{s.label}</Tag>
               },
-            },
-            {
-              title: '',
-              width: 100,
-              render: () => (
-                <Space size={4}>
-                  <Button type="text" size="small" icon={<EyeOutlined />} />
-                  <Button type="text" size="small" icon={<PrinterOutlined />} />
-                  <Button type="text" size="small" danger icon={<CloseCircleOutlined />} />
-                </Space>
-              ),
-            },
+            }
           ]}
           dataSource={filteredVouchers}
           pagination={{

@@ -1,11 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Card, Table, Tag, Space, Input, Select, Button, Statistic, Row, Col, Progress } from 'antd'
 import {
-  CreditCardOutlined,
-  EyeOutlined,
-  PrinterOutlined,
   ShopOutlined,
-  DownloadOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
 import { useAccountingPayablesQuery } from '@/features/accounting/api/useAccountingQueries'
@@ -61,9 +57,6 @@ export function AccountingPayables() {
         </div>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => query.refetch()} loading={query.isFetching}>Tải lại</Button>
-          <Button type="primary" icon={<DownloadOutlined />}>
-            Xuất danh sách nợ NCC
-          </Button>
         </Space>
       </div>
 
@@ -203,19 +196,7 @@ export function AccountingPayables() {
                 return <Progress percent={pct} size="small" strokeColor="#f59e0b" />
               },
             },
-            {
-              title: '',
-              width: 160,
-              render: () => (
-                <Space size={4}>
-                  <Button type="primary" size="small" icon={<CreditCardOutlined />}>
-                    Thanh toán
-                  </Button>
-                  <Button type="text" size="small" icon={<EyeOutlined />} />
-                  <Button type="text" size="small" icon={<PrinterOutlined />} />
-                </Space>
-              ),
-            },
+
           ]}
           dataSource={filteredSuppliers}
           pagination={false}

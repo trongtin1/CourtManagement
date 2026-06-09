@@ -673,7 +673,7 @@ public class BookingService : BaseService, IBookingService
                 PaymentMethod = "cash",
                 PaymentDate = DateTime.UtcNow,
                 Status = "success",
-                Note = isGroupDeposit ? $"[Khấu trừ quỹ cọc nhóm] {request.Note}".Trim() : request.Note,
+                Note = isGroupDeposit ? $"[GROUP_DEPOSIT_DEDUCTION] {request.Note}".Trim() : request.Note,
                 CreatedDate = DateTimeOffset.UtcNow
             };
             await _unitOfWork.IPaymentRepository.Add(payment);
@@ -784,6 +784,7 @@ public class BookingService : BaseService, IBookingService
                 CreatedDate = DateTimeOffset.UtcNow
             };
             await _unitOfWork.IPaymentRepository.Add(payment);
+            var refundPayment = payment;
 
             // 2. Cấn trừ PaidAmount của Booking
             entity.PaidAmount -= request.Amount;
@@ -803,6 +804,7 @@ public class BookingService : BaseService, IBookingService
             await _unitOfWork.CommitTransactionAsync();
 
             _logger.LogInformation($"{loggingHeader} - Hoàn tiền booking thành công. BookingID={id}, SốTiền={request.Amount}, TiềnĐãThanhToánCũ={oldPaidAmount}, TiềnĐãThanhToánMới={entity.PaidAmount}");
+            _accountingBackgroundTaskRunner.QueueProcessPaymentAccounting(refundPayment.PaymentID.ToString());
             return Success(_mapper.Map<BookingResponse>(entity), "Hoàn tiền thành công.");
         }
         catch (Exception ex)
@@ -1219,5 +1221,3 @@ public class BookingService : BaseService, IBookingService
 
 
 }
-
-

@@ -5,7 +5,6 @@ import {
   BankOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  PlusOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
 import { useAccountingCashflowQuery } from '@/features/accounting/api/useAccountingQueries'
@@ -48,9 +47,6 @@ export function AccountingCash() {
         </div>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => query.refetch()} loading={query.isFetching}>Tải lại</Button>
-          <Button type="primary" icon={<PlusOutlined />}>
-            Lập phiếu chi
-          </Button>
         </Space>
       </div>
 

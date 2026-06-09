@@ -9,8 +9,6 @@ public class AccountingRuleCondition
 
     public string RuleId { get; set; } = string.Empty;
 
-    public string SourceTable { get; set; } = string.Empty;
-
     public string FieldName { get; set; } = string.Empty;
 
     public string Operator { get; set; } = string.Empty;
@@ -19,7 +17,5 @@ public class AccountingRuleCondition
 
     public string LogicalGroup { get; set; } = string.Empty;
 
-    public string Description { get; set; } = string.Empty;
-
-    public bool IsDeleted { get; set; }
+    public int SortOrder { get; set; }
 }

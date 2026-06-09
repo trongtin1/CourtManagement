@@ -57,6 +57,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<ChartOfAccount> IChartOfAccountRepository { get; }
     IGenericRepository<AccountingRule> IAccountingRuleRepository { get; }
     IGenericRepository<AccountingRuleCondition> IAccountingRuleConditionRepository { get; }
+    IGenericRepository<AccountingRuleLine> IAccountingRuleLineRepository { get; }
     IGenericRepository<JournalEntry> IJournalEntryRepository { get; }
     IGenericRepository<JournalEntryLine> IJournalEntryLineRepository { get; }
     IGenericRepository<BusinessPartner> IBusinessPartnerRepository { get; }

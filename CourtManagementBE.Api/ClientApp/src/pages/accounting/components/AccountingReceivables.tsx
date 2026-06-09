@@ -1,5 +1,5 @@
 import { Card, Table, Tag, Space, Input, Select, Button, Statistic, Row, Col, Progress, Alert } from 'antd'
-import { DownloadOutlined, EyeOutlined, PrinterOutlined, WalletOutlined, WarningOutlined, ReloadOutlined } from '@ant-design/icons'
+import { WarningOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useAccountingReceivablesQuery } from '@/features/accounting/api/useAccountingQueries'
 import { useState } from 'react'
 
@@ -55,9 +55,6 @@ export function AccountingReceivables() {
         </div>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => query.refetch()} loading={query.isFetching}>Tải lại</Button>
-          <Button type="primary" icon={<DownloadOutlined />}>
-            Xuất danh sách nợ KH
-          </Button>
         </Space>
       </div>
 
@@ -195,19 +192,7 @@ export function AccountingReceivables() {
                 <Tag color={ageColorMap[age] || 'default'}>{ageLabelMap[age] || age}</Tag>
               ),
             },
-            {
-              title: '',
-              width: 140,
-              render: () => (
-                <Space size={4}>
-                  <Button type="primary" size="small" icon={<WalletOutlined />}>
-                    Thu
-                  </Button>
-                  <Button type="text" size="small" icon={<EyeOutlined />} />
-                  <Button type="text" size="small" icon={<PrinterOutlined />} />
-                </Space>
-              ),
-            },
+
           ]}
           dataSource={filteredCustomers}
           pagination={false}

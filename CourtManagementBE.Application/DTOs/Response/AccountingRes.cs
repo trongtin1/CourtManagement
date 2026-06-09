@@ -91,23 +91,35 @@ public class ChartOfAccountResponseDto
 public class AccountingRuleResponseDto
 {
     public string Id { get; set; } = string.Empty;
+    public string RuleName { get; set; } = string.Empty;
     public string TransactionType { get; set; } = string.Empty;
-    public string DebitAccount { get; set; } = string.Empty;
-    public string CreditAccount { get; set; } = string.Empty;
-    public string OriginalSource { get; set; } = string.Empty;
+    public string SourceTable { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public int Priority { get; set; }
+    public bool IsActive { get; set; }
     public List<AccountingRuleConditionResponseDto> Conditions { get; set; } = [];
+    public List<AccountingRuleLineResponseDto> Lines { get; set; } = [];
 }
 
 public class AccountingRuleConditionResponseDto
 {
     public string Id { get; set; } = string.Empty;
     public string RuleId { get; set; } = string.Empty;
-    public string SourceTable { get; set; } = string.Empty;
     public string FieldName { get; set; } = string.Empty;
     public string Operator { get; set; } = string.Empty;
     public string ExpectedValue { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    public string LogicalGroup { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+}
+
+public class AccountingRuleLineResponseDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string RuleId { get; set; } = string.Empty;
+    public string AccountCode { get; set; } = string.Empty;
+    public string EntryType { get; set; } = string.Empty;
+    public string ValueSource { get; set; } = string.Empty;
+    public string DescriptionTemplate { get; set; } = string.Empty;
 }
 
 public class VoucherResponseDto
