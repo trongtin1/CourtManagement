@@ -252,6 +252,8 @@ namespace CourtManagementBE.Api
 
             app.UseRateLimiter();                // Rate limiting
 
+            app.UseSerilogRequestLogging();      // Log HTTP requests gọn gàng
+
             app.UseAuthentication();             // JWT
             app.UseAuthorization();
 

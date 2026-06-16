@@ -452,9 +452,9 @@ export default function CourtPriceSettingPage() {
         </div>
 
         {isFormVisible && (
-          <div className="xl:col-span-1">
+          <div className="xl:col-span-1 sticky top-24 self-start">
             <Card
-              className="rounded-2xl shadow-sm border-slate-200 sticky top-6"
+              className="rounded-2xl shadow-sm border-slate-200"
               styles={{ body: { padding: '24px' } }}
             >
               <Typography.Title
