@@ -48,9 +48,9 @@ public class BookingController : ControllerBase
     }
 
     [HttpPost("full")]
-    public async Task<IActionResult> CreateFull([FromBody] CreateFullBookingRequest req)
+    public async Task<IActionResult> CreateFull([FromBody] CreateFullBookingRequest req, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey = null)
     {
-        var r = await _service.CreateFull(req);
+        var r = await _service.CreateFull(req, idempotencyKey);
         return StatusCode((int)r.StatusCode, r);
     }
 
@@ -76,9 +76,9 @@ public class BookingController : ControllerBase
     }
 
     [HttpPost("{id}/pay")]
-    public async Task<IActionResult> Pay(Guid id, [FromBody] BookingPaymentRequest req)
+    public async Task<IActionResult> Pay(Guid id, [FromBody] BookingPaymentRequest req, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey = null)
     {
-        var r = await _service.Pay(id, req);
+        var r = await _service.Pay(id, req, idempotencyKey);
         return StatusCode((int)r.StatusCode, r);
     }
 

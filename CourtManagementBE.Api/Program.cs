@@ -18,6 +18,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using CourtManagementBE.Application.Profiles;
+using CourtManagementBE.Api.Extensions;
+using CourtManagementBE.Infrastructure.Idempotency;
 using Serilog;
 
 namespace CourtManagementBE.Api
@@ -94,9 +96,21 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<AuditInterceptor>();
             builder.Services.AddDbContext<AppDbContext>((sp, options) =>
             {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    sqlOptions =>
+                    {
+                        sqlOptions.EnableRetryOnFailure(
+                            maxRetryCount: 3,
+                            maxRetryDelay: TimeSpan.FromSeconds(10),
+                            errorNumbersToAdd: null);
+                    });
                 options.AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
             });
+
+            // ── Resilient HttpClient ──────────────────────────────────────
+            builder.Services.AddHttpClient("ResilientClient")
+                .AddResilientPolicyHandler();
 
             // ── JWT Authentication ────────────────────────────────────────
             var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
@@ -179,6 +193,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<IHttpContextHelper, HttpContextHelper>();
             builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IFacilityService, FacilityService>();
             builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();

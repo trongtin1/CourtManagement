@@ -2,7 +2,7 @@ import type { AxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { httpClient } from '@/services/api/httpClient'
 
-export type ApiRequestConfig = Pick<AxiosRequestConfig, 'signal' | 'headers' | 'timeout'>
+export type ApiRequestConfig = Pick<AxiosRequestConfig, 'signal' | 'headers' | 'timeout' | 'idempotent'>
 
 export type AbortableRequest<T> = {
   promise: Promise<T>

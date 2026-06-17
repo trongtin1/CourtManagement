@@ -17,11 +17,13 @@ namespace CourtManagementBE.Application.Services;
 public class BookingService : BaseService, IBookingService
 {
     private readonly ILogger<BookingService> _logger;
+    private readonly IIdempotencyService _idempotencyService;
 
-    public BookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<BookingService> logger)
+    public BookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserContext currentUser, ILogger<BookingService> logger, IIdempotencyService idempotencyService)
         : base(unitOfWork, mapper, currentUser)
     {
         _logger = logger;
+        _idempotencyService = idempotencyService;
     }
 
     public async Task<Result<PageList<BookingResponse>>> GetAll(BookingResource query)
@@ -139,9 +141,19 @@ public class BookingService : BaseService, IBookingService
         return Created(_mapper.Map<BookingResponse>(entity));
     }
 
-    public async Task<Result<BookingResponse>> CreateFull(CreateFullBookingRequest request)
+    public async Task<Result<BookingResponse>> CreateFull(CreateFullBookingRequest request, string? idempotencyKey = null)
     {
         const string loggingHeader = "Tạo đơn đặt sân đầy đủ";
+        if (!string.IsNullOrEmpty(idempotencyKey))
+        {
+            var cachedResponse = await _idempotencyService.GetResponseAsync<Result<BookingResponse>>(idempotencyKey, request);
+            if (cachedResponse != null)
+            {
+                _logger.LogInformation($"{loggingHeader} - Trả về kết quả đã xử lý trước đó từ Idempotency Key: {idempotencyKey}");
+                return cachedResponse;
+            }
+        }
+
         if (request.Slots.Count == 0)
         {
             _logger.LogWarning($"{loggingHeader} - Tạo đơn đặt sân thất bại vì chưa chọn khung giờ.");
@@ -360,7 +372,6 @@ public class BookingService : BaseService, IBookingService
 
         try
         {
-            await _unitOfWork.BeginTransactionAsync();
             await _unitOfWork.IBookingRepository.Add(booking);
             await _unitOfWork.IBookingSlotRepository.AddRange(bookingSlots);
             if (serviceLines.Count > 0)
@@ -372,14 +383,19 @@ public class BookingService : BaseService, IBookingService
                 await _unitOfWork.IBookingComboRepository.AddRange(comboLines);
             }
 
-            await _unitOfWork.CommitTransactionAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation($"{loggingHeader} - Tạo booking đầy đủ thành công. BookingID={booking.BookingID}, CourtID={booking.CourtID}, CustomerID={booking.CustomerID}, BookingDate={booking.BookingDate}, SốSlot={bookingSlots.Count}, SốDịchVụ={serviceLines.Count}, SốCombo={comboLines.Count}, TổngTiền={booking.TotalAmount:N0}đ");
-            return Created(_mapper.Map<BookingResponse>(booking));
+            
+            var result = Created(_mapper.Map<BookingResponse>(booking));
+            if (!string.IsNullOrEmpty(idempotencyKey))
+            {
+                await _idempotencyService.SaveResponseAsync(idempotencyKey, request, result);
+            }
+            return result;
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, $"{loggingHeader} - Tạo booking đầy đủ thất bại trong quá trình giao dịch. CourtID={request.CourtID}, CustomerID={request.CustomerID}, BookingDate={request.BookingDate}");
             return Conflict<BookingResponse>("Không thể tạo booking vì dữ liệu đã thay đổi. Vui lòng tải lại khung giờ và thử lại.");
         }
@@ -530,7 +546,6 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>("Không thể hoàn thành đơn đặt sân khi chưa thanh toán đủ tiền.");
         }
 
-        await _unitOfWork.BeginTransactionAsync();
         try
         {
             var oldStatus = entity.Status;
@@ -569,7 +584,7 @@ public class BookingService : BaseService, IBookingService
                 note: $"Cập nhật trạng thái đơn đặt sân từ {oldStatus} sang {newStatus}"
             );
 
-            await _unitOfWork.CommitTransactionAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation($"{loggingHeader} - Cập nhật trạng thái booking thành công. BookingID={id}, OldStatus={oldStatus}, NewStatus={newStatus}");
 
@@ -577,15 +592,24 @@ public class BookingService : BaseService, IBookingService
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, $"{loggingHeader} - Cập nhật trạng thái booking thất bại trong quá trình giao dịch. BookingID={id}, RequestedStatus={newStatus}");
             return Conflict<BookingResponse>("Đã xảy ra lỗi khi cập nhật trạng thái.");
         }
     }
 
-    public async Task<Result<BookingResponse>> Pay(Guid id, BookingPaymentRequest request)
+    public async Task<Result<BookingResponse>> Pay(Guid id, BookingPaymentRequest request, string? idempotencyKey = null)
     {
         const string loggingHeader = "Pay Booking";
+        if (!string.IsNullOrEmpty(idempotencyKey))
+        {
+            var cachedResponse = await _idempotencyService.GetResponseAsync<Result<BookingResponse>>(idempotencyKey, new { Id = id, Request = request });
+            if (cachedResponse != null)
+            {
+                _logger.LogInformation($"{loggingHeader} - Trả về kết quả đã xử lý trước đó từ Idempotency Key: {idempotencyKey}");
+                return cachedResponse;
+            }
+        }
+
         if (request.Amount <= 0)
         {
             _logger.LogWarning($"{loggingHeader} - Số tiền thanh toán không hợp lệ. BookingID={id}, Amount={request.Amount}");
@@ -642,7 +666,6 @@ public class BookingService : BaseService, IBookingService
             }
         }
 
-        await _unitOfWork.BeginTransactionAsync();
         try
         {
             var oldPaidAmount = entity.PaidAmount;
@@ -701,14 +724,18 @@ public class BookingService : BaseService, IBookingService
             );
 
             await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
 
             _logger.LogInformation($"{loggingHeader} - Thanh toán booking thành công. BookingID={id}, SốTiền={request.Amount}, TiềnĐãThanhToánCũ={oldPaidAmount}, TiềnĐãThanhToánMới={entity.PaidAmount}, TrạngTháiMới={entity.Status}, KhấuTrừCọcNhóm={isGroupDeposit}");
-            return Success(_mapper.Map<BookingResponse>(entity), "Thanh toán thành công.");
+            
+            var result = Success(_mapper.Map<BookingResponse>(entity), "Thanh toán thành công.");
+            if (!string.IsNullOrEmpty(idempotencyKey))
+            {
+                await _idempotencyService.SaveResponseAsync(idempotencyKey, new { Id = id, Request = request }, result);
+            }
+            return result;
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, $"{loggingHeader} - Thanh toán booking thất bại trong quá trình giao dịch. BookingID={id}, SốTiền={request.Amount}");
             return Conflict<BookingResponse>("Đã xảy ra lỗi khi thực hiện thanh toán.");
         }
@@ -747,7 +774,6 @@ public class BookingService : BaseService, IBookingService
             return BadRequest<BookingResponse>($"Số tiền hoàn trả không được vượt quá số tiền đã thanh toán ({entity.PaidAmount:N0}).");
         }
 
-        await _unitOfWork.BeginTransactionAsync();
         try
         {
             var oldPaidAmount = entity.PaidAmount;
@@ -782,14 +808,12 @@ public class BookingService : BaseService, IBookingService
             );
 
             await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
 
             _logger.LogInformation($"{loggingHeader} - Hoàn tiền booking thành công. BookingID={id}, SốTiền={request.Amount}, TiềnĐãThanhToánCũ={oldPaidAmount}, TiềnĐãThanhToánMới={entity.PaidAmount}");
             return Success(_mapper.Map<BookingResponse>(entity), "Hoàn tiền thành công.");
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, $"{loggingHeader} - Hoàn tiền booking thất bại trong quá trình giao dịch. BookingID={id}, SốTiền={request.Amount}");
             return Conflict<BookingResponse>("Đã xảy ra lỗi khi thực hiện hoàn tiền.");
         }
@@ -906,7 +930,6 @@ public class BookingService : BaseService, IBookingService
             }
         };
 
-        await _unitOfWork.BeginTransactionAsync();
         try
         {
             var oldCourtId = booking.CourtID;
@@ -939,14 +962,12 @@ public class BookingService : BaseService, IBookingService
             );
 
             await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
 
             _logger.LogInformation($"{loggingHeader} - Dời lịch đặt sân thành công. BookingID={id}, CourtIDCũ={oldCourtId}, CourtIDMới={booking.CourtID}, NgàyCũ={oldBookingDate}, NgàyMới={booking.BookingDate}, GiờBắtĐầuMới={requestedSlot.StartTime}, GiờKếtThúcMới={requestedSlot.EndTime}, TổngTiềnMới={booking.TotalAmount}");
             return Success(_mapper.Map<BookingResponse>(booking), "Dời lịch đặt sân thành công.");
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, $"{loggingHeader} - Dời lịch đặt sân thất bại trong quá trình giao dịch. BookingID={id}, CourtIDMới={request.CourtID}, BookingDate={request.BookingDate}");
             return Conflict<BookingResponse>("Không thể dời lịch đặt sân. Vui lòng tải lại trang và thử lại.");
         }
@@ -969,7 +990,6 @@ public class BookingService : BaseService, IBookingService
         var slots = await _unitOfWork.IBookingSlotRepository.FindList(x => x.BookingID == id);
         var services = await _unitOfWork.IBookingServiceRepository.FindList(x => x.BookingID == id);
 
-        await _unitOfWork.BeginTransactionAsync();
         try
         {
             if (slots.Count > 0)
@@ -994,14 +1014,13 @@ public class BookingService : BaseService, IBookingService
                 _unitOfWork.IBookingServiceRepository.RemoveRange(services);
             }
             _unitOfWork.IBookingRepository.Remove(entity);
-            await _unitOfWork.CommitTransactionAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation($"{loggingHeader} - Xóa booking thành công. BookingID={id}, CourtID={entity.CourtID}, TrạngThái={entity.Status}, SốSlot={slots.Count}, SốDịchVụ={services.Count}");
             return Success(true, "Xóa đơn đặt sân thành công.");
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, $"{loggingHeader} - Xóa booking thất bại trong quá trình giao dịch. BookingID={id}");
             return Conflict<bool>("Đã xảy ra lỗi khi xóa booking.");
         }

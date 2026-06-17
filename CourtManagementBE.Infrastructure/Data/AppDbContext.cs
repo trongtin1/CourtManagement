@@ -73,6 +73,9 @@ public class AppDbContext : DbContext
     // ── Audit Log ─────────────────────────────────────────────────────────────
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // ── Idempotency / Idempotency Keys ──────────────────────────────────
+    public DbSet<IdempotencyKey> IdempotencyKeys => Set<IdempotencyKey>();
+
 
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -607,6 +610,16 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.ID);
             e.Property(x => x.Timezone).HasColumnType("varchar(50)").HasDefaultValue("Asia/Ho_Chi_Minh").IsRequired();
             e.Property(x => x.CancellationFeePercent).HasColumnType("decimal(5,2)").HasDefaultValue(20.0m);
+        });
+
+        // ── Idempotency / Idempotency Keys ──────────────────────────────────
+        modelBuilder.Entity<IdempotencyKey>(e =>
+        {
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasColumnType("varchar(250)").IsRequired();
+            e.Property(x => x.RequestHash).HasColumnType("varchar(64)").IsRequired();
+            e.Property(x => x.ResponseContent).HasColumnType("nvarchar(max)").IsRequired();
+            e.Property(x => x.CreatedAt).HasColumnType("datetimeoffset").IsRequired();
         });
     }
 

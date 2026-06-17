@@ -562,7 +562,7 @@ export default function CourtPriceSettingPage() {
                       <Checkbox className="font-semibold text-slate-800 text-xs">
                         <Tooltip title="Áp dụng làm giá chuẩn cho các khung giờ">
                           <span>
-                            Giá mặc định (Chuẩn){' '}
+                            Giá tải mặc định
                             <QuestionCircleOutlined className="text-slate-400 text-[10px] ml-0.5" />
                           </span>
                         </Tooltip>

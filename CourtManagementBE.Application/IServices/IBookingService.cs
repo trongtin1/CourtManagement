@@ -15,11 +15,11 @@ public interface IBookingService
     Task<Result<List<BookingResponse>>> GetByDate(DateTime date);
     Task<Result<BookingResponse>> GetById(Guid id);
     Task<Result<BookingResponse>> Create(BookingRequest request);
-    Task<Result<BookingResponse>> CreateFull(CreateFullBookingRequest request);
+    Task<Result<BookingResponse>> CreateFull(CreateFullBookingRequest request, string? idempotencyKey = null);
     Task<Result<BookingResponse>> Update(Guid id, BookingRequest request);
     Task<Result<BookingResponse>> Cancel(Guid id, BookingRequest request);
     Task<Result<BookingResponse>> UpdateStatus(Guid id, string status);
-    Task<Result<BookingResponse>> Pay(Guid id, BookingPaymentRequest request);
+    Task<Result<BookingResponse>> Pay(Guid id, BookingPaymentRequest request, string? idempotencyKey = null);
     Task<Result<BookingResponse>> Refund(Guid id, BookingRefundRequest request);
     Task<Result<BookingResponse>> Reschedule(Guid id, RescheduleBookingRequest request);
     Task<Result<List<BookingStatusResponse>>> GetStatuses();

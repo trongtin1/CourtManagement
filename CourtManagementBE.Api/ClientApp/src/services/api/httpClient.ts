@@ -4,6 +4,12 @@ import { env } from '@/config/env'
 import { AUTH_EVENTS, AUTH_STORAGE_KEYS } from '@/constants/auth'
 import { storage } from '@/utils/storage'
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    idempotent?: boolean
+  }
+}
+
 export const httpClient = axios.create({
   baseURL: env.apiBaseUrl,
   headers: {
@@ -23,6 +29,16 @@ httpClient.interceptors.request.use((config) => {
 
   if (workingFacilityId && workingFacilityId !== 'all') {
     config.headers['X-Facility-Id'] = workingFacilityId
+  }
+
+  if (config.idempotent && !config.headers['Idempotency-Key']) {
+    config.headers['Idempotency-Key'] =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0
+            return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+          })
   }
 
   return config

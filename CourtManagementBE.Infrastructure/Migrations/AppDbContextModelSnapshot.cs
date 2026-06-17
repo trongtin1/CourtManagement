@@ -1414,6 +1414,27 @@ namespace CourtManagementBE.Migrations
                     b.ToTable("Facilities");
                 });
 
+            modelBuilder.Entity("CourtManagementBE.Domain.Entities.IdempotencyKey", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("ResponseContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("IdempotencyKeys");
+                });
+
             modelBuilder.Entity("CourtManagementBE.Domain.Entities.PaymentMethods", b =>
                 {
                     b.Property<int>("PaymentMethodID")

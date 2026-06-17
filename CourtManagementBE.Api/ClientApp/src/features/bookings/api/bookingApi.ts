@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from '@/services/api/apiClient'
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete, type ApiRequestConfig } from '@/services/api/apiClient'
 import type { PageList, PaginationQuery } from '@/types/api'
 import type {
   Booking,
@@ -16,14 +16,15 @@ export const bookingApi = {
   getById: (id: string) => apiGet<Booking>(`/booking/${id}`),
   getByDate: (date: string) => apiGet<Booking[]>(`/booking/date/${date}`),
   create: (data: CreateBookingRequest) => apiPost<Booking>('/booking', data),
-  createFull: (data: CreateFullBookingRequest) => apiPost<Booking>('/booking/full', data),
+  createFull: (data: CreateFullBookingRequest, config?: ApiRequestConfig) =>
+    apiPost<Booking>('/booking/full', data, { idempotent: true, ...config }),
   update: (id: string, data: UpdateBookingRequest) =>
     apiPut<Booking>(`/booking/${id}`, data),
   delete: (id: string) => apiDelete(`/booking/${id}`),
   updateStatus: (id: string, status: string) =>
     apiPatch<Booking>(`/booking/${id}/status`, status),
-  pay: (id: string, data: PayBookingRequest) =>
-    apiPost<Booking>(`/booking/${id}/pay`, data),
+  pay: (id: string, data: PayBookingRequest, config?: ApiRequestConfig) =>
+    apiPost<Booking>(`/booking/${id}/pay`, data, { idempotent: true, ...config }),
   refund: (id: string, data: { amount: number; note?: string }) =>
     apiPost<Booking>(`/booking/${id}/refund`, data),
   reschedule: (id: string, data: RescheduleBookingRequest) =>
