@@ -1,10 +1,6 @@
 import { useEffect } from 'react'
 import { Button, Empty, Skeleton, Space, Typography } from 'antd'
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  ShopOutlined,
-} from '@ant-design/icons'
+import { PlusOutlined, ReloadOutlined, ShopOutlined } from '@ant-design/icons'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 

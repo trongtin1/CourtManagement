@@ -553,7 +553,9 @@ export function BookingGroupDetailDrawer({
                                         </strong>
                                       </span>
                                     </div>
-                                    {(bPaid > 0 || (b.totalAmount > bPaid && b.status !== 'Cancelled')) && (
+                                    {(bPaid > 0 ||
+                                      (b.totalAmount > bPaid &&
+                                        b.status !== 'Cancelled')) && (
                                       <div className="flex justify-end gap-1.5 border-t border-slate-100 pt-2.5 mt-1">
                                         {bPaid > 0 && (
                                           <Button
@@ -572,30 +574,36 @@ export function BookingGroupDetailDrawer({
                                             Hoàn tiền
                                           </Button>
                                         )}
-                                        {b.totalAmount > bPaid && b.status !== 'Cancelled' && (
-                                          <>
-                                            {detail.paidAmount >= (b.totalAmount - bPaid) && (
+                                        {b.totalAmount > bPaid &&
+                                          b.status !== 'Cancelled' && (
+                                            <>
+                                              {detail.paidAmount >=
+                                                b.totalAmount - bPaid && (
+                                                <Button
+                                                  type="dashed"
+                                                  size="middle"
+                                                  className="text-xs h-7.5 px-3.5 rounded-md font-semibold text-emerald-600 border-emerald-200 hover:border-emerald-500 hover:text-emerald-700 bg-emerald-50/30"
+                                                  loading={payBookingMutation.isPending}
+                                                  onClick={() => handleQuickDeduct(b)}
+                                                >
+                                                  Khấu trừ cọc (
+                                                  {formatCompactCurrency(
+                                                    b.totalAmount - bPaid,
+                                                  )}
+                                                  )
+                                                </Button>
+                                              )}
                                               <Button
-                                                type="dashed"
+                                                type="primary"
                                                 size="middle"
-                                                className="text-xs h-7.5 px-3.5 rounded-md font-semibold text-emerald-600 border-emerald-200 hover:border-emerald-500 hover:text-emerald-700 bg-emerald-50/30"
-                                                loading={payBookingMutation.isPending}
-                                                onClick={() => handleQuickDeduct(b)}
+                                                icon={<WalletOutlined />}
+                                                className="text-xs h-7.5 px-3.5 rounded-md font-semibold bg-emerald-600 hover:bg-emerald-700"
+                                                onClick={() => handlePayBookingClick(b)}
                                               >
-                                                Khấu trừ cọc ({formatCompactCurrency(b.totalAmount - bPaid)})
+                                                Thanh toán
                                               </Button>
-                                            )}
-                                            <Button
-                                              type="primary"
-                                              size="middle"
-                                              icon={<WalletOutlined />}
-                                              className="text-xs h-7.5 px-3.5 rounded-md font-semibold bg-emerald-600 hover:bg-emerald-700"
-                                              onClick={() => handlePayBookingClick(b)}
-                                            >
-                                              Thanh toán
-                                            </Button>
-                                          </>
-                                        )}
+                                            </>
+                                          )}
                                       </div>
                                     )}
                                   </div>
@@ -817,7 +825,8 @@ export function BookingGroupDetailDrawer({
             title={
               <span className="flex items-center gap-2 font-extrabold text-slate-800 text-base">
                 <WalletOutlined className="text-emerald-600" /> Thanh toán buổi chơi ngày{' '}
-                {selectedPayBooking && dayjs(selectedPayBooking.bookingDate).format('DD/MM/YYYY')}
+                {selectedPayBooking &&
+                  dayjs(selectedPayBooking.bookingDate).format('DD/MM/YYYY')}
               </span>
             }
             open={!!selectedPayBooking}
@@ -830,7 +839,11 @@ export function BookingGroupDetailDrawer({
               <Form
                 form={payBookingForm}
                 layout="vertical"
-                onFinish={(values: { amount: number; paymentSource: string; note?: string }) => {
+                onFinish={(values: {
+                  amount: number
+                  paymentSource: string
+                  note?: string
+                }) => {
                   payBookingMutation.mutate(
                     {
                       id: selectedPayBooking.bookingID,
@@ -849,8 +862,8 @@ export function BookingGroupDetailDrawer({
                       onError: (error) => {
                         const fallbackMessage = 'Thanh toán thất bại!'
                         const serverMessage =
-                          (error as { response?: { data?: { message?: string } } })?.response?.data
-                            ?.message ?? fallbackMessage
+                          (error as { response?: { data?: { message?: string } } })
+                            ?.response?.data?.message ?? fallbackMessage
                         message.error(serverMessage)
                       },
                     },
@@ -868,13 +881,18 @@ export function BookingGroupDetailDrawer({
                     { required: true, message: 'Vui lòng nhập số tiền!' },
                     {
                       validator: (_, value) => {
-                        if (value === undefined || value === null) return Promise.resolve()
-                        if (value <= 0) return Promise.reject(new Error('Số tiền phải lớn hơn 0.'))
+                        if (value === undefined || value === null)
+                          return Promise.resolve()
+                        if (value <= 0)
+                          return Promise.reject(new Error('Số tiền phải lớn hơn 0.'))
                         const max =
-                          selectedPayBooking.totalAmount - (selectedPayBooking.paidAmount ?? 0)
+                          selectedPayBooking.totalAmount -
+                          (selectedPayBooking.paidAmount ?? 0)
                         if (value > max) {
                           return Promise.reject(
-                            new Error('Số tiền thanh toán không được vượt quá số còn lại.'),
+                            new Error(
+                              'Số tiền thanh toán không được vượt quá số còn lại.',
+                            ),
                           )
                         }
                         return Promise.resolve()
@@ -885,8 +903,13 @@ export function BookingGroupDetailDrawer({
                   <InputNumber<number>
                     className="w-full"
                     min={1}
-                    max={selectedPayBooking.totalAmount - (selectedPayBooking.paidAmount ?? 0)}
-                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    max={
+                      selectedPayBooking.totalAmount -
+                      (selectedPayBooking.paidAmount ?? 0)
+                    }
+                    formatter={(value) =>
+                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    }
                     parser={(value) => Number(value?.replace(/,/g, '') || 0)}
                     size="large"
                   />
@@ -895,7 +918,9 @@ export function BookingGroupDetailDrawer({
                 <Form.Item
                   name="paymentSource"
                   label={
-                    <span className="text-xs font-bold text-slate-600">Nguồn thanh toán</span>
+                    <span className="text-xs font-bold text-slate-600">
+                      Nguồn thanh toán
+                    </span>
                   }
                   rules={[{ required: true, message: 'Vui lòng chọn nguồn thanh toán!' }]}
                 >
@@ -914,7 +939,9 @@ export function BookingGroupDetailDrawer({
                         </span>
                       </Radio>
                       <Radio value="direct">
-                        <span className="text-xs">Thanh toán trực tiếp bằng tiền mặt</span>
+                        <span className="text-xs">
+                          Thanh toán trực tiếp bằng tiền mặt
+                        </span>
                       </Radio>
                     </div>
                   </Radio.Group>
@@ -922,7 +949,9 @@ export function BookingGroupDetailDrawer({
 
                 <Form.Item
                   name="note"
-                  label={<span className="text-xs font-bold text-slate-600">Ghi chú</span>}
+                  label={
+                    <span className="text-xs font-bold text-slate-600">Ghi chú</span>
+                  }
                 >
                   <Input.TextArea rows={2} placeholder="Ghi chú thanh toán..." />
                 </Form.Item>

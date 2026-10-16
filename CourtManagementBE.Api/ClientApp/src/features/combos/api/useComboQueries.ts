@@ -35,7 +35,8 @@ export const useCreateComboMutation = () => {
 export const useUpdateComboMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: ComboRequest }) => comboApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: ComboRequest }) =>
+      comboApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: comboKeys.all }),
   })
 }

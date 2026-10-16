@@ -62,7 +62,6 @@ export function ServicesPage() {
   const updateMut = useUpdateServiceMutation()
   const deleteMut = useDeleteServiceMutation()
 
-
   const openCreate = () => {
     setEditingId(null)
     form.resetFields()
@@ -172,7 +171,9 @@ export function ServicesPage() {
               dataIndex: 'isActive',
               width: 80,
               render: (v: boolean) => (
-                <span className={v ? 'text-green-600' : 'text-red-500'}>{v ? 'Active' : 'Inactive'}</span>
+                <span className={v ? 'text-green-600' : 'text-red-500'}>
+                  {v ? 'Active' : 'Inactive'}
+                </span>
               ),
             },
             {

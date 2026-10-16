@@ -96,15 +96,7 @@ namespace CourtManagementBE.Api
             builder.Services.AddScoped<AuditInterceptor>();
             builder.Services.AddDbContext<AppDbContext>((sp, options) =>
             {
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    sqlOptions =>
-                    {
-                        sqlOptions.EnableRetryOnFailure(
-                            maxRetryCount: 3,
-                            maxRetryDelay: TimeSpan.FromSeconds(10),
-                            errorNumbersToAdd: null);
-                    });
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
                 options.AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
             });
 

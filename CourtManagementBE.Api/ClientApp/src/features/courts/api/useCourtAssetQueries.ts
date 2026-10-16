@@ -12,17 +12,18 @@ export const courtAssetKeys = {
 }
 
 export const useCourtAssetsQuery = (params?: PaginationQuery) =>
-  useQuery({  
+  useQuery({
     queryKey: courtAssetKeys.list(params),
     queryFn: () => courtAssetApi.getAll(params),
   })
 
-export const useCourtAssetsByCourtQuery = (courtId: number, enabled = true) => {    
-  return useQuery({  
+export const useCourtAssetsByCourtQuery = (courtId: number, enabled = true) => {
+  return useQuery({
     queryKey: courtAssetKeys.court(courtId),
     queryFn: () => courtAssetApi.getByCourt(courtId),
     enabled: enabled && courtId > 0,
-  })}
+  })
+}
 
 export const useCreateCourtAssetMutation = () => {
   const qc = useQueryClient()

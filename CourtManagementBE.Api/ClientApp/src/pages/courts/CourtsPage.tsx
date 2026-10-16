@@ -211,7 +211,11 @@ export function CourtsPage() {
                 <Space>
                   <Button
                     icon={<EditOutlined />}
-                    onClick={() => navigate(ROUTES.courtSettings.replace(':id', String(record.courtID)))}
+                    onClick={() =>
+                      navigate(
+                        ROUTES.courtSettings.replace(':id', String(record.courtID)),
+                      )
+                    }
                     size="small"
                     type="link"
                   />

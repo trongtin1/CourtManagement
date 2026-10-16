@@ -4,7 +4,8 @@ import type { UnitConversionRequest } from '../model/types'
 
 export const unitConversionKeys = {
   all: ['unitConversions'] as const,
-  byService: (serviceId: number) => [...unitConversionKeys.all, 'service', serviceId] as const,
+  byService: (serviceId: number) =>
+    [...unitConversionKeys.all, 'service', serviceId] as const,
 }
 
 export const useUnitConversionsQuery = (serviceId: number) => {
@@ -20,7 +21,9 @@ export const useCreateUnitConversionMutation = () => {
   return useMutation({
     mutationFn: (data: UnitConversionRequest) => unitConversionApi.create(data),
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: unitConversionKeys.byService(variables.serviceID) })
+      qc.invalidateQueries({
+        queryKey: unitConversionKeys.byService(variables.serviceID),
+      })
     },
   })
 }
@@ -28,10 +31,12 @@ export const useCreateUnitConversionMutation = () => {
 export const useUpdateUnitConversionMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UnitConversionRequest }) => 
+    mutationFn: ({ id, data }: { id: number; data: UnitConversionRequest }) =>
       unitConversionApi.update(id, data),
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: unitConversionKeys.byService(variables.data.serviceID) })
+      qc.invalidateQueries({
+        queryKey: unitConversionKeys.byService(variables.data.serviceID),
+      })
     },
   })
 }

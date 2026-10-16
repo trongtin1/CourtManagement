@@ -1,10 +1,13 @@
 import { apiDelete, apiGet, apiPost, apiPut } from '@/services/api/apiClient'
 import type { PageList, PaginationQuery } from '@/types/api'
-import type { CreateTimeSlotRequest, TimeSlot, UpdateTimeSlotRequest } from '../model/types'
+import type {
+  CreateTimeSlotRequest,
+  TimeSlot,
+  UpdateTimeSlotRequest,
+} from '../model/types'
 
 export const timeSlotApi = {
-  getAll: (params?: PaginationQuery) =>
-    apiGet<PageList<TimeSlot>>('/timeslot', params),
+  getAll: (params?: PaginationQuery) => apiGet<PageList<TimeSlot>>('/timeslot', params),
   getById: (id: number) => apiGet<TimeSlot>(`/timeslot/${id}`),
   create: (data: CreateTimeSlotRequest) => apiPost<TimeSlot>('/timeslot', data),
   update: (id: number, data: UpdateTimeSlotRequest) =>

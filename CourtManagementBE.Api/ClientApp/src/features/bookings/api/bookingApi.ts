@@ -1,4 +1,11 @@
-import { apiGet, apiPost, apiPut, apiPatch, apiDelete, type ApiRequestConfig } from '@/services/api/apiClient'
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiPatch,
+  apiDelete,
+  type ApiRequestConfig,
+} from '@/services/api/apiClient'
 import type { PageList, PaginationQuery } from '@/types/api'
 import type {
   Booking,

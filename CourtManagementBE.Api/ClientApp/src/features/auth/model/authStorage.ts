@@ -24,4 +24,3 @@ export const authStorage = {
     storage.remove(AUTH_STORAGE_KEYS.workingFacility)
   },
 }
-

@@ -8,7 +8,8 @@ import type {
 
 export const courtLockedSlotKeys = {
   all: ['courtLockedSlots'] as const,
-  list: (params?: PaginationQuery) => [...courtLockedSlotKeys.all, 'list', params] as const,
+  list: (params?: PaginationQuery) =>
+    [...courtLockedSlotKeys.all, 'list', params] as const,
   court: (courtId: number, targetDate?: string | null) =>
     [...courtLockedSlotKeys.all, 'court', courtId, targetDate ?? null] as const,
   availability: (courtId: number, targetDate: string) =>

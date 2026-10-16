@@ -97,7 +97,7 @@ export function CourtFeaturesSection({ courtId }: CourtFeaturesSectionProps) {
       setUpdatingFeatureId(null)
     }
   }
-  
+
   const isLoading = categoriesQuery.isPending || mappingsQuery.isPending
   const isRefreshing = categoriesQuery.isRefetching || mappingsQuery.isRefetching
 

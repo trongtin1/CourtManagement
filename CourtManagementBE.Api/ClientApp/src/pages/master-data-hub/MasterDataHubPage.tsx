@@ -92,8 +92,8 @@ const masterDataGroups = [
       },
       {
         name: 'Quy đổi đơn vị',
-        desc: 'Thiết lập quy đổi giữa các đơn vị',
-        path: ROUTES.units,
+        desc: 'Thiết lập quy đổi theo từng dịch vụ (Lon ➔ Thùng, Chai ➔ Két...)',
+        path: ROUTES.services,
         icon: <SwapOutlined />,
       },
       {

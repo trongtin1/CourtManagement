@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query'
 import { courtPriceApi } from './courtPriceApi'
 import type {
   CreateCourtPriceRequest,
@@ -8,7 +13,8 @@ import type {
 export const courtPriceKeys = {
   all: ['courtPrices'] as const,
   court: (courtId: number) => [...courtPriceKeys.all, 'court', courtId] as const,
-  courtWithDate: (courtId: number, targetDate: string) => [...courtPriceKeys.court(courtId), targetDate] as const,
+  courtWithDate: (courtId: number, targetDate: string) =>
+    [...courtPriceKeys.court(courtId), targetDate] as const,
 }
 
 export const useCourtPricesByCourtQuery = (courtId: number, targetDate: string) =>
@@ -25,7 +31,9 @@ export const useCreateCourtPriceMutation = () => {
   return useMutation({
     mutationFn: (data: CreateCourtPriceRequest) => courtPriceApi.create(data),
     onSuccess: (_data, variables) =>
-      queryClient.invalidateQueries({ queryKey: courtPriceKeys.court(variables.courtID) }),
+      queryClient.invalidateQueries({
+        queryKey: courtPriceKeys.court(variables.courtID),
+      }),
   })
 }
 

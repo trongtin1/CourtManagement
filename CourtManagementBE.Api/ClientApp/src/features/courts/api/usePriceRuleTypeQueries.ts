@@ -39,13 +39,8 @@ export const useUpdatePriceRuleTypeMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number
-      data: UpdatePriceRuleTypeRequest
-    }) => priceRuleTypeApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdatePriceRuleTypeRequest }) =>
+      priceRuleTypeApi.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: priceRuleTypeKeys.all }),
   })
 }

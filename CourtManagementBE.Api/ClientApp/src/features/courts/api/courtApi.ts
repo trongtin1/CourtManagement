@@ -9,14 +9,15 @@ import type {
   UpdateCourtRequest,
 } from '../model/types'
 
-
 export const courtApi = {
   getAll: (params?: PaginationQuery) => apiGet<PageList<Court>>('/court', params),
   getById: (id: number) => apiGet<Court>(`/court/${id}`),
   getSlotsAvailability: (id: number, date: string) =>
     apiGet<CourtSlotAvailability[]>(`/court/${id}/slots`, { date }),
   getTimelineAvailability: (facilityId: number, date: string) =>
-    apiGet<CourtTimelineAvailability[]>(`/court/facility/${facilityId}/timeline`, { date }),
+    apiGet<CourtTimelineAvailability[]>(`/court/facility/${facilityId}/timeline`, {
+      date,
+    }),
   getWeeklyTimeline: (id: number, date: string) =>
     apiGet<CourtWeeklyTimeline>(`/court/${id}/weekly-timeline`, { date }),
   create: (data: CreateCourtRequest) => apiPost<Court>('/court', data),

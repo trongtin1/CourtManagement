@@ -5,7 +5,6 @@ import type {
   UpdateCourtAreaMappingRequest,
 } from '../model/types'
 
-
 export const courtAreaMappingApi = {
   getByArea: (areaId: number) =>
     apiGet<CourtAreaMapping[]>(`/courtareamapping/area/${areaId}`),

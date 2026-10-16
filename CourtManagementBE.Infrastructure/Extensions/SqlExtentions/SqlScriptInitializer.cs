@@ -12,17 +12,32 @@ public static class SqlScriptInitializer
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
-        var sqlDir = Path.Combine(Directory.GetCurrentDirectory(), "CourtManagementBE.Infrastructure", "SqlScripts");
-        if (!Directory.Exists(sqlDir))
+        var currentDir = Directory.GetCurrentDirectory();
+        var candidatePaths = new[]
         {
-            sqlDir = Path.Combine(AppContext.BaseDirectory, "SqlScripts");
+            Path.Combine(currentDir, "CourtManagementBE.Infrastructure", "SqlScripts"),
+            Path.Combine(currentDir, "..", "CourtManagementBE.Infrastructure", "SqlScripts"),
+            Path.Combine(AppContext.BaseDirectory, "SqlScripts"),
+            Path.Combine(currentDir, "SqlScripts")
+        };
+
+        string? sqlDir = null;
+        foreach (var path in candidatePaths)
+        {
+            if (Directory.Exists(path) && Directory.GetFiles(path, "*.sql").Any())
+            {
+                sqlDir = Path.GetFullPath(path);
+                break;
+            }
         }
 
-        if (!Directory.Exists(sqlDir))
+        if (string.IsNullOrEmpty(sqlDir))
         {
-            logger.LogWarning("SqlScripts folder not found: {Path}", sqlDir);
+            logger.LogWarning("SqlScripts folder not found in any candidate paths: {Paths}", string.Join("; ", candidatePaths));
             return;
         }
+
+        logger.LogInformation("Nạp SQL scripts từ thư mục: {Path}", sqlDir);
 
         var files = Directory.GetFiles(sqlDir, "*.sql")
                              .OrderBy(x => x)
@@ -51,10 +66,11 @@ public static class SqlScriptInitializer
                 }
 
                 await transaction.CommitAsync();
+                logger.LogInformation("Nạp thành công SQL script: {File}", fileName);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error executing {File}", fileName);
+                logger.LogError(ex, "Lỗi thực thi SQL script {File}", fileName);
             }
         }
     }

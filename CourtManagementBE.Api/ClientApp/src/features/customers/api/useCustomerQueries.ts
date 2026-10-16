@@ -10,17 +10,17 @@ export const customerKeys = {
 }
 
 export const useCustomersQuery = (params?: PaginationQuery) => {
-  return useQuery({  
-    queryKey: customerKeys.list(params),  
-    queryFn: () => customerApi.getAll(params) 
+  return useQuery({
+    queryKey: customerKeys.list(params),
+    queryFn: () => customerApi.getAll(params),
   })
 }
 
 export const useCustomerQuery = (id: number) => {
-  return useQuery({ 
-    queryKey: customerKeys.detail(id), 
-    queryFn: () => customerApi.getById(id), 
-    enabled: id > 0 
+  return useQuery({
+    queryKey: customerKeys.detail(id),
+    queryFn: () => customerApi.getById(id),
+    enabled: id > 0,
   })
 }
 
@@ -35,7 +35,8 @@ export const useCreateCustomerMutation = () => {
 export const useUpdateCustomerMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCustomerRequest }) => customerApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateCustomerRequest }) =>
+      customerApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: customerKeys.all }),
   })
 }

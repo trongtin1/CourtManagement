@@ -29,4 +29,10 @@
     <ProjectReference Include="..\CourtManagementBE.Application\CourtManagementBE.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="SqlScripts\**\*.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

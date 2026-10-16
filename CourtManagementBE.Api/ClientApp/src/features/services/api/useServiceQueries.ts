@@ -9,18 +9,18 @@ export const serviceKeys = {
   detail: (id: number) => [...serviceKeys.all, 'detail', id] as const,
 }
 
-export const useServicesQuery = (params?: PaginationQuery) => { 
-  return useQuery({ 
-    queryKey: serviceKeys.list(params), 
-    queryFn: () => serviceApi.getAll(params) 
+export const useServicesQuery = (params?: PaginationQuery) => {
+  return useQuery({
+    queryKey: serviceKeys.list(params),
+    queryFn: () => serviceApi.getAll(params),
   })
 }
-  
+
 export const useServiceQuery = (id: number) => {
-  return useQuery({ 
-    queryKey: serviceKeys.detail(id), 
-    queryFn: () => serviceApi.getById(id), 
-    enabled: id > 0 
+  return useQuery({
+    queryKey: serviceKeys.detail(id),
+    queryFn: () => serviceApi.getById(id),
+    enabled: id > 0,
   })
 }
 
@@ -35,7 +35,8 @@ export const useCreateServiceMutation = () => {
 export const useUpdateServiceMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateServiceRequest }) => serviceApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateServiceRequest }) =>
+      serviceApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: serviceKeys.all }),
   })
 }

@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { courtTypeApi } from '@/features/courts/api/courtTypeApi'
 import type { PaginationQuery } from '@/types/api'
-import type { CourtType, CreateCourtTypeRequest, UpdateCourtTypeRequest } from '../model/types'
+import type {
+  CourtType,
+  CreateCourtTypeRequest,
+  UpdateCourtTypeRequest,
+} from '../model/types'
 
 export const courtTypeKeys = {
   all: ['courtTypes'] as const,
@@ -10,17 +14,17 @@ export const courtTypeKeys = {
 }
 
 export const useCourtTypesQuery = (params?: PaginationQuery) => {
-  return useQuery({ 
-    queryKey: courtTypeKeys.list(params), 
-    queryFn: () => courtTypeApi.getAll(params) 
+  return useQuery({
+    queryKey: courtTypeKeys.list(params),
+    queryFn: () => courtTypeApi.getAll(params),
   })
 }
 
 export const useCourtTypeQuery = (id: number) => {
-  return useQuery({ 
-    queryKey: courtTypeKeys.detail(id), 
-    queryFn: () => courtTypeApi.getById(id), 
-    enabled: id > 0 
+  return useQuery({
+    queryKey: courtTypeKeys.detail(id),
+    queryFn: () => courtTypeApi.getById(id),
+    enabled: id > 0,
   })
 }
 
@@ -35,7 +39,8 @@ export const useCreateCourtTypeMutation = () => {
 export const useUpdateCourtTypeMutation = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCourtTypeRequest }) => courtTypeApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateCourtTypeRequest }) =>
+      courtTypeApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: courtTypeKeys.all }),
   })
 }

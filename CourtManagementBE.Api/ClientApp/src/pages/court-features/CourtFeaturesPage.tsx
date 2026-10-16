@@ -161,7 +161,9 @@ export function CourtFeaturesPage() {
               title: 'Nhom',
               width: 150,
               render: (_: unknown, record: CourtFeature) => {
-                return <Tag color="purple">{record.courtFeatureCategory?.name || 'Other'}</Tag>
+                return (
+                  <Tag color="purple">{record.courtFeatureCategory?.name || 'Other'}</Tag>
+                )
               },
             },
             { title: 'Ten dac diem', dataIndex: 'featureName', width: 220 },

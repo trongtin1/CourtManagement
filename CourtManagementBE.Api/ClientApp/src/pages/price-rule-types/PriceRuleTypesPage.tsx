@@ -13,7 +13,12 @@ import {
   Table,
   Tag,
 } from 'antd'
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import type { TablePaginationConfig } from 'antd/es/table'
 
 import { LoadingSpin } from '@/components/common/LoadingSpin'

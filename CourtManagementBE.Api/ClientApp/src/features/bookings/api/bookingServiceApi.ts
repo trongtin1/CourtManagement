@@ -6,8 +6,6 @@ import type {
   UpdateBookingServiceRequest,
 } from '../model/types'
 
-
-
 export const bookingServiceApi = {
   getByBooking: (bookingId: string) =>
     apiGet<BookingService[]>(`/bookingservice/booking/${bookingId}`),

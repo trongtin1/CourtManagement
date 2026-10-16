@@ -2,14 +2,16 @@ import type { AxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { httpClient } from '@/services/api/httpClient'
 
-export type ApiRequestConfig = Pick<AxiosRequestConfig, 'signal' | 'headers' | 'timeout' | 'idempotent'>
+export type ApiRequestConfig = Pick<
+  AxiosRequestConfig,
+  'signal' | 'headers' | 'timeout' | 'idempotent'
+>
 
 export type AbortableRequest<T> = {
   promise: Promise<T>
   abort: () => void
   signal: AbortSignal
 }
-
 
 export async function apiGet<T>(
   url: string,
@@ -47,7 +49,10 @@ export async function apiPatch<T>(
   return res.data.data
 }
 
-export async function apiDelete<T = void>(url: string, config?: ApiRequestConfig): Promise<T> {
+export async function apiDelete<T = void>(
+  url: string,
+  config?: ApiRequestConfig,
+): Promise<T> {
   const res = await httpClient.delete<ApiResponse<T>>(url, config)
   return res.data.data
 }

@@ -68,7 +68,7 @@ const toUpdateRequest = (
   courtId: number,
   values: Record<string, unknown>,
 ): UpdateCourtAssetRequest => {
-  const {  ...data } = toCreateRequest(courtId, values)
+  const { ...data } = toCreateRequest(courtId, values)
   return data
 }
 
@@ -215,7 +215,9 @@ export function CourtAssetsSection({ courtId }: CourtAssetsSectionProps) {
                 title: 'Active',
                 dataIndex: 'isActive',
                 width: 90,
-                render: (value: boolean) => <Switch checked={value} disabled size="small" />,
+                render: (value: boolean) => (
+                  <Switch checked={value} disabled size="small" />
+                ),
               },
               {
                 title: '',

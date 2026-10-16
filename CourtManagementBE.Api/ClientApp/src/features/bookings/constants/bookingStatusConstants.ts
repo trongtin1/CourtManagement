@@ -5,9 +5,10 @@ export const BookingStatusConstants = {
   Completed: '004',
   Cancelled: '005',
   NoShow: '006',
-} as const;
+} as const
 
-export type BookingStatusValue = typeof BookingStatusConstants[keyof typeof BookingStatusConstants];
+export type BookingStatusValue =
+  (typeof BookingStatusConstants)[keyof typeof BookingStatusConstants]
 
 export const BookingStatusNameMap = {
   [BookingStatusConstants.Pending]: 'Pending',
@@ -16,4 +17,4 @@ export const BookingStatusNameMap = {
   [BookingStatusConstants.Completed]: 'Completed',
   [BookingStatusConstants.Cancelled]: 'Cancelled',
   [BookingStatusConstants.NoShow]: 'NoShow',
-} as const;
+} as const

@@ -36,6 +36,9 @@ public static class AppDbSeeder
         await SeedCourtFeatureMappingsAsync(db, courts, courtFeatures, cancellationToken);
         await SeedCourtUtilitiesAsync(db, courts, utilities, cancellationToken);
         await SeedCourtAssetsAsync(db, courts, cancellationToken);
+        await SeedCourtDefaultPriceRulesAsync(db, cancellationToken);
+        await SeedUnitConversionsAsync(db, services, cancellationToken);
+        await SeedCombosAsync(db, services, cancellationToken);
         await SeedBookingsAsync(db, courts, services, customers, cancellationToken);
     }
 
@@ -140,6 +143,8 @@ public static class AppDbSeeder
             new Units { Code = "piece", Name = "Chiếc", Symbol = "chiếc", SortOrder = 4 },
             new Units { Code = "set", Name = "Bộ", Symbol = "bộ", SortOrder = 5 },
             new Units { Code = "hour", Name = "Giờ", Symbol = "giờ", SortOrder = 6 },
+            new Units { Code = "carton", Name = "Thùng", Symbol = "thùng", SortOrder = 7 },
+            new Units { Code = "pack", Name = "Lốc", Symbol = "lốc", SortOrder = 8 },
         ], cancellationToken);
 
         await SeedMasterAsync(db.AssetCategories, [
@@ -714,5 +719,169 @@ public static class AppDbSeeder
                 await db.SaveChangesAsync(cancellationToken);
             }
         }
+    }
+
+    private static async Task SeedCourtDefaultPriceRulesAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        if (await db.CourtDefaultPriceRules.AnyAsync(cancellationToken))
+            return;
+
+        var priceRuleTypes = await db.PriceRuleTypes.ToListAsync(cancellationToken);
+        var offPeak = priceRuleTypes.FirstOrDefault(x => x.Code == "off_peak");
+        var peak = priceRuleTypes.FirstOrDefault(x => x.Code == "peak");
+        var weekend = priceRuleTypes.FirstOrDefault(x => x.Code == "weekend");
+
+        var rules = new List<CourtDefaultPriceRule>();
+
+        // Thứ 2 đến Thứ 6 (DayOfWeek: 1 - 5)
+        for (int dow = 1; dow <= 5; dow++)
+        {
+            // 06:00 - 16:00 (Thấp điểm)
+            rules.Add(new CourtDefaultPriceRule
+            {
+                DayOfWeek = dow,
+                PriceRuleTypeID = offPeak?.PriceRuleTypeID,
+                StartTime = new TimeSpan(6, 0, 0),
+                EndTime = new TimeSpan(16, 0, 0),
+                Price = 80_000m,
+                IsLoadDefault = true,
+                IsActive = true,
+                CreatedBy = AdminLogin
+            });
+
+            // 16:00 - 22:00 (Cao điểm)
+            rules.Add(new CourtDefaultPriceRule
+            {
+                DayOfWeek = dow,
+                PriceRuleTypeID = peak?.PriceRuleTypeID,
+                StartTime = new TimeSpan(16, 0, 0),
+                EndTime = new TimeSpan(22, 0, 0),
+                Price = 120_000m,
+                IsLoadDefault = true,
+                IsActive = true,
+                CreatedBy = AdminLogin
+            });
+        }
+
+        // Thứ 7 & CN (DayOfWeek: 6 & 0)
+        foreach (int dow in new[] { 0, 6 })
+        {
+            rules.Add(new CourtDefaultPriceRule
+            {
+                DayOfWeek = dow,
+                PriceRuleTypeID = weekend?.PriceRuleTypeID,
+                StartTime = new TimeSpan(6, 0, 0),
+                EndTime = new TimeSpan(22, 0, 0),
+                Price = 150_000m,
+                IsLoadDefault = true,
+                IsActive = true,
+                CreatedBy = AdminLogin
+            });
+        }
+
+        db.CourtDefaultPriceRules.AddRange(rules);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedUnitConversionsAsync(AppDbContext db, List<Services> services, CancellationToken cancellationToken)
+    {
+        if (await db.UnitConversions.AnyAsync(cancellationToken))
+            return;
+
+        var units = await db.Units.ToListAsync(cancellationToken);
+        var bottleUnit = units.FirstOrDefault(x => x.Code == "bottle");
+        var cartonUnit = units.FirstOrDefault(x => x.Code == "carton");
+        var packUnit = units.FirstOrDefault(x => x.Code == "pack");
+        var waterService = services.FirstOrDefault(x => x.ServiceCode == "WATER");
+
+        if (bottleUnit is not null && waterService is not null)
+        {
+            if (cartonUnit is not null)
+            {
+                db.UnitConversions.Add(new UnitConversions
+                {
+                    ServiceID = waterService.ServiceID,
+                    SourceUnitID = cartonUnit.UnitID, // Thùng
+                    TargetUnitID = bottleUnit.UnitID, // Chai
+                    Factor = 24m,                     // 1 thùng = 24 chai
+                    IsActive = true
+                });
+            }
+
+            if (packUnit is not null)
+            {
+                db.UnitConversions.Add(new UnitConversions
+                {
+                    ServiceID = waterService.ServiceID,
+                    SourceUnitID = packUnit.UnitID,   // Lốc
+                    TargetUnitID = bottleUnit.UnitID, // Chai
+                    Factor = 6m,                      // 1 lốc = 6 chai
+                    IsActive = true
+                });
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static async Task SeedCombosAsync(AppDbContext db, List<Services> services, CancellationToken cancellationToken)
+    {
+        if (await db.Combos.AnyAsync(cancellationToken))
+            return;
+
+        var waterService = services.FirstOrDefault(x => x.ServiceCode == "WATER");
+        var shuttleService = services.FirstOrDefault(x => x.ServiceCode == "SHUTTLE");
+
+        var combo1 = new Combos
+        {
+            ComboCode = "COMBO_REFRESH",
+            ComboName = "Combo Giờ Chơi + Nước Suối",
+            Description = "Bao gồm 2 giờ chơi sân và 2 chai nước suối ướp lạnh.",
+            ComboPrice = 220_000m,
+            DurationHours = 2,
+            IsActive = true
+        };
+
+        var combo2 = new Combos
+        {
+            ComboCode = "COMBO_PRO",
+            ComboName = "Gói Tập Luyện Pro",
+            Description = "Bao gồm 2 giờ chơi sân, 1 ống cầu lông 12 quả và 2 chai nước suối.",
+            ComboPrice = 320_000m,
+            DurationHours = 2,
+            IsActive = true
+        };
+
+        db.Combos.AddRange(combo1, combo2);
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (waterService is not null)
+        {
+            db.ComboServices.Add(new ComboServices
+            {
+                ComboID = combo1.ComboID,
+                ServiceID = waterService.ServiceID,
+                Quantity = 2
+            });
+
+            db.ComboServices.Add(new ComboServices
+            {
+                ComboID = combo2.ComboID,
+                ServiceID = waterService.ServiceID,
+                Quantity = 2
+            });
+        }
+
+        if (shuttleService is not null)
+        {
+            db.ComboServices.Add(new ComboServices
+            {
+                ComboID = combo2.ComboID,
+                ServiceID = shuttleService.ServiceID,
+                Quantity = 1
+            });
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

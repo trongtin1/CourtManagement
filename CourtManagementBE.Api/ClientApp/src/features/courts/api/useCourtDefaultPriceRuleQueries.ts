@@ -17,7 +17,7 @@ export const courtDefaultPriceRuleKeys = {
 
 export const useCourtDefaultPriceRulesQuery = (
   params?: PaginationQuery,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) =>
   useQuery({
     queryKey: courtDefaultPriceRuleKeys.list(params),

@@ -7,7 +7,8 @@ import type {
 } from '@/features/courts/model/types'
 
 export const courtAssetApi = {
-  getAll: (params?: PaginationQuery) => apiGet<PageList<CourtAsset>>('/courtasset', params),
+  getAll: (params?: PaginationQuery) =>
+    apiGet<PageList<CourtAsset>>('/courtasset', params),
   getByCourt: (courtId: number) => apiGet<CourtAsset[]>(`/courtasset/court/${courtId}`),
   create: (data: CreateCourtAssetRequest) => apiPost<CourtAsset>('/courtasset', data),
   update: (id: number, data: UpdateCourtAssetRequest) =>

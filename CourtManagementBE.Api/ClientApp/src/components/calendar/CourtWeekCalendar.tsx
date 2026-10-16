@@ -94,8 +94,12 @@ export function CourtWeekCalendar<TEvent extends object = CourtWeekCalendarEvent
         <DnDCalendar
           {...calendarProps}
           resizable={resizable}
-          onEventDrop={onEventDrop as ((args: EventInteractionArgs<object>) => void) | undefined}
-          onEventResize={onEventResize as ((args: EventInteractionArgs<object>) => void) | undefined}
+          onEventDrop={
+            onEventDrop as ((args: EventInteractionArgs<object>) => void) | undefined
+          }
+          onEventResize={
+            onEventResize as ((args: EventInteractionArgs<object>) => void) | undefined
+          }
         />
       </div>
     )

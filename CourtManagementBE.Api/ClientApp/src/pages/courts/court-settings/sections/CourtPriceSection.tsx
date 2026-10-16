@@ -48,7 +48,10 @@ import {
   toTimeSpan,
   getDisabledTime,
 } from '@/utils/format'
-import { CourtWeekCalendar, type EventInteractionArgs } from '@/components/calendar/CourtWeekCalendar'
+import {
+  CourtWeekCalendar,
+  type EventInteractionArgs,
+} from '@/components/calendar/CourtWeekCalendar'
 import { COURT_WEEK_CALENDAR_FORMATS } from '@/components/calendar/courtWeekCalendarFormats'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -104,7 +107,6 @@ const hasCollision = (blocks: PriceBlock[], candidate: PriceBlock, excludeId?: s
       b.start < candidate.end &&
       b.end > candidate.start,
   )
-
 
 // ── Custom Event ──────────────────────────────────────────────────────────────
 function PriceEventTooltipContent({

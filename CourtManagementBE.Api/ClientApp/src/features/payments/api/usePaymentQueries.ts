@@ -8,17 +8,17 @@ export const paymentKeys = {
   detail: (id: number) => [...paymentKeys.all, 'detail', id] as const,
 }
 
-export const usePaymentsQuery = (params?: PaginationQuery) => { 
-  return useQuery({ 
-    queryKey: paymentKeys.list(params), 
-    queryFn: () => paymentApi.getAll(params) 
+export const usePaymentsQuery = (params?: PaginationQuery) => {
+  return useQuery({
+    queryKey: paymentKeys.list(params),
+    queryFn: () => paymentApi.getAll(params),
   })
 }
 
 export const usePaymentQuery = (id: number) => {
-  return useQuery({ 
-    queryKey: paymentKeys.detail(id), 
-    queryFn: () => paymentApi.getById(id), 
-    enabled: id > 0 
+  return useQuery({
+    queryKey: paymentKeys.detail(id),
+    queryFn: () => paymentApi.getById(id),
+    enabled: id > 0,
   })
 }

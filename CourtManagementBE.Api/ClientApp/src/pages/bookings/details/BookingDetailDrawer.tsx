@@ -367,7 +367,7 @@ export function BookingDetailDrawer({
     amount?: number
     paymentMethod?: string
     note?: string
-    paymentSource?: typeof PaymentSources[keyof typeof PaymentSources]
+    paymentSource?: (typeof PaymentSources)[keyof typeof PaymentSources]
   }
 
   const isCurrentBookingSlot = (slot: CourtSlotAvailability) =>
@@ -787,7 +787,9 @@ export function BookingDetailDrawer({
               payForm.setFieldsValue({
                 amount: remainingAmount,
                 paymentMethod: 'cash',
-                paymentSource: canUseGroup ? PaymentSources.GroupDeposit : PaymentSources.Direct,
+                paymentSource: canUseGroup
+                  ? PaymentSources.GroupDeposit
+                  : PaymentSources.Direct,
                 note: '',
               })
               setIsPayModalOpen(true)
